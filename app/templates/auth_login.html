@@ -14,5 +14,6 @@
     <button type="submit">log in</button>
   </form>
   <p class="hint">new here? <a href="{{ url_for('auth.signup') }}">sign up</a> — it takes a minute 💕</p>
+  <p class="hint">forgot your password? <a href="{{ url_for('auth.reset_request') }}">reset it 🌱</a></p>
 </section>
 {% endblock %}

@@ -1,0 +1,41 @@
+{% extends "dash_base.html" %}
+{% block title %}privacy{% endblock %}
+{% block content %}
+<section class="card legal">
+  <h1>privacy 🍃</h1>
+  <p class="hint">the short version: we don't track you, we don't sell anything about you,
+  and public pages set zero cookies. here's the long version.</p>
+
+  <h2>who we are</h2>
+  <p>controller in the sense of the GDPR: [FULL LEGAL NAME], [ADDRESS], reachable at
+  <a href="mailto:[CONTACT EMAIL]">[CONTACT EMAIL]</a>.</p>
+
+  <h2>what we process, and why</h2>
+  <p><strong>your account:</strong> your email address and a salted hash of your password
+  (we never store the password itself). legal basis: performance of contract,
+  Art. 6 (1)(b) GDPR — it's how your login works.</p>
+  <p><strong>your page:</strong> the username, display name, bio, pronouns, links and theme
+  you choose to publish. you put this here to be public; it's visible to anyone with the link.</p>
+  <p><strong>password reset emails:</strong> if you request one, your email address is passed to
+  our email delivery provider, Resend (Resend, Inc., USA), solely to deliver that one email.
+  transfer to the USA is safeguarded by [EU STANDARD CONTRACTUAL CLAUSES / DPF — VERIFY WITH PROVIDER].</p>
+  <p><strong>server logs:</strong> our host processes technical request data (such as IP addresses)
+  for security and operation. legal basis: legitimate interest, Art. 6 (1)(f) GDPR.
+  hosting provider: [HOSTING PROVIDER, LOCATION — FILL IN AT DEPLOY].</p>
+
+  <h2>what we deliberately don't do</h2>
+  <p>no analytics scripts, no advertising pixels, no third-party requests, and no cookies of any
+  kind on public profile pages — for anyone, ever. the only cookie we set at all is a session
+  cookie when you log in to edit your own page, and it does exactly that one job.</p>
+
+  <h2>how long we keep things</h2>
+  <p>your data stays as long as your account exists. to delete your account and everything in it,
+  email <a href="mailto:[CONTACT EMAIL]">[CONTACT EMAIL]</a> from your account address and
+  we'll remove it promptly. password reset tokens expire after one hour.</p>
+
+  <h2>your rights</h2>
+  <p>under the GDPR you have the right to access, rectification, erasure, restriction of
+  processing, data portability, and objection, plus the right to lodge a complaint with a
+  supervisory authority. just write to the contact address above.</p>
+</section>
+{% endblock %}

@@ -49,6 +49,16 @@ def favicon():
     return current_app.send_static_file("favicon.svg")
 
 
+@bp.get("/imprint")
+def imprint():
+    return render_template("imprint.html")
+
+
+@bp.get("/privacy")
+def privacy():
+    return render_template("privacy.html")
+
+
 @bp.get("/")
 def index():
     return render_template("index.html", csp_nonce=use_public_csp())

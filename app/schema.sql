@@ -16,6 +16,8 @@ CREATE TABLE IF NOT EXISTS users (
     avatar_value  TEXT    NOT NULL DEFAULT '🥒',     -- emoji char OR gradient name; allowlists in constants.py
     theme_json    TEXT    NOT NULL,                  -- versioned JSON, see app/theme.py
     theme_version INTEGER NOT NULL DEFAULT 1,
+    reset_token_hash TEXT,                            -- sha256 of the emailed token; NULL when none active
+    reset_expires INTEGER,                            -- unix epoch; token dead after this
     created_at    TEXT    NOT NULL DEFAULT (datetime('now'))
 );
 

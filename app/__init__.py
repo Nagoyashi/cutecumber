@@ -12,7 +12,12 @@ from flask import Flask, g, render_template, session
 
 from . import auth, dash, db, links, public
 from .extensions import limiter
-from .security import apply_security_headers, check_csrf, get_csrf_token
+from .security import (
+    apply_security_headers,
+    check_csrf,
+    get_csrf_token,
+    session_auth_fragment,
+)
 
 
 def create_app() -> Flask:
@@ -82,6 +87,10 @@ def create_app() -> Flask:
             )
             if g.user is None:  # stale cookie for a deleted account
                 session.clear()
+            elif session.get("auth") != session_auth_fragment(g.user["password_hash"]):
+                # password changed since this session was issued — sign out
+                session.clear()
+                g.user = None
 
     app.before_request(check_csrf)
     app.after_request(apply_security_headers)

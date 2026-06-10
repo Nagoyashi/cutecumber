@@ -1,0 +1,16 @@
+{% extends "dash_base.html" %}
+{% block title %}reset password{% endblock %}
+{% block content %}
+<section class="card">
+  <h1>forgot your password? 🌱</h1>
+  <p>no worries — pop your email in and we'll send you a reset link.</p>
+  <form method="post" action="{{ url_for('auth.reset_request') }}" class="stack">
+    <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+    <label for="email">email</label>
+    <input id="email" name="email" type="email" required maxlength="254"
+           autocomplete="email" placeholder="you@example.com">
+    <button type="submit">send me a reset link 💌</button>
+  </form>
+  <p class="hint">remembered it after all? <a href="{{ url_for('auth.login') }}">log in</a></p>
+</section>
+{% endblock %}

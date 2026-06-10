@@ -28,6 +28,10 @@ RESERVED_USERNAMES = frozenset(
         "www",
         "cutecumber",
         "official",
+        "reset",
+        "imprint",
+        "impressum",
+        "legal",
     }
 )
 

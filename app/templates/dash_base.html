@@ -32,5 +32,10 @@
   {% endwith %}
   {% block content %}{% endblock %}
 </main>
+<footer class="sitefooter">
+  <a href="{{ url_for('public.index') }}">🥒 cutecumber</a> ·
+  <a href="{{ url_for('public.privacy') }}">privacy</a> ·
+  <a href="{{ url_for('public.imprint') }}">imprint</a>
+</footer>
 </body>
 </html>

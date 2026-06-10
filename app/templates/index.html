@@ -14,20 +14,29 @@
 <meta name="theme-color" content="#fff5f7">
 <style nonce="{{ csp_nonce }}">
 *{margin:0;padding:0;box-sizing:border-box}
-body{min-height:100svh;display:flex;align-items:center;justify-content:center;padding:24px;
-font-family:system-ui,-apple-system,"Segoe UI",sans-serif;color:#3c3c43;line-height:1.5;
+body{min-height:100svh;display:flex;align-items:center;justify-content:center;padding:32px 24px;
+font-family:system-ui,-apple-system,sans-serif;color:#3c3c43;line-height:1.5;
 background:linear-gradient(160deg,#fff5f7 0%,#f3f9f4 100%)}
-main{width:100%;max-width:420px;text-align:center}
+main{width:100%;max-width:480px;text-align:center}
 .logo{font-size:56px;line-height:1}
 h1{margin-top:12px;font-size:1.75rem}
-.tagline{margin-top:8px;color:#8a8a93}
-.cta{margin-top:28px;display:grid;gap:12px}
-.cta a{display:block;padding:13px 16px;border-radius:999px;text-decoration:none;font-weight:600}
+.tagline{margin-top:8px;color:#6e6e78}
+.ctabox{margin-top:24px;background:#fff;border:1px solid #f0d4de;border-radius:20px;
+padding:22px 20px;box-shadow:0 6px 24px rgba(229,143,177,.12);display:grid;gap:12px}
+.ctabox a{display:block;padding:13px 16px;border-radius:999px;text-decoration:none;font-weight:600}
 .primary{background:#e58fb1;color:#fff}
 .primary:hover,.primary:focus-visible{background:#d97da2}
 .secondary{background:#fff;color:#3c3c43;border:2px solid #f0d4de}
 .secondary:hover,.secondary:focus-visible{border-color:#e58fb1}
-.promise{margin-top:24px;font-size:.85rem;color:#8a8a93}
+.claim{font-size:.85rem;color:#6e6e78}
+h2{margin:36px 0 4px;font-size:1.1rem}
+.why{margin-top:12px;display:grid;gap:12px;text-align:left}
+.why div{background:#fff;border:1px solid #f0d4de;border-radius:16px;padding:14px 16px}
+.why strong{display:block;margin-bottom:2px}
+.why p{font-size:.92rem;color:#6e6e78}
+footer{margin-top:36px;font-size:.8rem;color:#8a8a93}
+footer a{color:#8a8a93;text-decoration:none}
+footer a:hover,footer a:focus-visible{color:#3c3c43}
 </style>
 </head>
 <body>
@@ -35,11 +44,26 @@ h1{margin-top:12px;font-size:1.75rem}
   <div class="logo" aria-hidden="true">🥒</div>
   <h1>cutecumber</h1>
   <p class="tagline">the cutest little home for all your links</p>
-  <div class="cta">
+
+  <div class="ctabox">
     <a class="primary" href="/signup">claim your username ✨</a>
     <a class="secondary" href="/login">log in</a>
+    <p class="claim">cutecumber.cc/<strong>you</strong> — if it's free, it's yours</p>
   </div>
-  <p class="promise">no trackers, no analytics scripts, no creepy stuff. ever. 💚</p>
+
+  <h2>why cutecumber? 🥒</h2>
+  <nav class="why">
+    <div><strong>🍃 zero trackers, zero cookies</strong>
+      <p>your public page loads no analytics, no pixels, no third-party anything, and sets no cookies. that's not a setting — it's the whole point.</p></div>
+    <div><strong>⚡ honestly, stupidly fast</strong>
+      <p>a cutecumber page is about two kilobytes. it's done loading before the tap finishes — even on cursed train wifi.</p></div>
+    <div><strong>🎀 cute that everyone can read</strong>
+      <p>hand-tuned pastel themes, and every single one passes accessibility contrast standards. soft on the eyes, readable by all of them.</p></div>
+    <div><strong>🌱 small, indie, yours</strong>
+      <p>no big-tech parent company, no ads, nothing about you for sale. just a tiny tool that wants your corner of the internet to be cozy.</p></div>
+  </nav>
+
+  <footer><a href="/privacy">privacy</a> · <a href="/imprint">imprint</a></footer>
 </main>
 </body>
 </html>

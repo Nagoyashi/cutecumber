@@ -83,9 +83,9 @@ Secure-by-default (`COOKIE_SECURE=0` is a dev-only opt-out).
 Sending email costs money or a third-party dependency; neither is justified
 pre-launch. Consequence: **a forgotten password currently means a lost
 account.** Acceptable while testers are the only users.
-**Revisit: BEFORE public launch — this is a launch blocker**, not a nice-to-
-have. Cheapest path at that point is a transactional-email free tier; needs a
-written justification here when chosen.
+**Resolved (June 2026, #26):** password reset shipped via Resend's free
+tier. Email verification at signup remains deliberately absent — it adds
+signup friction for no v0 benefit. Revisit if spam signups become real.
 
 ## 10. CSP split: nonce'd inline style on public, external-only on dash
 
@@ -257,3 +257,39 @@ unversioned and keep Flask's default. Real Lighthouse requires a real
 browser: structural proxies (preload order, font-display swap, inline-only
 CSS, viewport meta) are asserted in smoke tests; the actual score gets
 checked in Chrome DevTools against the forwarded/deployed URL.
+
+## 26. Password reset: Resend over raw HTTPS, hashed tokens, session kill
+
+Resend is called with a stdlib urllib POST — a JSON request does not justify
+an SDK dependency (the closed list stands). Dev mode (no RESEND_API_KEY) logs
+the reset link to the console so the flow works locally. Security shape:
+tokens are 32-byte urlsafe randoms stored as SHA-256 (a DB leak leaks nothing
+usable), single-use, 1-hour expiry, latest-token-wins; the request endpoint
+returns an identical message whether the email exists or not (no account
+enumeration) and is rate-limited 5/hour. A password change also rotates a
+session "auth fragment" (derived from the password hash, checked in
+load_user), which invalidates every existing session despite sessions being
+stateless cookies. Free-tier caveat: until cutecumber.cc is verified in the
+Resend dashboard, the resend.dev sender delivers only to the account owner's
+own address — verify the domain before launch.
+
+## 27. Legal pages: honest drafts with placeholders, footer links everywhere
+
+/imprint (§5 DDG shape) and /privacy (GDPR shape) ship with [PLACEHOLDER]
+markers for legal identity, address, hosting provider, and the US-transfer
+safeguard for Resend. The privacy page describes only what the app actually
+does — which is verifiable from this repo. Legal links sit in the site footer
+on dash/auth/landing pages AND as tiny muted links on public profile footers
+(German "immediately reachable" practice favors this; **revisit** removing
+them from profile pages only if qualified counsel says the two-click path via
+the landing page suffices). Known gap, stated honestly in the privacy page:
+account deletion is manual-by-email until a delete button ships (launch
+checklist 1c). These pages are drafts by a software project, not legal advice.
+
+## 28. Landing "why" claims must stay literally true
+
+The why-section claims (zero trackers/cookies on public pages, ~2 KB pages,
+every preset passes WCAG AA contrast) are each backed by an automated test in
+this repo. **Rule:** no marketing claim ships on the landing page unless a
+test or measurable property backs it; if a feature ever weakens a claim, the
+landing copy changes in the same commit.

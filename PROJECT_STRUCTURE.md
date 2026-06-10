@@ -34,7 +34,11 @@ cutecumber/
     ├── security.py          CSRF (get_csrf_token/check_csrf), security headers,
     │                        DASH_CSP / PUBLIC_CSP + use_public_csp(), login_required
     ├── extensions.py        limiter (flask-limiter, memory storage)
-    ├── auth.py              /signup /login (GET+POST, rate-limited POSTs), POST /logout
+    ├── auth.py              /signup /login (GET+POST, rate-limited POSTs),
+    │                        POST /logout, /reset + /reset/<token> (password
+    │                        reset: hashed single-use tokens, anti-enumeration)
+    ├── mail.py              send_email() via Resend HTTP API (stdlib urllib,
+    │                        no SDK). Dev mode: logs instead of sending.
     ├── dash.py              GET /dash, POST /dash/claim (one-shot, race-safe),
     │                        POST /dash/profile (re-renders form on error)
     ├── links.py             POST /dash/links (add), POST /dash/links/<id>
@@ -130,7 +134,14 @@ Prod: `gunicorn -w 1 'wsgi:app'` behind Caddy; `TRUST_PROXY=1`, `COOKIE_SECURE=1
 
 ## Launch checklist (v0 is done; launch is not)
 
-1. Password reset story — hard blocker, DECISIONS.md #9.
+1. ~~Password reset~~ ✅ — shipped via Resend (DECISIONS.md #26). Remaining
+   sub-tasks: verify cutecumber.cc in the Resend dashboard, set RESEND_API_KEY
+   and MAIL_FROM in prod.
+1b. Fill the [PLACEHOLDERS] in imprint.html and privacy.html with real legal
+   identity/address, and have both pages reviewed — they are honest drafts,
+   not legal advice (DECISIONS.md #27).
+1c. Account deletion is currently manual-by-email (stated in the privacy
+   page). A self-serve delete button should exist before real users.
 2. Deploy target + Litestream-style backups — DECISIONS.md #11.
 3. Real Lighthouse run in Chrome DevTools against a public URL (structural
    proxies are tested; the real score needs a real browser).

@@ -6,6 +6,7 @@ EVERY mutating request, app-wide, via a before_request hook. There is no
 exemption mechanism on purpose — if a route needs one, that's a design smell.
 """
 
+import hashlib
 import hmac
 import secrets
 from functools import wraps
@@ -42,6 +43,14 @@ def use_public_csp() -> str:
     nonce = secrets.token_urlsafe(16)
     g.csp = PUBLIC_CSP.format(nonce=nonce)
     return nonce
+
+
+def session_auth_fragment(password_hash: str) -> str:
+    """Derived from the password hash and stored in the session at login.
+    load_user rejects sessions whose fragment no longer matches — so changing
+    the password (e.g. via reset) invalidates every other session, despite
+    sessions being stateless signed cookies."""
+    return hashlib.sha256(password_hash.encode("ascii")).hexdigest()[:16]
 
 
 def get_csrf_token() -> str:

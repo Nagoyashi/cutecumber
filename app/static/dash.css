@@ -382,3 +382,20 @@ select:focus-visible {
 }
 
 .section-title { font-size: 1.2rem; font-weight: 700; }
+
+/* --- legal pages + site footer --- */
+
+.legal h2 { font-size: 1rem; margin: 16px 0 4px; }
+.legal p { font-size: 0.95rem; }
+.legal .hint { margin-top: 4px; }
+
+.sitefooter {
+  max-width: 480px;
+  margin: 0 auto 28px;
+  padding: 0 20px;
+  text-align: center;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+.sitefooter a { color: var(--muted); text-decoration: none; }
+.sitefooter a:hover, .sitefooter a:focus-visible { color: var(--text); }

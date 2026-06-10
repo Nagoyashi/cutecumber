@@ -1,0 +1,16 @@
+{% extends "dash_base.html" %}
+{% block title %}new password{% endblock %}
+{% block content %}
+<section class="card">
+  <h1>pick a new password 🔐</h1>
+  <form method="post" action="{{ url_for('auth.reset_with_token', token=token) }}" class="stack">
+    <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+    <label for="password">new password</label>
+    <input id="password" name="password" type="password" required
+           minlength="8" maxlength="72" autocomplete="new-password"
+           placeholder="something long and cozy">
+    <button type="submit">save new password ✨</button>
+  </form>
+  <p class="hint">this signs you out everywhere else, for safety 💚</p>
+</section>
+{% endblock %}

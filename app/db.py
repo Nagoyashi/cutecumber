@@ -42,6 +42,8 @@ def init_db() -> None:
     # Column upgrades for DBs created before the column existed. Table and DDL
     # are code literals, never user input.
     _ensure_column(db, "users", "avatar_value", "TEXT NOT NULL DEFAULT '🥒'")
+    _ensure_column(db, "users", "reset_token_hash", "TEXT")
+    _ensure_column(db, "users", "reset_expires", "INTEGER")
     db.commit()
 
 
