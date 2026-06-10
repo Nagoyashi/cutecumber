@@ -40,7 +40,9 @@ cutecumber/
     ├── mail.py              send_email() via Resend HTTP API (stdlib urllib,
     │                        no SDK). Dev mode: logs instead of sending.
     ├── dash.py              GET /dash, POST /dash/claim (one-shot, race-safe),
-    │                        POST /dash/profile (re-renders form on error)
+    │                        POST /dash/profile (re-renders form on error),
+    │                        GET /dash/account + POST /dash/account/delete
+    │                        (password-gated hard delete)
     ├── links.py             POST /dash/links (add), POST /dash/links/<id>
     │                        (action=save|delete), POST /dash/links/reorder
     │                        (exact-permutation check). IDOR rule everywhere.
@@ -140,8 +142,10 @@ Prod: `gunicorn -w 1 'wsgi:app'` behind Caddy; `TRUST_PROXY=1`, `COOKIE_SECURE=1
 1b. Fill the [PLACEHOLDERS] in imprint.html and privacy.html with real legal
    identity/address, and have both pages reviewed — they are honest drafts,
    not legal advice (DECISIONS.md #27).
-1c. Account deletion is currently manual-by-email (stated in the privacy
-   page). A self-serve delete button should exist before real users.
+1c. ~~Account deletion~~ ✅ — self-serve, password-gated, on /dash/account
+   (DECISIONS.md #29). Launch-time follow-up: username tombstone.
+1d. DESIGN_PACKS.md is the spec for designer-made decoration packs; the
+   pack-registry build session starts when the first assets exist.
 2. Deploy target + Litestream-style backups — DECISIONS.md #11.
 3. Real Lighthouse run in Chrome DevTools against a public URL (structural
    proxies are tested; the real score needs a real browser).

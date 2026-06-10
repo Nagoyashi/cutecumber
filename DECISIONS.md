@@ -293,3 +293,24 @@ every preset passes WCAG AA contrast) are each backed by an automated test in
 this repo. **Rule:** no marketing claim ships on the landing page unless a
 test or measurable property backs it; if a feature ever weakens a claim, the
 landing copy changes in the same commit.
+
+## 29. Account deletion: password-gated, immediate, hard
+
+One button on /dash/account behind the current password (the JS confirm is
+courtesy; the password is the gate). DELETE on the user row; links cascade
+via the FK; the session dies. No soft-delete, no grace period — privacy-first
+means gone-means-gone, and it keeps the GDPR erasure story one sentence long.
+**Accepted risk:** the freed username is instantly claimable, which enables
+impersonation of a deleted account's old audience. Pre-launch this is fine.
+**Revisit at launch:** a username tombstone (e.g. 30-day quarantine before
+re-claim) is a small table and worth adding once real audiences exist.
+
+## 30. Kawaii decorations: curated pack registry, never user uploads
+
+Direction settled (build pending first assets): designer-made SVG decoration
+packs per DESIGN_PACKS.md — 130×130 tiles, ≤8 KB, accent-tinted or
+full-color, automated safety checks (no scripts/foreignObject/raster), served
+as cached static files, validated against a registry like every other theme
+token. End users PICK packs; they never upload SVG (script-bearing format +
+moderation burden + page-weight risk). Packs are also the natural paid unit
+if monetization happens — selling cuteness, not data.

@@ -11,6 +11,8 @@ nobody loses a 500-character bio to a redirect.
 
 from sqlite3 import IntegrityError
 
+import bcrypt
+
 from flask import (
     Blueprint,
     abort,
@@ -20,11 +22,13 @@ from flask import (
     redirect,
     render_template,
     request,
+    session,
     url_for,
 )
 
 from .constants import (
     AVATAR_EMOJI,
+    PASSWORD_MAX_BYTES,
     AVATAR_GRADIENTS,
     BIO_MAX,
     DISPLAY_NAME_MAX,
@@ -246,3 +250,33 @@ def theme_save():
     db.commit()
     flash("theme saved — your page is looking adorable 🎨", "success")
     return redirect(url_for("dash.home", open="theme", _anchor="theme"))
+
+
+# ------------------------------------------------------------------ account
+
+@bp.get("/dash/account")
+@login_required
+def account():
+    return render_template("dash_account.html")
+
+@bp.post("/dash/account/delete")
+@limiter.limit("5 per hour")
+@login_required
+def account_delete():
+    """Hard delete, immediately: user row goes, links cascade via the FK.
+    Gated by the current password (the JS confirm is convenience, not the
+    gate). The username becomes claimable again — see DECISIONS.md #29."""
+    password = (request.form.get("password") or "").encode("utf-8")
+    ok = False
+    if 0 < len(password) <= PASSWORD_MAX_BYTES:
+        ok = bcrypt.checkpw(password, g.user["password_hash"].encode("ascii"))
+    if not ok:
+        flash("that password doesn't match — nothing was deleted 💚", "error")
+        return redirect(url_for("dash.account"))
+
+    db = get_db()
+    db.execute("DELETE FROM users WHERE id = ?", (g.user["id"],))
+    db.commit()
+    session.clear()
+    flash("your account is deleted — everything is gone. take care out there 💚", "success")
+    return redirect(url_for("auth.login"))

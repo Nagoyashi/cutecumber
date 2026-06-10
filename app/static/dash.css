@@ -399,3 +399,22 @@ select:focus-visible {
 }
 .sitefooter a { color: var(--muted); text-decoration: none; }
 .sitefooter a:hover, .sitefooter a:focus-visible { color: var(--text); }
+
+/* --- account page --- */
+
+.danger-zone { border-color: #f3c2cb; }
+.danger-zone h1 { color: var(--err-text); }
+
+.danger-btn {
+  margin-top: 8px;
+  font: inherit;
+  font-weight: 600;
+  padding: 12px 16px;
+  border: 2px solid var(--err-text);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--err-text);
+  cursor: pointer;
+}
+.danger-btn:hover { background: var(--err-bg); }
+.danger-btn:focus-visible { outline: 3px solid var(--err-text); outline-offset: 2px; }

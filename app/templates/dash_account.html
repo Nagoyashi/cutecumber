@@ -1,0 +1,25 @@
+{% extends "dash_base.html" %}
+{% block title %}account{% endblock %}
+{% block content %}
+<section class="card">
+  <h1>your account 🌿</h1>
+  <p>email: <strong>{{ g.user.email }}</strong></p>
+  <p>page: <strong>{% if g.user.username %}cutecumber.cc/{{ g.user.username }}{% else %}no username claimed yet{% endif %}</strong></p>
+  <p class="hint">want a new password? log out and use
+    <a href="{{ url_for('auth.reset_request') }}">forgot password</a> — it works even while you still remember the old one.</p>
+</section>
+
+<section class="card danger-zone">
+  <h1>danger zone 🥀</h1>
+  <p>deleting your account removes your page, your links, your theme — everything,
+  immediately and forever. your username becomes available for anyone to claim.</p>
+  <form method="post" action="{{ url_for('dash.account_delete') }}" class="stack">
+    <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+    <label for="del-password">confirm with your password</label>
+    <input type="password" id="del-password" name="password" required maxlength="72"
+           autocomplete="current-password" placeholder="your current password">
+    <button type="submit" class="danger-btn"
+            data-confirm="really delete your whole account? this cannot be undone 🥀">delete my account forever</button>
+  </form>
+</section>
+{% endblock %}
