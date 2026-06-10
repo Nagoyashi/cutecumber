@@ -35,6 +35,12 @@ from .constants import (
     PRONOUNS_MAX,
     validate_username,
 )
+from .avatars import (
+    AvatarError,
+    delete_avatar_file,
+    process_avatar,
+    store_avatar,
+)
 from .db import get_db
 from .extensions import limiter
 from .security import login_required
@@ -153,11 +159,15 @@ def _validate_profile(display_name: str, bio: str, pronouns: str, avatar: str):
         return f"the pronouns field maxes out at {PRONOUNS_MAX} characters 🌱", None, None
 
     kind, _, value = avatar.partition(":")
-    valid_avatar = (kind == "emoji" and value in AVATAR_EMOJI) or (
-        kind == "gradient" and value in AVATAR_GRADIENTS
+    valid_avatar = (
+        (kind == "emoji" and value in AVATAR_EMOJI)
+        or (kind == "gradient" and value in AVATAR_GRADIENTS)
+        or (kind == "image" and value == "keep" and g.user["avatar_kind"] == "image")
     )
     if not valid_avatar:
         return "that avatar isn't one of ours — pick one from the grid 🎀", None, None
+    if kind == "image":
+        value = g.user["avatar_value"]  # keep the existing upload
     return None, kind, value
 
 
@@ -174,7 +184,25 @@ def profile():
     pronouns = (request.form.get("pronouns") or "").strip()
     avatar = (request.form.get("avatar") or "").strip()
 
-    error, kind, value = _validate_profile(display_name, bio, pronouns, avatar)
+    upload = request.files.get("avatar_file")
+    if upload is not None and upload.filename:
+        # A fresh upload wins over whatever radio is checked.
+        try:
+            blob = process_avatar(upload.stream)
+        except AvatarError as exc:
+            flash(str(exc), "error")
+            return _render_home(
+                form={
+                    "display_name": display_name,
+                    "bio": bio,
+                    "pronouns": pronouns,
+                    "avatar": avatar,
+                },
+                open_section="profile",
+            )
+        error, kind, value = None, "image", store_avatar(g.user["id"], blob)
+    else:
+        error, kind, value = _validate_profile(display_name, bio, pronouns, avatar)
     if error:
         flash(error, "error")
         return _render_home(
@@ -186,6 +214,12 @@ def profile():
             },
             open_section="profile",
         )
+
+    # Data minimization: an uploaded photo that's been replaced or switched
+    # away from gets deleted, not orphaned (DECISIONS.md #31).
+    old_kind, old_value = g.user["avatar_kind"], g.user["avatar_value"]
+    if old_kind == "image" and (kind != "image" or value != old_value):
+        delete_avatar_file(old_value)
 
     db = get_db()
     db.execute(
@@ -274,6 +308,8 @@ def account_delete():
         flash("that password doesn't match — nothing was deleted 💚", "error")
         return redirect(url_for("dash.account"))
 
+    if g.user["avatar_kind"] == "image":
+        delete_avatar_file(g.user["avatar_value"])
     db = get_db()
     db.execute("DELETE FROM users WHERE id = ?", (g.user["id"],))
     db.commit()

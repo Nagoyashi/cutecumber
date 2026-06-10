@@ -314,3 +314,30 @@ as cached static files, validated against a registry like every other theme
 token. End users PICK packs; they never upload SVG (script-bearing format +
 moderation burden + page-weight risk). Packs are also the natural paid unit
 if monetization happens — selling cuteness, not data.
+
+## 31. Avatar uploads: byte-identified, re-encoded, metadata-free, tidy
+
+Pipeline per the original spec: the client's filename and content-type are
+ignored; Pillow identifies the BYTES (jpeg/png/webp/gif only, 8 MB input cap,
+30 M-pixel decompression-bomb ceiling), EXIF orientation is applied FIRST
+(else phone photos render sideways forever), then center-crop to 176×176
+(88px circle at 2x) and re-encode to WebP with a quality ladder until ≤30 KB.
+Re-encoding without passing exif/icc IS the metadata strip — GPS included —
+and tests/test_avatar.py enforces it the way test_theme.py enforces AA.
+Files live in instance/avatars/ as <user_id>-<12 hex>.webp (name rotates per
+upload → /a/<file> serves immutable-cached), pattern-validated at save AND
+serve. Data minimization: switching away from a photo, replacing it, or
+deleting the account deletes the file. MAX_CONTENT_LENGTH went 64 KB → 8 MB
+globally because the CSRF hook parses bodies before routes can set per-route
+caps; acceptable on one box with rate limits. Pillow joins requirements
+exactly as the dependency rule anticipated ("Pillow only when avatar uploads
+ship").
+
+## 32. Email diagnostics: send-test CLI, full error surfacing
+
+The reset endpoint deliberately masks send failures from browsers
+(anti-enumeration), which makes "email doesn't work" undebuggable from the
+UI. So: HTTP errors from Resend now log the response BODY (where the actual
+reason lives — wrong From domain, sandbox restriction, bad key), and
+`flask --app wsgi send-test you@example.com` sends outside the masked path
+and prints the verdict. First stop for any future email mystery.

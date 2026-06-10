@@ -73,11 +73,18 @@
 
 <details class="card section" id="profile" {% if open_section == 'profile' %}open{% endif %}>
   <summary><span class="section-title">your profile 🌷</span></summary>
-  <form method="post" action="{{ url_for('dash.profile') }}" class="stack">
+  <form method="post" action="{{ url_for('dash.profile') }}" class="stack" enctype="multipart/form-data">
     <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
 
     <span class="field-label">your avatar</span>
     <div class="picker" role="radiogroup" aria-label="avatar">
+      {% if g.user.avatar_kind == 'image' %}
+      <label class="pick">
+        <input type="radio" name="avatar" value="image:keep"
+               {% if form.avatar.startswith('image:') %}checked{% endif %}>
+        <span class="swatch photo-swatch"><img src="/a/{{ g.user.avatar_value }}" alt="your photo"></span>
+      </label>
+      {% endif %}
       {% for e in avatar_emoji %}
       <label class="pick">
         <input type="radio" name="avatar" value="emoji:{{ e }}"
@@ -93,6 +100,9 @@
       </label>
       {% endfor %}
     </div>
+
+    <label for="avatar_file">or upload a photo <span class="optional">(we strip all location data — promise 🍃)</span></label>
+    <input type="file" id="avatar_file" name="avatar_file" accept="image/*">
 
     <label for="display_name">display name</label>
     <input id="display_name" name="display_name" maxlength="60"

@@ -15,6 +15,7 @@ import os
 import urllib.error
 import urllib.request
 
+import click
 from flask import current_app
 
 _RESEND_ENDPOINT = "https://api.resend.com/emails"
@@ -48,6 +49,31 @@ def send_email(to: str, subject: str, text: str) -> bool:
     try:
         with urllib.request.urlopen(request, timeout=10) as response:
             return 200 <= response.status < 300
+    except urllib.error.HTTPError as exc:
+        # Resend puts the real reason in the response body — surface it.
+        detail = exc.read().decode("utf-8", "replace")[:500]
+        current_app.logger.error(
+            "email send failed for %s: HTTP %s — %s", to, exc.code, detail
+        )
+        return False
     except (urllib.error.URLError, TimeoutError) as exc:
         current_app.logger.error("email send failed for %s: %s", to, exc)
         return False
+
+
+@click.command("send-test")
+@click.argument("recipient")
+def send_test_command(recipient: str) -> None:
+    """Send a test email and print the unmasked result.
+    Usage: flask --app wsgi send-test you@example.com"""
+    ok = send_email(
+        recipient,
+        "cutecumber test email 🥒",
+        "if you can read this, email sending works! 🎉",
+    )
+    click.echo("sent ✓ — check the inbox (and spam)" if ok
+               else "FAILED — the exact Resend error is logged right above ↑")
+
+
+def init_app(app) -> None:
+    app.cli.add_command(send_test_command)

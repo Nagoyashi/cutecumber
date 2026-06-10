@@ -34,6 +34,9 @@ cutecumber/
     ├── security.py          CSRF (get_csrf_token/check_csrf), security headers,
     │                        DASH_CSP / PUBLIC_CSP + use_public_csp(), login_required
     ├── extensions.py        limiter (flask-limiter, memory storage)
+    ├── avatars.py           uploaded-avatar pipeline: byte-identified,
+    │                        EXIF/GPS stripped (test-enforced), 176px WebP,
+    │                        ≤30 KB. Files in instance/avatars/, served at /a/.
     ├── auth.py              /signup /login (GET+POST, rate-limited POSTs),
     │                        POST /logout, /reset + /reset/<token> (password
     │                        reset: hashed single-use tokens, anti-enumeration)
@@ -62,7 +65,8 @@ cutecumber/
                                  (currently 130) — count before adding.
 tests/
     ├── test_url_validation.py   run: python -m unittest -v  (from repo root)
-    └── test_theme.py            validator, migrations, WCAG AA on all presets
+    ├── test_theme.py            validator, migrations, WCAG AA on all presets
+    └── test_avatar.py           EXIF/GPS stripping, sizing, rejection paths
 ```
 
 ## Conventions
@@ -146,7 +150,10 @@ Prod: `gunicorn -w 1 'wsgi:app'` behind Caddy; `TRUST_PROXY=1`, `COOKIE_SECURE=1
    (DECISIONS.md #29). Launch-time follow-up: username tombstone.
 1d. DESIGN_PACKS.md is the spec for designer-made decoration packs; the
    pack-registry build session starts when the first assets exist.
-2. Deploy target + Litestream-style backups — DECISIONS.md #11.
+2. Deploy target + Litestream-style backups — DECISIONS.md #11. **THE
+   blocker now**: nothing else on this list matters without a server.
+2b. Marketing/launch approach for the ICP — genuinely open, zero budget
+   (Product & Brand session).
 3. Real Lighthouse run in Chrome DevTools against a public URL (structural
    proxies are tested; the real score needs a real browser).
 4. Drag-reorder verified on a real phone (iOS Safari especially).

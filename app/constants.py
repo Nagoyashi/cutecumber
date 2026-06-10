@@ -99,6 +99,12 @@ def validate_link_url(raw: str) -> tuple[str | None, str | None]:
 
     return url, None
 
+# Uploaded avatars (DECISIONS.md #31): re-encoded to this exact display
+# size, EXIF (incl. GPS) stripped by re-encode, hard output cap per budget.
+AVATAR_IMAGE_SIZE = 176          # 88px circle at 2x for retina
+AVATAR_MAX_BYTES = 30 * 1024     # output budget: 30 KB
+AVATAR_MAX_UPLOAD = 8 * 1024 * 1024  # input cap: 8 MB (phone photos)
+
 # Avatars are curated tokens, never freeform input (DECISIONS.md #13).
 # Validated at save AND at render; render falls back to the default on
 # anything unrecognised so a bad row can never break a public page.

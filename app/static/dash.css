@@ -418,3 +418,27 @@ select:focus-visible {
 }
 .danger-btn:hover { background: var(--err-bg); }
 .danger-btn:focus-visible { outline: 3px solid var(--err-text); outline-offset: 2px; }
+
+/* --- avatar upload --- */
+
+.photo-swatch { padding: 0; overflow: hidden; }
+.photo-swatch img { width: 100%; height: 100%; object-fit: cover; border-radius: 10px; }
+
+input[type="file"] {
+  font: inherit;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+input[type="file"]::file-selector-button {
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-right: 10px;
+  padding: 8px 14px;
+  border: 2px solid var(--border);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--text);
+  cursor: pointer;
+}
+input[type="file"]::file-selector-button:hover { border-color: var(--accent); }

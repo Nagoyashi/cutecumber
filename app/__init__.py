@@ -10,7 +10,7 @@ import os
 from dotenv import load_dotenv
 from flask import Flask, g, render_template, session
 
-from . import auth, dash, db, links, public
+from . import auth, dash, db, links, mail, public
 from .extensions import limiter
 from .security import (
     apply_security_headers,
@@ -34,6 +34,7 @@ def create_app() -> Flask:
 
     app = Flask(__name__)
     os.makedirs(app.instance_path, exist_ok=True)
+    os.makedirs(os.path.join(app.instance_path, "avatars"), exist_ok=True)
 
     app.config.update(
         SECRET_KEY=secret,
@@ -49,8 +50,9 @@ def create_app() -> Flask:
         PERMANENT_SESSION_LIFETIME=60 * 60 * 24 * 30,  # 30 days
         # Stealth by default: robots.txt serves Disallow: / until launch day.
         ROBOTS_ALLOW=os.environ.get("ROBOTS_ALLOW", "0") == "1",
-        # All v0 forms are tiny text fields. Raised only when avatar uploads ship.
-        MAX_CONTENT_LENGTH=64 * 1024,
+        # Raised from 64 KB when avatar uploads shipped; the CSRF hook parses
+        # the body before routes run, so this cap must be global (DECISIONS #31).
+        MAX_CONTENT_LENGTH=8 * 1024 * 1024,
     )
 
     # Behind Caddy/nginx in prod, set TRUST_PROXY=1 so rate limiting keys on the
@@ -62,6 +64,7 @@ def create_app() -> Flask:
 
     db.init_app(app)
     limiter.init_app(app)
+    mail.init_app(app)
 
     app.register_blueprint(auth.bp)
     app.register_blueprint(dash.bp)

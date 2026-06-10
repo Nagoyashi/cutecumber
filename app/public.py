@@ -10,7 +10,14 @@ Hard rules for everything in this blueprint:
   inline <style> block, which is also where per-user theming will land.
 """
 
-from flask import Blueprint, Response, current_app, redirect, render_template
+from flask import (
+    Blueprint,
+    Response,
+    current_app,
+    redirect,
+    render_template,
+    send_from_directory,
+)
 
 from .constants import (
     AVATAR_EMOJI,
@@ -21,6 +28,7 @@ from .constants import (
     validate_link_url,
 )
 from .db import get_db
+from .avatars import AVATAR_FILE_RE, avatar_dir
 from .security import use_public_csp
 from .theme import load_theme, resolve_theme
 
@@ -40,6 +48,18 @@ def robots():
     else:
         body = "User-agent: *\nDisallow: /\n"
     return Response(body, mimetype="text/plain")
+
+
+@bp.get("/a/<filename>")
+def avatar_file(filename: str):
+    """Processed avatars only — filenames are validated against our own
+    pattern, and every file in that directory was produced by our pipeline.
+    Filenames rotate on every upload, so immutable caching is safe."""
+    if not AVATAR_FILE_RE.match(filename):
+        return _not_found()
+    response = send_from_directory(avatar_dir(), filename, mimetype="image/webp")
+    response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
+    return response
 
 
 @bp.get("/favicon.ico")
@@ -106,9 +126,12 @@ def profile(username: str):
     # anything unrecognised falls back to the default emoji — a bad row must
     # never break a public page.
     gradient = None
+    avatar_image = None
     avatar_emoji = DEFAULT_AVATAR_EMOJI
     if user["avatar_kind"] == "gradient":
         gradient = AVATAR_GRADIENTS.get(user["avatar_value"])
+    elif user["avatar_kind"] == "image" and AVATAR_FILE_RE.match(user["avatar_value"] or ""):
+        avatar_image = user["avatar_value"]
     elif user["avatar_value"] in AVATAR_EMOJI:
         avatar_emoji = user["avatar_value"]
 
@@ -131,6 +154,7 @@ def profile(username: str):
         description=description,
         canonical=canonical,
         gradient=gradient,
+        avatar_image=avatar_image,
         avatar_emoji=avatar_emoji,
         links=links,
         csp_nonce=use_public_csp(),
