@@ -235,3 +235,58 @@ textarea:focus-visible {
 .rowbtns .danger:hover { background: var(--err-bg); }
 
 .addlink { border-top: 1px dashed var(--border); padding-top: 16px; margin-top: 14px; }
+
+/* --- editor layout: forms left, sticky live preview right --- */
+
+.editor { display: grid; gap: 20px; align-items: start; }
+.col-main { display: grid; gap: 20px; min-width: 0; }
+.col-side { min-width: 0; }
+
+@media (min-width: 920px) {
+  .wrap { max-width: 960px; }
+  .editor { grid-template-columns: minmax(0, 1fr) 360px; }
+  .col-side { position: sticky; top: 20px; }
+}
+
+#preview-frame {
+  width: 100%;
+  height: 480px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: #fff;
+}
+
+/* --- drag-to-reorder --- */
+
+.drag {
+  font: inherit;
+  font-size: 1rem;
+  line-height: 1;
+  padding: 8px 4px;
+  border: none;
+  border-radius: 8px;
+  background: none;
+  color: var(--muted);
+  cursor: grab;
+  touch-action: none;   /* lets pointer events own the gesture on touch */
+  user-select: none;
+}
+.drag:hover { color: var(--text); background: var(--bg1); }
+.drag:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+
+.linkrow { grid-template-columns: 28px 52px 1fr; }
+li.dragging { opacity: 0.6; }
+li.dragging .linkrow { border-color: var(--accent); border-style: dashed; }
+
+#order-form { margin: 0 0 14px; }
+#order-form button {
+  width: 100%;
+  font: inherit;
+  font-weight: 600;
+  padding: 11px 16px;
+  border: none;
+  border-radius: 999px;
+  background: var(--accent-deep);
+  color: #fff;
+  cursor: pointer;
+}

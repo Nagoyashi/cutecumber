@@ -17,6 +17,8 @@
   <p class="hint">3–30 characters: lowercase letters, numbers, dashes, underscores. no leading or trailing dashes/underscores.</p>
 </section>
 {% else %}
+<div class="editor">
+<div class="col-main">
 <section class="card">
   <h1>your page is live! 🎉</h1>
   <p class="pagelink"><a href="{{ site_origin }}/{{ g.user.username }}">cutecumber.cc/{{ g.user.username }}</a></p>
@@ -26,11 +28,12 @@
 <section class="card">
   <h1>your links 🔗</h1>
   {% if links %}
-  <ul class="linklist">
+  <ul class="linklist" id="linklist">
     {% for link in links %}
-    <li>
+    <li data-id="{{ link.id }}">
       <form method="post" action="{{ url_for('links.modify', link_id=link.id) }}" class="linkrow">
         <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+        <button type="button" class="drag" aria-label="reorder — drag, or use arrow keys">⠿</button>
         <input class="emoji-in" name="emoji" maxlength="8" value="{{ link.emoji or '' }}"
                placeholder="✨" aria-label="link emoji">
         <input name="title" maxlength="100" required value="{{ link.title }}" aria-label="link title">
@@ -38,12 +41,18 @@
                inputmode="url" aria-label="link url">
         <div class="rowbtns">
           <button type="submit" name="action" value="save">save</button>
-          <button type="submit" name="action" value="delete" class="danger">delete</button>
+          <button type="submit" name="action" value="delete" class="danger"
+                  data-confirm="delete this link? it can't be undone 🥺">delete</button>
         </div>
       </form>
     </li>
     {% endfor %}
   </ul>
+  <form method="post" action="{{ url_for('links.reorder') }}" id="order-form" hidden>
+    <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+    <input type="hidden" name="order" value="">
+    <button type="submit">save this order ✨</button>
+  </form>
   {% else %}
   <p class="hint">no links yet — add your first one below 🌱</p>
   {% endif %}
@@ -100,5 +109,16 @@
     <button type="submit">save my page 💾</button>
   </form>
 </section>
+</div>
+<div class="col-side">
+<section class="card">
+  <h1>preview 🔍</h1>
+  <iframe id="preview-frame" src="/{{ g.user.username }}"
+          title="live preview of your public page"
+          data-username="{{ g.user.username }}"></iframe>
+  <p class="hint">name, pronouns and bio update as you type — everything else updates when you save 💫</p>
+</section>
+</div>
+</div>
 {% endif %}
 {% endblock %}

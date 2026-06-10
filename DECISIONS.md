@@ -15,8 +15,15 @@ Read-heavy workload, one box, tiny schema. WAL gives concurrent readers during
 writes; `busy_timeout=5000` absorbs writer contention. Per-request connections
 opened lazily in `g` — SQLite connections are cheap and this avoids
 threading/pooling complexity entirely.
-**Revisit (Postgres):** only with a measured reason — sustained write
-contention or multi-box. Not before.
+**Revisit (Postgres):** only with a MEASURED trigger: sustained SQLITE_BUSY
+errors under real traffic, or a demonstrated need for a second app server.
+If either fires, the migration gets proposed unprompted.
+**Portability guardrails (added after re-litigating this, June 2026):** to
+keep the exit an afternoon — standard SQL only (no SQLite-only features in
+app queries), strict column typing (ints as ints, ISO timestamps), all SQL
+lives in the modules. The migration cost analysis: ~a day of driver/DDL work
+at any point in time, plus an hours-long cutover ceremony if users exist;
+data volumes (10k users ≈ tens of MB) copy in under a minute.
 
 ## 3. Usernames are immutable after claim (v0)
 
@@ -95,6 +102,13 @@ Single VPS + Caddy vs Fly.io/Render. SQLite either way; backups via Litestream
 or snapshot cron. App is deploy-agnostic: `TRUST_PROXY` env flag wires
 ProxyFix so rate limiting keys on real client IPs behind a proxy.
 **Decide before the first public user.**
+**Addendum (June 2026):** budget constraint is $0 for now; deploy deferred
+until v0 is done. Candidates at that point: Fly.io (~$3–5/mo, least ops),
+Oracle Always Free ARM ($0, signup/capacity friction, pair with Litestream so
+the host is disposable), Render paid (works, pricier). Render FREE is
+disqualified permanently: ephemeral filesystem deletes the SQLite file on
+every restart. Vercel hosts nothing we have. In the meantime, OG-unfurl and
+phone testing run through a Codespaces public forwarded port.
 
 ## 12. OG/canonical URLs come from SITE_ORIGIN config, not the Host header
 
@@ -158,5 +172,31 @@ written-justification trigger for adding pytest as a dev dependency.
 
 No JS means no confirm dialog, and a no-JS two-step confirm page is friction
 for a v0. The delete button is visually separated and styled as the danger
-action. **Revisit:** with the editor-JS session (a confirm fits in the 200-line
-budget) or the first "I deleted my link by accident" complaint.
+action. **Resolved in the editor-JS session:** delete buttons now carry a
+data-confirm dialog (~8 lines of the JS budget). No-JS users keep one-click
+delete — acceptable residual.
+
+## 19. Reordering: Pointer Events drag + arrow keys, batched, exact permutation
+
+HTML5 drag-and-drop doesn't fire on touchscreens, and the ICP edits from
+phones — so the drag handle uses Pointer Events (one code path for mouse and
+touch, `touch-action: none` on the handle). The same handle moves rows with
+ArrowUp/ArrowDown for keyboard users. Changes batch in the DOM; a "save this
+order" button appears only when the order differs from saved, and submits a
+comma-separated id list as a classic form POST — no fetch, no JSON API. The
+server requires the submitted ids to be an EXACT permutation of the user's
+link ids: that one check blocks foreign ids (IDOR), duplicates, and stale
+tabs. With JS disabled, reordering is unavailable (new links append); all
+other CRUD still works. **Revisit:** complaints from no-JS users would add
+up/down buttons as a fallback.
+
+## 20. Live preview = same-origin iframe of the REAL public page
+
+The dash embeds `/username` in an iframe and the editor JS updates text nodes
+inside it (same-origin DOM access) as the person types name/pronouns/bio.
+Why: zero markup duplication, the preview can't drift from the real renderer,
+and the public page still ships zero script. Cost: public-page CSP loosened
+from `frame-ancestors 'none'` to `'self'` and X-Frame-Options DENY →
+SAMEORIGIN — third-party framing remains blocked. Avatar/theme/links preview
+on save (the redirect reloads the iframe). **Revisit:** only to tighten if
+the preview is ever redesigned away.

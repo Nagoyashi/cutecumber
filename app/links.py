@@ -81,6 +81,42 @@ def add():
     return redirect(url_for("dash.home"))
 
 
+@bp.post("/dash/links/reorder")
+@limiter.limit("60 per 15 minutes")
+@login_required
+def reorder():
+    """Persist a new link order submitted as a comma-separated list of ids.
+
+    The submitted ids must be an EXACT permutation of this user's link ids —
+    that simultaneously blocks foreign ids (IDOR), dropped/duplicated links,
+    and stale tabs where a link was deleted elsewhere mid-drag.
+    """
+    raw = (request.form.get("order") or "").strip()
+    try:
+        ids = [int(part) for part in raw.split(",")] if raw else []
+    except ValueError:
+        abort(400)
+
+    db = get_db()
+    current = [
+        row["id"]
+        for row in db.execute(
+            "SELECT id FROM links WHERE user_id = ?", (g.user["id"],)
+        )
+    ]
+    if sorted(ids) != sorted(current):
+        flash("that order looks out of date — refresh the page and try again 🌀", "error")
+        return redirect(url_for("dash.home"))
+
+    db.executemany(
+        "UPDATE links SET position = ? WHERE id = ? AND user_id = ?",
+        [(position, link_id, g.user["id"]) for position, link_id in enumerate(ids)],
+    )
+    db.commit()
+    flash("order saved ✨", "success")
+    return redirect(url_for("dash.home"))
+
+
 @bp.post("/dash/links/<int:link_id>")
 @limiter.limit("60 per 15 minutes")
 @login_required

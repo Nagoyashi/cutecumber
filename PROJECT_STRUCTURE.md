@@ -3,8 +3,9 @@
 > Read this first, every session. Companion doc: `DECISIONS.md` (the *why* +
 > revisit conditions). Update both proactively when changes warrant it.
 
-**Status:** skeleton + profile editing + links CRUD complete. Next up:
-reorder/preview JS (the only JS, ≤200 lines), then the theming engine.
+**Status:** skeleton + profile + links + editor JS complete (drag/keyboard
+reorder, live preview, delete confirm — 130 of the 200-line JS budget used).
+Next up: the theming engine, then the perf/polish pass.
 
 ## File map
 
@@ -35,7 +36,8 @@ cutecumber/
     ├── dash.py              GET /dash, POST /dash/claim (one-shot, race-safe),
     │                        POST /dash/profile (re-renders form on error)
     ├── links.py             POST /dash/links (add), POST /dash/links/<id>
-    │                        (action=save|delete). IDOR rule on every query.
+    │                        (action=save|delete), POST /dash/links/reorder
+    │                        (exact-permutation check). IDOR rule everywhere.
     ├── public.py            GET /, GET /<username> (OG tags), cute 404
     ├── templates/
     │   ├── public_page.html     standalone; inline nonce'd CSS; OG tags; ZERO JS
@@ -44,7 +46,10 @@ cutecumber/
     │   ├── dash_base.html       layout for everything logged-in/auth
     │   ├── auth_signup.html / auth_login.html / dash_home.html / error.html
     └── static/
-        └── dash.css             dash side ONLY. Public pages never load static files.
+        ├── dash.css             dash side ONLY. Public pages never load static files.
+        └── dash.js              the ONLY JS in the product: reorder, live
+                                 preview, delete confirm. HARD 200-line budget
+                                 (currently 130) — count before adding.
 tests/
     └── test_url_validation.py   run: python -m unittest -v  (from repo root)
 ```
@@ -73,6 +78,11 @@ its name to `RESERVED_USERNAMES` in the same commit.
 through `theme.load_theme()`'s migration registry. Shape change ⇒ version bump
 + migration function, same commit.
 
+**JavaScript.** One file (`static/dash.js`), vanilla, no dependencies, dash
+side only, progressive enhancement (everything except reordering works with
+JS off). 200-line hard budget; if a change would cross it, redesign first.
+Public pages never load a script, full stop.
+
 **Tests.** Stdlib unittest, `python -m unittest -v` from the repo root.
 Only the URL validator, theme validator, and saved-shape migrations get
 tests; trivial code does not.
@@ -98,7 +108,8 @@ Prod: `gunicorn -w 1 'wsgi:app'` behind Caddy; `TRUST_PROXY=1`, `COOKIE_SECURE=1
    gradient allowlists (DECISIONS.md #13).
 3. ~~Links CRUD~~ ✅ — validator at save AND render, IDOR-checked queries,
    50-link cap, URL-validator tests (DECISIONS.md #15–17).
-4. **Reorder + live preview** — the only JS in the product, ≤200 lines total.
+4. ~~Reorder + live preview~~ ✅ — pointer-events drag + arrow keys, iframe
+   preview of the real page, delete confirm (DECISIONS.md #19–20).
 5. **Theming engine** — token validator (server-side, hex colors, allowlisted
    values), presets, per-user `<style>` rendering into the public page;
    **tests for the validator and for theme migrations**.
