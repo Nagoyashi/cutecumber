@@ -10,7 +10,7 @@ Hard rules for everything in this blueprint:
   inline <style> block, which is also where per-user theming will land.
 """
 
-from flask import Blueprint, current_app, redirect, render_template
+from flask import Blueprint, Response, current_app, redirect, render_template
 
 from .constants import (
     AVATAR_EMOJI,
@@ -28,6 +28,25 @@ bp = Blueprint("public", __name__)
 
 DEFAULT_DESCRIPTION = "✨ all my links, one cute little page ✨"
 DESCRIPTION_MAX = 200  # OG description trim; full bio still renders on-page
+
+
+@bp.get("/robots.txt")
+def robots():
+    """Stealth by default (DECISIONS.md #25): Disallow everything until
+    ROBOTS_ALLOW=1 is set at launch. Can't collide with usernames — dots
+    aren't in the username alphabet."""
+    if current_app.config["ROBOTS_ALLOW"]:
+        body = "User-agent: *\nDisallow:\n"
+    else:
+        body = "User-agent: *\nDisallow: /\n"
+    return Response(body, mimetype="text/plain")
+
+
+@bp.get("/favicon.ico")
+def favicon():
+    """Browsers and crawlers request this unconditionally; without it every
+    visit logged a 404 through the username route."""
+    return current_app.send_static_file("favicon.svg")
 
 
 @bp.get("/")

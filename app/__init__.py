@@ -42,6 +42,8 @@ def create_app() -> Flask:
         # Secure-by-default; dev opts out via COOKIE_SECURE=0 in .env.
         SESSION_COOKIE_SECURE=os.environ.get("COOKIE_SECURE", "1") == "1",
         PERMANENT_SESSION_LIFETIME=60 * 60 * 24 * 30,  # 30 days
+        # Stealth by default: robots.txt serves Disallow: / until launch day.
+        ROBOTS_ALLOW=os.environ.get("ROBOTS_ALLOW", "0") == "1",
         # All v0 forms are tiny text fields. Raised only when avatar uploads ship.
         MAX_CONTENT_LENGTH=64 * 1024,
     )

@@ -232,3 +232,28 @@ palette at render time rather than stored — they can't be set to something
 unreadable, and preset AA is enforced by tests/test_theme.py, not eyeballs.
 **Revisit (more fonts):** only via the same fontsource/npm pipeline, same
 budget per file.
+
+## 24. Dash IA: collapsible sections, anchored save redirects, sticky flash
+
+The dash is a slim page-live banner plus three native <details> sections with
+ids (#links/#profile/#theme) — zero JS spent. Saves redirect to
+`?open=<section>#<section>`: the query param tells the server which section to
+render expanded (URL fragments never reach the server, so the param is
+mandatory), the fragment scrolls the browser there, and `.flash` is
+position:sticky so the confirmation stays visible after the jump. Fixes the
+"page jumps to top after every save" complaint at zero JS cost. Default open
+section: links.
+**Rule:** any future dash section follows this exact pattern.
+
+## 25. Stealth robots.txt, SVG favicon, immutable font caching
+
+robots.txt serves `Disallow: /` until ROBOTS_ALLOW=1 (launch-day flip,
+documented in .env.example) — supports the soft-launch plan without code
+changes. Favicon is one ~120-byte first-party SVG (🥒), also served at
+/favicon.ico, which kills the 404 every browser was generating through the
+username route. Font files carry their version in the filename (fontsource
+naming), so they get `Cache-Control: immutable, max-age=1y`; dash.css/js are
+unversioned and keep Flask's default. Real Lighthouse requires a real
+browser: structural proxies (preload order, font-display swap, inline-only
+CSS, viewport meta) are asserted in smoke tests; the actual score gets
+checked in Chrome DevTools against the forwarded/deployed URL.

@@ -3,9 +3,8 @@
 > Read this first, every session. Companion doc: `DECISIONS.md` (the *why* +
 > revisit conditions). Update both proactively when changes warrant it.
 
-**Status:** v0 feature-complete — skeleton, profile, links, editor JS, and
-the theming engine (6 AA-verified presets, token overrides, 2 self-hosted
-display fonts). Remaining: the perf/polish pass, then launch prep.
+**Status:** v0 COMPLETE — all six build sessions shipped. What remains is
+launch prep, not features (see launch checklist at the bottom).
 
 ## File map
 
@@ -93,6 +92,13 @@ Public pages never load a script, full stop.
 Only the URL validator, theme validator, and saved-shape migrations get
 tests; trivial code does not.
 
+**Dash IA.** One slim page-live banner, then three collapsible sections
+(`#links`, `#profile`, `#theme`). Every mutating route redirects back to its
+own section: `url_for("dash.home", open="<section>", _anchor="<section>")` —
+the query param expands it server-side (fragments never reach the server),
+the anchor scrolls to it, and the sticky flash keeps feedback visible. Any
+new dash section MUST follow this pattern.
+
 **Copy voice.** Warm, soft, lowercase-ish, a little silly, never corporate.
 Errors are kind and say what to do next.
 
@@ -119,8 +125,15 @@ Prod: `gunicorn -w 1 'wsgi:app'` behind Caddy; `TRUST_PROXY=1`, `COOKIE_SECURE=1
 5. ~~Theming engine~~ ✅ — validator at save AND render, 6 presets with
    AA enforced by tests, fonts, backgrounds, decorations (DECISIONS.md #21–23).
    Scalloped button shape deferred (#22).
-6. **Perf + polish pass** — verify ≤15 KB gzipped budget per public page,
-   Lighthouse 100, LCP < 1.0s on simulated 4G.
+6. ~~Perf + polish pass~~ ✅ — collapsible dash IA, anchored save redirects,
+   robots.txt (stealth), favicon, immutable font caching (DECISIONS.md #24–25).
 
-Pre-launch blockers that aren't features: password reset story (DECISIONS.md
-#9) and the deploy-target decision (DECISIONS.md #11).
+## Launch checklist (v0 is done; launch is not)
+
+1. Password reset story — hard blocker, DECISIONS.md #9.
+2. Deploy target + Litestream-style backups — DECISIONS.md #11.
+3. Real Lighthouse run in Chrome DevTools against a public URL (structural
+   proxies are tested; the real score needs a real browser).
+4. Drag-reorder verified on a real phone (iOS Safari especially).
+5. Flip ROBOTS_ALLOW=1 on launch day.
+6. Settle the launch/marketing approach (Product & Brand session).

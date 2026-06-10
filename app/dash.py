@@ -47,9 +47,20 @@ from .theme import (
 bp = Blueprint("dash", __name__)
 
 
-def _render_home(form: dict | None = None, add_form: dict | None = None):
+VALID_SECTIONS = ("links", "profile", "theme")
+
+
+def _render_home(
+    form: dict | None = None,
+    add_form: dict | None = None,
+    open_section: str | None = None,
+):
     """Render the dashboard. `form` / `add_form` override field values after a
-    failed save so nothing the user typed gets lost."""
+    failed save so nothing the user typed gets lost. `open_section` decides
+    which collapsible section starts expanded (defaults to ?open=… or links)."""
+    if open_section is None:
+        requested = request.args.get("open", "")
+        open_section = requested if requested in VALID_SECTIONS else "links"
     if form is None:
         form = {
             "display_name": g.user["display_name"] or "",
@@ -84,6 +95,7 @@ def _render_home(form: dict | None = None, add_form: dict | None = None):
         theme_overridden=bool(stored_theme.get("overrides")),
         presets=list(PRESETS),
         enums=ENUM_KEYS,
+        open_section=open_section,
     )
 
 
@@ -167,7 +179,8 @@ def profile():
                 "bio": bio,
                 "pronouns": pronouns,
                 "avatar": avatar,
-            }
+            },
+            open_section="profile",
         )
 
     db = get_db()
@@ -185,7 +198,7 @@ def profile():
     )
     db.commit()
     flash("saved! your page is looking adorable 💕", "success")
-    return redirect(url_for("dash.home"))
+    return redirect(url_for("dash.home", open="profile", _anchor="profile"))
 
 
 import json as _json
@@ -198,6 +211,7 @@ def theme_save():
     if not g.user["username"]:
         flash("claim your username first — then we'll make it pretty 🌱", "error")
         return redirect(url_for("dash.home"))
+
 
     action = request.form.get("action")
     preset = request.form.get("preset") or ""
@@ -222,7 +236,7 @@ def theme_save():
     clean, error = validate_theme(candidate)
     if error:
         flash(error, "error")
-        return redirect(url_for("dash.home"))
+        return redirect(url_for("dash.home", open="theme", _anchor="theme"))
 
     db = get_db()
     db.execute(
@@ -231,4 +245,4 @@ def theme_save():
     )
     db.commit()
     flash("theme saved — your page is looking adorable 🎨", "success")
-    return redirect(url_for("dash.home"))
+    return redirect(url_for("dash.home", open="theme", _anchor="theme"))

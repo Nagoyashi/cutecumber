@@ -66,6 +66,10 @@ def check_csrf() -> None:
 
 
 def apply_security_headers(response):
+    # Font files carry their version in the filename (fontsource naming), so
+    # they're safe to cache forever; css/js keep Flask's default max-age.
+    if request.path.startswith("/static/fonts/"):
+        response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
     response.headers.setdefault(
         "Content-Security-Policy", getattr(g, "csp", DASH_CSP)
     )

@@ -62,13 +62,16 @@ def add():
             f"you've hit the {MAX_LINKS_PER_PAGE}-link limit — maybe prune a few? 🍂",
             "error",
         )
-        return redirect(url_for("dash.home"))
+        return redirect(url_for("dash.home", open="links", _anchor="links"))
 
     normalized, error = _validate(title, url, emoji)
     if error:
         flash(error, "error")
         # Re-render with the submitted values so a pasted URL isn't lost.
-        return _render_home(add_form={"title": title, "url": url, "emoji": emoji})
+        return _render_home(
+            add_form={"title": title, "url": url, "emoji": emoji},
+            open_section="links",
+        )
 
     db.execute(
         "INSERT INTO links (user_id, title, url, emoji, position)"
@@ -78,7 +81,7 @@ def add():
     )
     db.commit()
     flash("link added! ✨", "success")
-    return redirect(url_for("dash.home"))
+    return redirect(url_for("dash.home", open="links", _anchor="links"))
 
 
 @bp.post("/dash/links/reorder")
@@ -106,7 +109,7 @@ def reorder():
     ]
     if sorted(ids) != sorted(current):
         flash("that order looks out of date — refresh the page and try again 🌀", "error")
-        return redirect(url_for("dash.home"))
+        return redirect(url_for("dash.home", open="links", _anchor="links"))
 
     db.executemany(
         "UPDATE links SET position = ? WHERE id = ? AND user_id = ?",
@@ -114,7 +117,7 @@ def reorder():
     )
     db.commit()
     flash("order saved ✨", "success")
-    return redirect(url_for("dash.home"))
+    return redirect(url_for("dash.home", open="links", _anchor="links"))
 
 
 @bp.post("/dash/links/<int:link_id>")
@@ -134,14 +137,14 @@ def modify(link_id: int):
             flash("link deleted 🍂", "success")
         else:
             flash("hmm, we couldn't find that link 🤔", "error")
-        return redirect(url_for("dash.home"))
+        return redirect(url_for("dash.home", open="links", _anchor="links"))
 
     if action == "save":
         title, url, emoji = _clean(request.form)
         normalized, error = _validate(title, url, emoji)
         if error:
             flash(error, "error")
-            return redirect(url_for("dash.home"))
+            return redirect(url_for("dash.home", open="links", _anchor="links"))
         cursor = db.execute(
             "UPDATE links SET title = ?, url = ?, emoji = ?"
             " WHERE id = ? AND user_id = ?",
@@ -152,6 +155,6 @@ def modify(link_id: int):
             flash("link updated 💾", "success")
         else:
             flash("hmm, we couldn't find that link 🤔", "error")
-        return redirect(url_for("dash.home"))
+        return redirect(url_for("dash.home", open="links", _anchor="links"))
 
     abort(400)

@@ -356,3 +356,29 @@ select:focus-visible {
 }
 
 .themebtns { justify-content: flex-start; }
+
+/* --- polish pass: sticky flash, collapsible sections, slim page bar --- */
+
+.flash { position: sticky; top: 10px; z-index: 5; box-shadow: 0 4px 14px rgba(60, 60, 67, 0.08); }
+
+.pagebar { padding: 18px 24px; }
+.pagebar .hint { margin-top: 2px; }
+
+.section > summary {
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.section > summary::-webkit-details-marker { display: none; }
+.section > summary::after { content: "▸"; color: var(--muted); transition: transform 0.15s; }
+.section[open] > summary::after { transform: rotate(90deg); }
+.section[open] > summary { margin-bottom: 12px; }
+.section > summary:focus-visible {
+  outline: 3px solid var(--accent-deep);
+  outline-offset: 4px;
+  border-radius: 8px;
+}
+
+.section-title { font-size: 1.2rem; font-weight: 700; }

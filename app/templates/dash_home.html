@@ -19,14 +19,14 @@
 {% else %}
 <div class="editor">
 <div class="col-main">
-<section class="card">
-  <h1>your page is live! 🎉</h1>
-  <p class="pagelink"><a href="{{ site_origin }}/{{ g.user.username }}">cutecumber.cc/{{ g.user.username }}</a></p>
-  <p>pop that link in your bios 💕</p>
+
+<section class="card pagebar">
+  <p class="pagelink">🎉 <a href="{{ site_origin }}/{{ g.user.username }}">cutecumber.cc/{{ g.user.username }}</a></p>
+  <p class="hint">your page is live — pop that link in your bios 💕</p>
 </section>
 
-<section class="card">
-  <h1>your links 🔗</h1>
+<details class="card section" id="links" {% if open_section == 'links' %}open{% endif %}>
+  <summary><span class="section-title">your links 🔗</span></summary>
   {% if links %}
   <ul class="linklist" id="linklist">
     {% for link in links %}
@@ -68,11 +68,11 @@
     <input id="add-emoji" name="emoji" maxlength="8" value="{{ add_form.emoji }}" placeholder="🛍️">
     <button type="submit">add link ➕</button>
   </form>
-  <p class="hint">new links go to the bottom — drag-to-reorder is coming soon ✨</p>
-</section>
+  <p class="hint">new links go to the bottom — grab ⠿ to reorder ✨</p>
+</details>
 
-<section class="card">
-  <h1>make it yours 🎀</h1>
+<details class="card section" id="profile" {% if open_section == 'profile' %}open{% endif %}>
+  <summary><span class="section-title">your profile 🌷</span></summary>
   <form method="post" action="{{ url_for('dash.profile') }}" class="stack">
     <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
 
@@ -106,12 +106,12 @@
     <textarea id="bio" name="bio" maxlength="500" rows="4"
               placeholder="a little something about you ✨">{{ form.bio }}</textarea>
 
-    <button type="submit">save my page 💾</button>
+    <button type="submit">save my profile 💾</button>
   </form>
-</section>
+</details>
 
-<section class="card">
-  <h1>your theme 🎨</h1>
+<details class="card section" id="theme" {% if open_section == 'theme' %}open{% endif %}>
+  <summary><span class="section-title">your theme 🎨</span></summary>
   <form method="post" action="{{ url_for('dash.theme_save') }}" class="stack">
     <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
     <span class="field-label">preset</span>
@@ -173,7 +173,8 @@
       </div>
     </details>
   </form>
-</section>
+</details>
+
 </div>
 <div class="col-side">
 <section class="card">
