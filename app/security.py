@@ -24,9 +24,13 @@ DASH_CSP = (
 # default-src 'none' means scripts cannot run even if markup were injected.
 # frame-ancestors 'self' (not 'none') so OUR dash can embed the page as the
 # live preview; anyone else framing it stays blocked (DECISIONS.md #20).
+# img-src includes data: for the curated theme SVG layers (dots pattern,
+# sparkles/hearts/stars) inlined as data URIs — inert image data, built
+# server-side from validated tokens only (DECISIONS.md #21). font-src 'self'
+# for the one optional self-hosted display font.
 PUBLIC_CSP = (
-    "default-src 'none'; style-src 'nonce-{nonce}'; img-src 'self'; "
-    "base-uri 'none'; form-action 'none'; frame-ancestors 'self'"
+    "default-src 'none'; style-src 'nonce-{nonce}'; img-src 'self' data:; "
+    "font-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'self'"
 )
 
 

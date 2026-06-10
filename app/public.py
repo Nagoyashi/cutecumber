@@ -22,6 +22,7 @@ from .constants import (
 )
 from .db import get_db
 from .security import use_public_csp
+from .theme import load_theme, resolve_theme
 
 bp = Blueprint("public", __name__)
 
@@ -50,7 +51,7 @@ def profile(username: str):
         get_db()
         .execute(
             "SELECT id, username, display_name, bio, pronouns, avatar_kind,"
-            " avatar_value FROM users WHERE username = ?",
+            " avatar_value, theme_json FROM users WHERE username = ?",
             (lowered,),
         )
         .fetchone()
@@ -89,8 +90,13 @@ def profile(username: str):
 
     canonical = f"{current_app.config['SITE_ORIGIN']}/{user['username']}"
 
+    # Theme tokens: validated at save (dash) AND resolved tolerantly here —
+    # a corrupted theme_json row falls back to the default preset.
+    theme = resolve_theme(load_theme(user["theme_json"]))
+
     return render_template(
         "public_page.html",
+        t=theme,
         user=user,
         title=title,
         description=description,

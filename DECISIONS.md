@@ -200,3 +200,35 @@ from `frame-ancestors 'none'` to `'self'` and X-Frame-Options DENY →
 SAMEORIGIN — third-party framing remains blocked. Avatar/theme/links preview
 on save (the redirect reloads the iframe). **Revisit:** only to tighten if
 the preview is ever redesigned away.
+
+## 21. Theme SVG layers are inline data: URIs; public img-src gains `data:`
+
+Dot patterns and decorations (sparkles/hearts/stars) are tiny SVGs built
+server-side from validated hex tokens, percent-encoded into CSS data URIs —
+zero extra requests, a few hundred bytes each. CSP cost: `img-src 'self'
+data:` on public pages. data: URIs are inert image data; scripts still cannot
+run (`default-src 'none'`), so this is a cosmetic loosening, not a security
+one. Generated CSS deliberately contains no quotes/ampersands/angle brackets,
+which keeps every template insert autoescape-transparent — `|safe` remains
+banned project-wide (a test enforces the character set).
+
+## 22. Scalloped button shape: deferred, not faked
+
+The spec lists pill/rounded/square/scalloped. There's no clean CSS scallop
+that fits the budget (mask-based techniques are fiddly and brittle), and
+shipping a dotted-outline imitation under the name "scalloped" is worse than
+shipping three honest shapes. Enum ships as pill/rounded/square.
+**Revisit:** at the polish pass; a stored-shape version bump is NOT needed to
+add an enum value later (additive change).
+
+## 23. Display fonts: fontsource subsets via npm, one per page, h1 only
+
+Fredoka 600 (16.4 KB) and Comfortaa 700 (13.4 KB), latin subset WOFF2,
+self-hosted in static/fonts — under the 30 KB budget with room to spare. Body
+text is always the system stack; the display font applies to the h1 only and
+is preloaded. `font: system` skips the font entirely. Derived theme values
+(muted text, accent-button label color, shadow tint) are computed from the
+palette at render time rather than stored — they can't be set to something
+unreadable, and preset AA is enforced by tests/test_theme.py, not eyeballs.
+**Revisit (more fonts):** only via the same fontsource/npm pipeline, same
+budget per file.

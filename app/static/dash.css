@@ -290,3 +290,69 @@ li.dragging .linkrow { border-color: var(--accent); border-style: dashed; }
   color: #fff;
   cursor: pointer;
 }
+
+/* --- theme picker --- */
+
+.presets { grid-template-columns: repeat(auto-fill, minmax(86px, 1fr)); }
+
+.preset-pick { text-align: center; }
+.preset-pick .swatch { border-radius: 50%; }
+.preset-name {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+
+/* chip colors — keep in sync with theme.PRESETS (bg outer, accent dot) */
+.chip-dot { width: 45%; height: 45%; border-radius: 50%; }
+.chip-strawberry_milk { background: #fff5f7; } .chip-strawberry_milk .chip-dot { background: #e58fb1; }
+.chip-matcha_latte    { background: #f4f9ef; } .chip-matcha_latte .chip-dot    { background: #6f9a5d; }
+.chip-lavender_haze   { background: #f7f3fd; } .chip-lavender_haze .chip-dot   { background: #7a59c8; }
+.chip-cherry_cola     { background: #fdf1ef; } .chip-cherry_cola .chip-dot     { background: #b23350; }
+.chip-seafoam         { background: #eefaf6; } .chip-seafoam .chip-dot         { background: #1f7d76; }
+.chip-midnight_snack  { background: #232338; } .chip-midnight_snack .chip-dot  { background: #f3a7c3; }
+
+.finetune { border-top: 1px dashed var(--border); padding-top: 14px; margin-top: 14px; }
+.finetune summary {
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+.finetune summary:hover { color: var(--accent-deep); }
+
+.tune-grid {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px 14px;
+  align-items: center;
+  margin: 14px 0;
+}
+.tune-grid label { font-weight: 500; font-size: 0.9rem; }
+
+input[type="color"] {
+  width: 52px;
+  height: 34px;
+  padding: 2px;
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  background: #fff;
+  cursor: pointer;
+}
+
+select {
+  font: inherit;
+  font-size: 0.9rem;
+  padding: 7px 10px;
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--text);
+}
+select:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(229, 143, 177, 0.25);
+}
+
+.themebtns { justify-content: flex-start; }

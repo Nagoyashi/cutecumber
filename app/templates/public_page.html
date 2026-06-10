@@ -12,27 +12,35 @@
 <meta property="og:type" content="profile">
 <meta property="og:site_name" content="cutecumber.cc">
 <meta name="twitter:card" content="summary">
-<meta name="theme-color" content="#fff5f7">
-<style nonce="{{ csp_nonce }}">
+<meta name="theme-color" content="{{ t.bg }}">
+{% if t.font_file %}<link rel="preload" href="{{ t.font_file }}" as="font" type="font/woff2" crossorigin>
+{% endif %}<style nonce="{{ csp_nonce }}">
+{% if t.font_file %}@font-face{font-family:{{ t.font_family }};src:url({{ t.font_file }}) format('woff2');font-weight:{{ t.heading_weight }};font-display:swap}
+{% endif %}:root{--bg:{{ t.bg }};--surface:{{ t.surface }};--text:{{ t.text }};--muted:{{ t.muted }};--accent:{{ t.accent }};--accent-text:{{ t.accent_text }};--radius:{{ t.radius }}}
 *{margin:0;padding:0;box-sizing:border-box}
 body{min-height:100svh;display:flex;align-items:center;justify-content:center;padding:24px;
-font-family:system-ui,-apple-system,"Segoe UI",sans-serif;color:#3c3c43;line-height:1.5;
-background:linear-gradient(160deg,#fff5f7 0%,#f3f9f4 100%)}
+font-family:system-ui,-apple-system,sans-serif;color:var(--text);line-height:1.5;
+background:{{ t.page_background }}}
 main{width:100%;max-width:420px;text-align:center}
 .avatar{font-size:56px;line-height:1}
 {% if gradient %}.avatar-g{width:88px;height:88px;border-radius:50%;margin:0 auto;
 background:linear-gradient(135deg,{{ gradient[0] }},{{ gradient[1] }})}
-{% endif %}h1{margin-top:12px;font-size:1.5rem;font-weight:700;overflow-wrap:break-word}
-.pronouns{margin-top:2px;color:#8a8a93;font-size:.9rem}
+{% endif %}h1{margin-top:12px;font-size:1.6rem;font-weight:{{ t.heading_weight }};overflow-wrap:break-word;
+font-family:{{ t.heading_stack }}}
+.pronouns{margin-top:2px;color:var(--muted);font-size:.9rem}
 .bio{margin-top:10px;overflow-wrap:break-word;white-space:pre-line}
 {% if links %}.links{margin-top:24px;display:grid;gap:12px}
-.links a{display:block;padding:13px 16px;border-radius:999px;background:#fff;color:#3c3c43;
-text-decoration:none;font-weight:600;border:2px solid #f0d4de;overflow-wrap:break-word}
-.links a:hover,.links a:focus-visible{border-color:#e58fb1}
-{% endif %}.empty{margin-top:28px;color:#8a8a93;font-size:.95rem}
+.links a{display:block;padding:13px 16px;border-radius:var(--radius);text-decoration:none;
+font-weight:600;overflow-wrap:break-word;
+{% if t.button_style == 'filled' %}background:var(--accent);color:var(--accent-text);border:2px solid var(--accent)
+{% elif t.button_style == 'outline' %}background:var(--surface);color:var(--text);border:2px solid var(--accent)
+{% else %}background:var(--surface);color:var(--text);border:2px solid var(--surface);box-shadow:0 5px 16px {{ t.shadow }}
+{% endif %}}
+.links a:hover,.links a:focus-visible{filter:brightness(.96);transform:translateY(-1px)}
+{% endif %}.empty{margin-top:28px;color:var(--muted);font-size:.95rem}
 footer{margin-top:44px;font-size:.8rem}
-footer a{color:#8a8a93;text-decoration:none}
-footer a:hover,footer a:focus-visible{color:#3c3c43}
+footer a{color:var(--muted);text-decoration:none}
+footer a:hover,footer a:focus-visible{color:var(--text)}
 </style>
 </head>
 <body>

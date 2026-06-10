@@ -109,6 +109,71 @@
     <button type="submit">save my page 💾</button>
   </form>
 </section>
+
+<section class="card">
+  <h1>your theme 🎨</h1>
+  <form method="post" action="{{ url_for('dash.theme_save') }}" class="stack">
+    <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+    <span class="field-label">preset</span>
+    <div class="picker presets" role="radiogroup" aria-label="theme preset">
+      {% for name in presets %}
+      <label class="pick preset-pick">
+        <input type="radio" name="preset" value="{{ name }}"
+               {% if name == theme_preset %}checked{% endif %}>
+        <span class="swatch preset-chip chip-{{ name }}"><span class="chip-dot"></span></span>
+        <span class="preset-name">{{ name.replace('_', ' ') }}</span>
+      </label>
+      {% endfor %}
+    </div>
+    <button type="submit" name="action" value="preset">use this preset ✨</button>
+    <p class="hint">picking a preset clears any fine-tuning below — every preset passes accessibility contrast out of the box 💚</p>
+  </form>
+
+  <form method="post" action="{{ url_for('dash.theme_save') }}" class="stack finetune">
+    <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+    <input type="hidden" name="preset" value="{{ theme_preset }}">
+    <details {% if theme_overridden %}open{% endif %}>
+      <summary>fine-tune {{ theme_preset.replace('_', ' ') }} ✏️</summary>
+      <div class="tune-grid">
+        <label for="t-bg">page color</label>
+        <input type="color" id="t-bg" name="bg" value="{{ t.bg }}">
+        <label for="t-bg2">page color two</label>
+        <input type="color" id="t-bg2" name="bg2" value="{{ t.bg2 }}">
+        <label for="t-surface">button color</label>
+        <input type="color" id="t-surface" name="surface" value="{{ t.surface }}">
+        <label for="t-text">text color</label>
+        <input type="color" id="t-text" name="text" value="{{ t.text }}">
+        <label for="t-accent">accent</label>
+        <input type="color" id="t-accent" name="accent" value="{{ t.accent }}">
+        <label for="t-font">heading font</label>
+        <select id="t-font" name="font">
+          {% for v in enums['font'] %}<option value="{{ v }}" {% if t.font == v %}selected{% endif %}>{{ v }}</option>{% endfor %}
+        </select>
+        <label for="t-shape">button shape</label>
+        <select id="t-shape" name="button_shape">
+          {% for v in enums['button_shape'] %}<option value="{{ v }}" {% if t.button_shape == v %}selected{% endif %}>{{ v }}</option>{% endfor %}
+        </select>
+        <label for="t-style">button style</label>
+        <select id="t-style" name="button_style">
+          {% for v in enums['button_style'] %}<option value="{{ v }}" {% if t.button_style == v %}selected{% endif %}>{{ v.replace('_', ' ') }}</option>{% endfor %}
+        </select>
+        <label for="t-background">background</label>
+        <select id="t-background" name="background">
+          {% for v in enums['background'] %}<option value="{{ v }}" {% if t.background == v %}selected{% endif %}>{{ v }}</option>{% endfor %}
+        </select>
+        <label for="t-decoration">decoration</label>
+        <select id="t-decoration" name="decoration">
+          {% for v in enums['decoration'] %}<option value="{{ v }}" {% if t.decoration == v %}selected{% endif %}>{{ v }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="rowbtns themebtns">
+        <button type="submit" name="action" value="save">save fine-tuning 💾</button>
+        <button type="submit" name="action" value="reset" class="danger"
+                data-confirm="reset all fine-tuning back to the preset? 🎨">reset</button>
+      </div>
+    </details>
+  </form>
+</section>
 </div>
 <div class="col-side">
 <section class="card">

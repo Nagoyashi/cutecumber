@@ -13,6 +13,7 @@ from sqlite3 import IntegrityError
 
 from flask import (
     Blueprint,
+    abort,
     current_app,
     flash,
     g,
@@ -33,6 +34,15 @@ from .constants import (
 from .db import get_db
 from .extensions import limiter
 from .security import login_required
+from .theme import (
+    COLOR_KEYS,
+    ENUM_KEYS,
+    PRESETS,
+    THEME_VERSION,
+    load_theme,
+    resolve_theme,
+    validate_theme,
+)
 
 bp = Blueprint("dash", __name__)
 
@@ -60,6 +70,7 @@ def _render_home(form: dict | None = None, add_form: dict | None = None):
             )
             .fetchall()
         )
+    stored_theme = load_theme(g.user["theme_json"])
     return render_template(
         "dash_home.html",
         site_origin=current_app.config["SITE_ORIGIN"],
@@ -68,6 +79,11 @@ def _render_home(form: dict | None = None, add_form: dict | None = None):
         links=user_links,
         avatar_emoji=AVATAR_EMOJI,
         avatar_gradients=AVATAR_GRADIENTS,
+        t=resolve_theme(stored_theme),
+        theme_preset=stored_theme["preset"],
+        theme_overridden=bool(stored_theme.get("overrides")),
+        presets=list(PRESETS),
+        enums=ENUM_KEYS,
     )
 
 
@@ -169,4 +185,50 @@ def profile():
     )
     db.commit()
     flash("saved! your page is looking adorable 💕", "success")
+    return redirect(url_for("dash.home"))
+
+
+import json as _json
+
+
+@bp.post("/dash/theme")
+@limiter.limit("30 per 15 minutes")
+@login_required
+def theme_save():
+    if not g.user["username"]:
+        flash("claim your username first — then we'll make it pretty 🌱", "error")
+        return redirect(url_for("dash.home"))
+
+    action = request.form.get("action")
+    preset = request.form.get("preset") or ""
+
+    if action in ("preset", "reset"):
+        # Applying a preset (or resetting) clears all fine-tuning.
+        candidate = {"version": THEME_VERSION, "preset": preset, "overrides": {}}
+    elif action == "save":
+        overrides = {}
+        for key in COLOR_KEYS:
+            value = (request.form.get(key) or "").strip().lower()
+            if value:
+                overrides[key] = value
+        for key in ENUM_KEYS:
+            value = (request.form.get(key) or "").strip()
+            if value:
+                overrides[key] = value
+        candidate = {"version": THEME_VERSION, "preset": preset, "overrides": overrides}
+    else:
+        abort(400)
+
+    clean, error = validate_theme(candidate)
+    if error:
+        flash(error, "error")
+        return redirect(url_for("dash.home"))
+
+    db = get_db()
+    db.execute(
+        "UPDATE users SET theme_json = ?, theme_version = ? WHERE id = ?",
+        (_json.dumps(clean, separators=(",", ":")), clean["version"], g.user["id"]),
+    )
+    db.commit()
+    flash("theme saved — your page is looking adorable 🎨", "success")
     return redirect(url_for("dash.home"))

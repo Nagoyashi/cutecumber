@@ -3,9 +3,9 @@
 > Read this first, every session. Companion doc: `DECISIONS.md` (the *why* +
 > revisit conditions). Update both proactively when changes warrant it.
 
-**Status:** skeleton + profile + links + editor JS complete (drag/keyboard
-reorder, live preview, delete confirm — 130 of the 200-line JS budget used).
-Next up: the theming engine, then the perf/polish pass.
+**Status:** v0 feature-complete — skeleton, profile, links, editor JS, and
+the theming engine (6 AA-verified presets, token overrides, 2 self-hosted
+display fonts). Remaining: the perf/polish pass, then launch prep.
 
 ## File map
 
@@ -27,8 +27,11 @@ cutecumber/
     │                        init-db CLI command (also runs idempotent column
     │                        upgrades — always safe to re-run)
     ├── schema.sql           users + links (links table pre-created, CRUD later)
-    ├── theme.py             versioned theme_json: default_theme(), load_theme(),
-    │                        MIGRATIONS registry. Engine/validator: not yet built.
+    ├── theme.py             THE theming engine: PRESETS (6, AA-enforced by
+    │                        tests), validate_theme (save path, strict),
+    │                        resolve_theme (render path, tolerant), computed
+    │                        muted/accent_text/shadow, CSS + SVG-data-URI
+    │                        builders, load_theme + MIGRATIONS registry.
     ├── security.py          CSRF (get_csrf_token/check_csrf), security headers,
     │                        DASH_CSP / PUBLIC_CSP + use_public_csp(), login_required
     ├── extensions.py        limiter (flask-limiter, memory storage)
@@ -46,12 +49,15 @@ cutecumber/
     │   ├── dash_base.html       layout for everything logged-in/auth
     │   ├── auth_signup.html / auth_login.html / dash_home.html / error.html
     └── static/
-        ├── dash.css             dash side ONLY. Public pages never load static files.
+        ├── dash.css             dash side ONLY (public pages: inline CSS only).
+        ├── fonts/               2 subsetted WOFF2 display fonts (fontsource
+        │                        via npm). At most ONE loads per public page.
         └── dash.js              the ONLY JS in the product: reorder, live
                                  preview, delete confirm. HARD 200-line budget
                                  (currently 130) — count before adding.
 tests/
-    └── test_url_validation.py   run: python -m unittest -v  (from repo root)
+    ├── test_url_validation.py   run: python -m unittest -v  (from repo root)
+    └── test_theme.py            validator, migrations, WCAG AA on all presets
 ```
 
 ## Conventions
@@ -93,7 +99,7 @@ Errors are kind and say what to do next.
 **Rate limits** decorate POST handlers via `@limiter.limit(..., methods=["POST"])`
 (or plain `@limiter.limit` on POST-only routes). Current: signup 5/hour,
 login 10/15min, claim 10/hour, profile save 30/15min, link add/edit/delete
-60/15min each.
+60/15min each, theme save 30/15min.
 
 ## How it runs
 
@@ -110,9 +116,9 @@ Prod: `gunicorn -w 1 'wsgi:app'` behind Caddy; `TRUST_PROXY=1`, `COOKIE_SECURE=1
    50-link cap, URL-validator tests (DECISIONS.md #15–17).
 4. ~~Reorder + live preview~~ ✅ — pointer-events drag + arrow keys, iframe
    preview of the real page, delete confirm (DECISIONS.md #19–20).
-5. **Theming engine** — token validator (server-side, hex colors, allowlisted
-   values), presets, per-user `<style>` rendering into the public page;
-   **tests for the validator and for theme migrations**.
+5. ~~Theming engine~~ ✅ — validator at save AND render, 6 presets with
+   AA enforced by tests, fonts, backgrounds, decorations (DECISIONS.md #21–23).
+   Scalloped button shape deferred (#22).
 6. **Perf + polish pass** — verify ≤15 KB gzipped budget per public page,
    Lighthouse 100, LCP < 1.0s on simulated 4G.
 
