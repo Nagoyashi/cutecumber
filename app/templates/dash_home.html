@@ -20,7 +20,46 @@
 <section class="card">
   <h1>your page is live! 🎉</h1>
   <p class="pagelink"><a href="{{ site_origin }}/{{ g.user.username }}">cutecumber.cc/{{ g.user.username }}</a></p>
-  <p>pop that link in your bios. profile details, links, and themes are coming next — your page is looking adorable already 💕</p>
+  <p>pop that link in your bios 💕</p>
+</section>
+
+<section class="card">
+  <h1>make it yours 🎀</h1>
+  <form method="post" action="{{ url_for('dash.profile') }}" class="stack">
+    <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+
+    <span class="field-label">your avatar</span>
+    <div class="picker" role="radiogroup" aria-label="avatar">
+      {% for e in avatar_emoji %}
+      <label class="pick">
+        <input type="radio" name="avatar" value="emoji:{{ e }}"
+               {% if form.avatar == 'emoji:' ~ e %}checked{% endif %}>
+        <span class="swatch">{{ e }}</span>
+      </label>
+      {% endfor %}
+      {% for name in avatar_gradients %}
+      <label class="pick">
+        <input type="radio" name="avatar" value="gradient:{{ name }}"
+               {% if form.avatar == 'gradient:' ~ name %}checked{% endif %}>
+        <span class="swatch grad grad-{{ name }}" title="{{ name.replace('_', ' ') }}"></span>
+      </label>
+      {% endfor %}
+    </div>
+
+    <label for="display_name">display name</label>
+    <input id="display_name" name="display_name" maxlength="60"
+           value="{{ form.display_name }}" placeholder="what should the world call you?">
+
+    <label for="pronouns">pronouns <span class="optional">(optional)</span></label>
+    <input id="pronouns" name="pronouns" maxlength="40"
+           value="{{ form.pronouns }}" placeholder="she/her · they/them · whatever fits">
+
+    <label for="bio">bio</label>
+    <textarea id="bio" name="bio" maxlength="500" rows="4"
+              placeholder="a little something about you ✨">{{ form.bio }}</textarea>
+
+    <button type="submit">save my page 💾</button>
+  </form>
 </section>
 {% endif %}
 {% endblock %}

@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS users (
     bio           TEXT,
     pronouns      TEXT,
     avatar_kind   TEXT    NOT NULL DEFAULT 'emoji',  -- 'emoji' | 'gradient' (uploads: later, maybe)
+    avatar_value  TEXT    NOT NULL DEFAULT '🥒',     -- emoji char OR gradient name; allowlists in constants.py
     theme_json    TEXT    NOT NULL,                  -- versioned JSON, see app/theme.py
     theme_version INTEGER NOT NULL DEFAULT 1,
     created_at    TEXT    NOT NULL DEFAULT (datetime('now'))

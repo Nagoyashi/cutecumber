@@ -101,3 +101,26 @@ ProxyFix so rate limiting keys on real client IPs behind a proxy.
 Host headers are attacker-influenced; canonical URLs and OG tags must never
 be. One env var, set once per environment.
 **Revisit:** never.
+
+## 13. Avatars: `avatar_value` column + curated allowlists (no freeform emoji)
+
+`avatar_kind` ('emoji' | 'gradient') plus `avatar_value` (the emoji character
+or the gradient name). Both validated against allowlists in `constants.py` at
+save AND at render; render falls back to 🥒 on anything unrecognised so a bad
+row can never break a public page. Freeform emoji input was rejected because
+validating "is this actually an emoji" across ZWJ sequences is a swamp, and a
+curated picker matches the brand (deep-but-curated) and the validated-tokens
+philosophy. Gradient names intentionally mirror the working theme-preset list.
+Known small duplication: swatch colors repeat in `static/dash.css` (dash CSP
+forbids inline styles) — sync comment in both files.
+**Revisit (freeform emoji):** real user demand. It's a validation-rule change,
+not a schema change.
+
+## 14. Schema upgrades via idempotent `init-db` column checks
+
+`init_db()` applies `schema.sql` (CREATE IF NOT EXISTS) then adds any missing
+columns via `_ensure_column` (PRAGMA table_info + ALTER). Re-running
+`flask init-db` is always safe and is the upgrade mechanism between sessions
+pre-launch. This is deliberately NOT a migration framework.
+**Revisit:** first destructive change (column drop/rename/type change) or
+first real users — that's when numbered migration scripts earn their keep.

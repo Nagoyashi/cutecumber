@@ -12,7 +12,13 @@ Hard rules for everything in this blueprint:
 
 from flask import Blueprint, current_app, redirect, render_template
 
-from .constants import RESERVED_USERNAMES, USERNAME_RE
+from .constants import (
+    AVATAR_EMOJI,
+    AVATAR_GRADIENTS,
+    DEFAULT_AVATAR_EMOJI,
+    RESERVED_USERNAMES,
+    USERNAME_RE,
+)
 from .db import get_db
 from .security import use_public_csp
 
@@ -42,14 +48,24 @@ def profile(username: str):
     user = (
         get_db()
         .execute(
-            "SELECT username, display_name, bio, pronouns FROM users"
-            " WHERE username = ?",
+            "SELECT username, display_name, bio, pronouns, avatar_kind,"
+            " avatar_value FROM users WHERE username = ?",
             (lowered,),
         )
         .fetchone()
     )
     if user is None:
         return _not_found()
+
+    # Resolve the avatar against the allowlists (validate at save AND render);
+    # anything unrecognised falls back to the default emoji — a bad row must
+    # never break a public page.
+    gradient = None
+    avatar_emoji = DEFAULT_AVATAR_EMOJI
+    if user["avatar_kind"] == "gradient":
+        gradient = AVATAR_GRADIENTS.get(user["avatar_value"])
+    elif user["avatar_value"] in AVATAR_EMOJI:
+        avatar_emoji = user["avatar_value"]
 
     title = user["display_name"] or f"@{user['username']}"
     description = (user["bio"] or DEFAULT_DESCRIPTION).strip()
@@ -64,6 +80,8 @@ def profile(username: str):
         title=title,
         description=description,
         canonical=canonical,
+        gradient=gradient,
+        avatar_emoji=avatar_emoji,
         csp_nonce=use_public_csp(),
     )
 

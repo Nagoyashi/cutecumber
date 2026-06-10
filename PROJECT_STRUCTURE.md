@@ -3,8 +3,9 @@
 > Read this first, every session. Companion doc: `DECISIONS.md` (the *why* +
 > revisit conditions). Update both proactively when changes warrant it.
 
-**Status:** walking skeleton complete (signup → claim username → public page
-with OG tags). Theming engine, profile editing, and links CRUD not started.
+**Status:** walking skeleton + profile editing complete (display name, bio,
+pronouns, curated emoji/gradient avatar, rendered on the public page).
+Links CRUD, preview/reorder JS, and the theming engine not started.
 
 ## File map
 
@@ -20,9 +21,11 @@ cutecumber/
     ├── __init__.py          create_app(): config, loud SECRET_KEY failure, blueprint
     │                        registration, g.user loader, error handlers (400/404/413/429/500)
     ├── constants.py         RESERVED_USERNAMES, USERNAME_RE, all length caps,
-    │                        validate_username(). ONE source of truth for limits.
+    │                        validate_username(), AVATAR_EMOJI + AVATAR_GRADIENTS
+    │                        allowlists. ONE source of truth for limits.
     ├── db.py                get_db() (per-request conn, WAL, busy_timeout),
-    │                        init-db CLI command
+    │                        init-db CLI command (also runs idempotent column
+    │                        upgrades — always safe to re-run)
     ├── schema.sql           users + links (links table pre-created, CRUD later)
     ├── theme.py             versioned theme_json: default_theme(), load_theme(),
     │                        MIGRATIONS registry. Engine/validator: not yet built.
@@ -30,7 +33,8 @@ cutecumber/
     │                        DASH_CSP / PUBLIC_CSP + use_public_csp(), login_required
     ├── extensions.py        limiter (flask-limiter, memory storage)
     ├── auth.py              /signup /login (GET+POST, rate-limited POSTs), POST /logout
-    ├── dash.py              GET /dash, POST /dash/claim (one-shot, race-safe)
+    ├── dash.py              GET /dash, POST /dash/claim (one-shot, race-safe),
+    │                        POST /dash/profile (re-renders form on error)
     ├── public.py            GET /, GET /<username> (OG tags), cute 404
     ├── templates/
     │   ├── public_page.html     standalone; inline nonce'd CSS; OG tags; ZERO JS
@@ -71,7 +75,7 @@ Errors are kind and say what to do next.
 
 **Rate limits** decorate POST handlers via `@limiter.limit(..., methods=["POST"])`
 (or plain `@limiter.limit` on POST-only routes). Current: signup 5/hour,
-login 10/15min, claim 10/hour. Page-save gets one when it exists.
+login 10/15min, claim 10/hour, profile save 30/15min.
 
 ## How it runs
 
@@ -82,10 +86,8 @@ Prod: `gunicorn -w 1 'wsgi:app'` behind Caddy; `TRUST_PROXY=1`, `COOKIE_SECURE=1
 ## v0 roadmap (ship in this order)
 
 1. ~~Walking skeleton~~ ✅ this session
-2. **Profile editing** — display name, bio, pronouns; emoji-or-gradient avatar.
-   Open question to settle first: where the avatar *value* lives (likely a new
-   `avatar_value` column next to `avatar_kind` — schema change, do it before
-   real users exist).
+2. ~~Profile editing~~ ✅ — `avatar_value` column added; curated emoji +
+   gradient allowlists (DECISIONS.md #13).
 3. **Links CRUD** — add/edit/delete with title/url/emoji; URL scheme allowlist
    validated at save AND render; `rel="noopener noreferrer nofollow"`;
    **tests for the URL validator** (first tests in the repo).

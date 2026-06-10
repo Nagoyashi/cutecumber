@@ -33,11 +33,22 @@ def close_db(_exc: BaseException | None = None) -> None:
 
 
 def init_db() -> None:
-    """Apply schema.sql. Idempotent: schema uses CREATE ... IF NOT EXISTS."""
+    """Apply schema.sql, then upgrade existing tables. Idempotent both ways:
+    schema uses CREATE ... IF NOT EXISTS, and upgrades only add what's missing,
+    so `flask init-db` is always safe to re-run."""
     db = get_db()
     with current_app.open_resource("schema.sql") as f:
         db.executescript(f.read().decode("utf-8"))
+    # Column upgrades for DBs created before the column existed. Table and DDL
+    # are code literals, never user input.
+    _ensure_column(db, "users", "avatar_value", "TEXT NOT NULL DEFAULT '🥒'")
     db.commit()
+
+
+def _ensure_column(db: sqlite3.Connection, table: str, column: str, ddl: str) -> None:
+    existing = {row["name"] for row in db.execute(f"PRAGMA table_info({table})")}
+    if column not in existing:
+        db.execute(f"ALTER TABLE {table} ADD COLUMN {column} {ddl}")
 
 
 @click.command("init-db")

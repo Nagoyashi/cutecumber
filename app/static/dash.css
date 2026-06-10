@@ -129,3 +129,68 @@ button[type="submit"]:focus-visible {
 }
 .flash-success { background: var(--ok-bg); color: var(--ok-text); }
 .flash-error { background: var(--err-bg); color: var(--err-text); }
+
+/* --- profile form --- */
+
+.field-label { font-size: 0.9rem; font-weight: 600; }
+.optional { font-weight: 400; color: var(--muted); }
+
+textarea {
+  font: inherit;
+  padding: 11px 14px;
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  background: #fff;
+  color: var(--text);
+  resize: vertical;
+}
+textarea:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(229, 143, 177, 0.25);
+}
+
+.picker {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(44px, 1fr));
+  gap: 8px;
+}
+
+.pick { position: relative; display: block; }
+
+.pick input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.swatch {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 1;
+  font-size: 24px;
+  border-radius: 12px;
+  border: 2px solid var(--border);
+  background: #fff;
+  cursor: pointer;
+  user-select: none;
+}
+
+.pick input:checked + .swatch {
+  border-color: var(--accent-deep);
+  box-shadow: 0 0 0 3px rgba(229, 143, 177, 0.35);
+}
+.pick input:focus-visible + .swatch {
+  outline: 3px solid var(--accent-deep);
+  outline-offset: 2px;
+}
+
+/* gradient swatches — keep colors in sync with constants.AVATAR_GRADIENTS */
+.grad { border-radius: 50%; }
+.grad-strawberry_milk { background: linear-gradient(135deg, #ffd3e0, #fff0f3); }
+.grad-matcha_latte    { background: linear-gradient(135deg, #cfe8cf, #f3f9f4); }
+.grad-lavender_haze   { background: linear-gradient(135deg, #ddd1f0, #f4effb); }
+.grad-cherry_cola     { background: linear-gradient(135deg, #e8a0b4, #fbe3ea); }
+.grad-seafoam         { background: linear-gradient(135deg, #c9ece4, #eafaf6); }
+.grad-midnight_snack  { background: linear-gradient(135deg, #4a4e69, #22223b); }

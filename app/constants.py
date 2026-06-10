@@ -50,6 +50,30 @@ LINK_TITLE_MAX = 100
 LINK_URL_MAX = 2000
 MAX_LINKS_PER_PAGE = 50
 
+# Avatars are curated tokens, never freeform input (DECISIONS.md #13).
+# Validated at save AND at render; render falls back to the default on
+# anything unrecognised so a bad row can never break a public page.
+DEFAULT_AVATAR_EMOJI = "🥒"
+
+AVATAR_EMOJI = (
+    "🥒", "🍓", "🍵", "🍒", "🌊", "🌙",
+    "⭐", "🌷", "🌸", "🌼", "🍄", "🐸",
+    "🐱", "🐰", "🦋", "🐝", "🍑", "🍋",
+    "🫐", "🍰", "🧸", "🎀", "✨", "💖",
+)
+
+# name -> (color_from, color_to). Rendered as linear-gradient(135deg, …).
+# Names line up with the working theme-preset list on purpose.
+# NOTE: swatch styles in static/dash.css duplicate these colors — keep in sync.
+AVATAR_GRADIENTS = {
+    "strawberry_milk": ("#ffd3e0", "#fff0f3"),
+    "matcha_latte": ("#cfe8cf", "#f3f9f4"),
+    "lavender_haze": ("#ddd1f0", "#f4effb"),
+    "cherry_cola": ("#e8a0b4", "#fbe3ea"),
+    "seafoam": ("#c9ece4", "#eafaf6"),
+    "midnight_snack": ("#4a4e69", "#22223b"),
+}
+
 
 def validate_username(username: str) -> str | None:
     """Return a user-facing error message, or None if the username is valid.
