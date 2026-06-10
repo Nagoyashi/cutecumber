@@ -1,0 +1,131 @@
+/* dash.css — editor/auth side only. Public pages never load this file;
+   they carry their own tiny inline CSS under the performance budget. */
+
+:root {
+  --bg1: #fff5f7;
+  --bg2: #f3f9f4;
+  --surface: #ffffff;
+  --text: #3c3c43;       /* 10.4:1 on surface — AA/AAA */
+  --muted: #6e6e78;      /* 5.6:1 on surface — AA */
+  --accent: #e58fb1;
+  --accent-deep: #b9486f; /* 5.0:1 on white — AA for the small bits */
+  --border: #f0d4de;
+  --ok-bg: #e7f6ec;
+  --ok-text: #1c6b3c;
+  --err-bg: #fdeef0;
+  --err-text: #a33a52;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  min-height: 100svh;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  color: var(--text);
+  line-height: 1.55;
+  background: linear-gradient(160deg, var(--bg1) 0%, var(--bg2) 100%);
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+}
+
+.brand {
+  font-weight: 700;
+  text-decoration: none;
+  color: var(--text);
+}
+
+.topnav { display: flex; gap: 16px; align-items: center; }
+
+.topnav a {
+  color: var(--text);
+  text-decoration: none;
+  font-size: 0.95rem;
+}
+.topnav a:hover, .topnav a:focus-visible { color: var(--accent-deep); }
+
+.linkish {
+  background: none;
+  border: none;
+  font: inherit;
+  font-size: 0.95rem;
+  color: var(--text);
+  cursor: pointer;
+  padding: 0;
+}
+.linkish:hover, .linkish:focus-visible { color: var(--accent-deep); }
+
+.wrap {
+  max-width: 480px;
+  margin: 24px auto 64px;
+  padding: 0 20px;
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 28px 24px;
+  box-shadow: 0 6px 24px rgba(229, 143, 177, 0.12);
+}
+
+.card h1 { font-size: 1.35rem; margin-bottom: 8px; }
+.card p { margin-bottom: 8px; }
+
+.center { text-align: center; }
+.errcode { font-size: 2.5rem; font-weight: 700; color: var(--accent); }
+
+.stack { display: grid; gap: 8px; margin-top: 14px; }
+
+label { font-size: 0.9rem; font-weight: 600; }
+.prefix-label { color: var(--muted); font-weight: 600; }
+
+input {
+  font: inherit;
+  padding: 11px 14px;
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  background: #fff;
+  color: var(--text);
+}
+input:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(229, 143, 177, 0.25);
+}
+
+button[type="submit"] {
+  margin-top: 8px;
+  font: inherit;
+  font-weight: 600;
+  padding: 12px 16px;
+  border: none;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #fff;
+  cursor: pointer;
+}
+button[type="submit"]:hover { background: #d97da2; }
+button[type="submit"]:focus-visible {
+  outline: 3px solid var(--accent-deep);
+  outline-offset: 2px;
+}
+
+.hint { margin-top: 12px; font-size: 0.85rem; color: var(--muted); }
+.hint a { color: var(--accent-deep); }
+
+.pagelink { font-size: 1.1rem; font-weight: 600; overflow-wrap: anywhere; }
+.pagelink a { color: var(--accent-deep); }
+
+.flash {
+  padding: 12px 16px;
+  border-radius: 12px;
+  margin-bottom: 14px;
+  font-size: 0.95rem;
+}
+.flash-success { background: var(--ok-bg); color: var(--ok-text); }
+.flash-error { background: var(--err-bg); color: var(--err-text); }

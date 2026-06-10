@@ -1,0 +1,9 @@
+{% extends "dash_base.html" %}
+{% block title %}oops{% endblock %}
+{% block content %}
+<section class="card center">
+  <p class="errcode">{{ code }}</p>
+  <p>{{ message }}</p>
+  <p class="hint"><a href="{{ url_for('public.index') }}">back home 🏡</a></p>
+</section>
+{% endblock %}

@@ -1,0 +1,103 @@
+# DECISIONS.md — cutecumber.cc
+
+> The *why* behind each choice, with the condition that would reopen it.
+> If you're about to argue with a pattern, read its entry first.
+
+## 1. App factory + blueprints (`create_app()`)
+
+Three blueprints (auth, dash, public) matching the product's two worlds plus
+auth. Factory pattern so tests can build isolated apps with their own config.
+**Revisit:** never, realistically — this is load-bearing and cheap.
+
+## 2. Raw sqlite3, WAL, per-request connections, no ORM
+
+Read-heavy workload, one box, tiny schema. WAL gives concurrent readers during
+writes; `busy_timeout=5000` absorbs writer contention. Per-request connections
+opened lazily in `g` — SQLite connections are cheap and this avoids
+threading/pooling complexity entirely.
+**Revisit (Postgres):** only with a measured reason — sustained write
+contention or multi-box. Not before.
+
+## 3. Usernames are immutable after claim (v0)
+
+The URL *is* the product; renames break every bio link the user has pasted,
+free old names for impersonation, and complicate the reserved/unique logic.
+One-shot claim is race-safe twice: `UPDATE ... WHERE username IS NULL` plus
+the UNIQUE constraint.
+**Revisit:** real users asking for renames. If granted: cooldown + old-name
+tombstone to block instant impersonation.
+
+## 4. Home-rolled CSRF (no flask-wtf)
+
+flask-wtf isn't on the dependency list and drags in WTForms for what is ~20
+lines: random token in the signed session, hidden field, constant-time compare
+in a global before_request hook. No exemption mechanism exists on purpose.
+**Revisit:** if we ever serve a JSON API (would need header-token variant).
+
+## 5. theme_json is versioned from day one; links table pre-created
+
+Every stored theme blob carries `version: 1` and loads through a migration
+registry (`app/theme.py`), even though the theming engine doesn't exist yet —
+retrofitting versioning after real rows exist is exactly the migration pain
+this avoids. Same logic for creating `links` in the initial schema: an empty
+table is free; an early-v0 migration is not.
+**Rule, not revisitable:** no stored-shape change without version bump +
+migration in the same commit.
+
+## 6. bcrypt with a hard 72-byte password cap
+
+bcrypt 5 **raises ValueError** past 72 bytes in both `hashpw` and `checkpw`
+(verified against 5.0.0, not assumed). So: signup rejects >72 bytes with kind
+copy; login short-circuits >72-byte attempts and burns a dummy `checkpw` to
+keep timing uniform. Unknown emails also get a dummy check (no email-existence
+oracle). Min length 8.
+**Revisit:** bcrypt major-version bumps — re-verify the >72-byte behavior.
+
+## 7. flask-limiter with in-memory storage
+
+Zero-infrastructure rate limiting, correct for a single process. **Known
+limitation:** counters are per-process, so `gunicorn -w 4` would multiply
+every limit by 4. Hence `-w 1` in the README.
+**Revisit:** at deploy, if one worker can't carry the load — options are
+SQLite/Redis-backed storage (new dependency, needs a written justification
+here) or accepting N× limits. Decide then, with numbers.
+
+## 8. Public pages set zero cookies for anonymous visitors
+
+Privacy is the brand. Public routes never touch the session; public templates
+never call `csrf_token()` (the only thing that lazily creates one). Verified
+in the smoke test: no `Set-Cookie` on `GET /<username>`. The dash side uses
+Flask's signed session cookie — first-party, HttpOnly, SameSite=Lax,
+Secure-by-default (`COOKIE_SECURE=0` is a dev-only opt-out).
+**Rule, not revisitable.**
+
+## 9. No email verification / password reset in v0 scaffold
+
+Sending email costs money or a third-party dependency; neither is justified
+pre-launch. Consequence: **a forgotten password currently means a lost
+account.** Acceptable while testers are the only users.
+**Revisit: BEFORE public launch — this is a launch blocker**, not a nice-to-
+have. Cheapest path at that point is a transactional-email free tier; needs a
+written justification here when chosen.
+
+## 10. CSP split: nonce'd inline style on public, external-only on dash
+
+Public pages: `default-src 'none'` + per-request `style-src 'nonce-…'` — the
+single inline `<style>` block is where per-user theme tokens will render, and
+the nonce avoids `'unsafe-inline'` entirely. Even injected markup can't run
+scripts or load anything. Dash: `style-src 'self'`, and `script-src 'self'`
+gets added only when the ≤200-line editor JS ships.
+**Revisit:** only to tighten.
+
+## 11. Deploy target — OPEN
+
+Single VPS + Caddy vs Fly.io/Render. SQLite either way; backups via Litestream
+or snapshot cron. App is deploy-agnostic: `TRUST_PROXY` env flag wires
+ProxyFix so rate limiting keys on real client IPs behind a proxy.
+**Decide before the first public user.**
+
+## 12. OG/canonical URLs come from SITE_ORIGIN config, not the Host header
+
+Host headers are attacker-influenced; canonical URLs and OG tags must never
+be. One env var, set once per environment.
+**Revisit:** never.

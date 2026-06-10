@@ -1,0 +1,26 @@
+{% extends "dash_base.html" %}
+{% block title %}your page{% endblock %}
+{% block content %}
+{% if not g.user.username %}
+<section class="card">
+  <h1>pick your username 🌱</h1>
+  <p>this becomes your page's address. choose with care — it's permanent for now!</p>
+  <form method="post" action="{{ url_for('dash.claim') }}" class="stack">
+    <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+    <label for="username" class="prefix-label">cutecumber.cc/</label>
+    <input id="username" name="username" required minlength="3" maxlength="30"
+           pattern="[a-z0-9][a-z0-9_\-]{1,28}[a-z0-9]"
+           autocomplete="off" autocapitalize="off" spellcheck="false"
+           placeholder="yourname">
+    <button type="submit">claim it ✨</button>
+  </form>
+  <p class="hint">3–30 characters: lowercase letters, numbers, dashes, underscores. no leading or trailing dashes/underscores.</p>
+</section>
+{% else %}
+<section class="card">
+  <h1>your page is live! 🎉</h1>
+  <p class="pagelink"><a href="{{ site_origin }}/{{ g.user.username }}">cutecumber.cc/{{ g.user.username }}</a></p>
+  <p>pop that link in your bios. profile details, links, and themes are coming next — your page is looking adorable already 💕</p>
+</section>
+{% endif %}
+{% endblock %}
