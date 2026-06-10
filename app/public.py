@@ -18,6 +18,7 @@ from .constants import (
     DEFAULT_AVATAR_EMOJI,
     RESERVED_USERNAMES,
     USERNAME_RE,
+    validate_link_url,
 )
 from .db import get_db
 from .security import use_public_csp
@@ -48,7 +49,7 @@ def profile(username: str):
     user = (
         get_db()
         .execute(
-            "SELECT username, display_name, bio, pronouns, avatar_kind,"
+            "SELECT id, username, display_name, bio, pronouns, avatar_kind,"
             " avatar_value FROM users WHERE username = ?",
             (lowered,),
         )
@@ -56,6 +57,20 @@ def profile(username: str):
     )
     if user is None:
         return _not_found()
+
+    rows = (
+        get_db()
+        .execute(
+            "SELECT title, url, emoji FROM links WHERE user_id = ?"
+            " ORDER BY position, id",
+            (user["id"],),
+        )
+        .fetchall()
+    )
+    # Validate at save AND render: a URL that no longer passes the allowlist
+    # (corrupted row, rule tightened since save) is silently dropped — a bad
+    # link must never reach a visitor's browser.
+    links = [r for r in rows if validate_link_url(r["url"])[0] == r["url"]]
 
     # Resolve the avatar against the allowlists (validate at save AND render);
     # anything unrecognised falls back to the default emoji — a bad row must
@@ -82,6 +97,7 @@ def profile(username: str):
         canonical=canonical,
         gradient=gradient,
         avatar_emoji=avatar_emoji,
+        links=links,
         csp_nonce=use_public_csp(),
     )
 

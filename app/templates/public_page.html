@@ -25,7 +25,11 @@ background:linear-gradient(135deg,{{ gradient[0] }},{{ gradient[1] }})}
 {% endif %}h1{margin-top:12px;font-size:1.5rem;font-weight:700;overflow-wrap:break-word}
 .pronouns{margin-top:2px;color:#8a8a93;font-size:.9rem}
 .bio{margin-top:10px;overflow-wrap:break-word;white-space:pre-line}
-.empty{margin-top:28px;color:#8a8a93;font-size:.95rem}
+{% if links %}.links{margin-top:24px;display:grid;gap:12px}
+.links a{display:block;padding:13px 16px;border-radius:999px;background:#fff;color:#3c3c43;
+text-decoration:none;font-weight:600;border:2px solid #f0d4de;overflow-wrap:break-word}
+.links a:hover,.links a:focus-visible{border-color:#e58fb1}
+{% endif %}.empty{margin-top:28px;color:#8a8a93;font-size:.95rem}
 footer{margin-top:44px;font-size:.8rem}
 footer a{color:#8a8a93;text-decoration:none}
 footer a:hover,footer a:focus-visible{color:#3c3c43}
@@ -38,8 +42,11 @@ footer a:hover,footer a:focus-visible{color:#3c3c43}
   {% endif %}<h1>{{ title }}</h1>
   {% if user.pronouns %}<p class="pronouns">{{ user.pronouns }}</p>{% endif %}
   {% if user.bio %}<p class="bio">{{ user.bio }}</p>{% endif %}
-  <p class="empty">no links here yet — check back soon ✨</p>
-  <footer><a href="/">made with cutecumber 🥒</a></footer>
+  {% if links %}<nav class="links">
+  {% for link in links %}<a href="{{ link.url }}" target="_blank" rel="noopener noreferrer nofollow">{% if link.emoji %}<span aria-hidden="true">{{ link.emoji }}</span> {% endif %}{{ link.title }}</a>
+  {% endfor %}</nav>
+  {% else %}<p class="empty">no links here yet — check back soon ✨</p>
+  {% endif %}<footer><a href="/">made with cutecumber 🥒</a></footer>
 </main>
 </body>
 </html>

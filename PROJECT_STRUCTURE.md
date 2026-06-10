@@ -3,9 +3,8 @@
 > Read this first, every session. Companion doc: `DECISIONS.md` (the *why* +
 > revisit conditions). Update both proactively when changes warrant it.
 
-**Status:** walking skeleton + profile editing complete (display name, bio,
-pronouns, curated emoji/gradient avatar, rendered on the public page).
-Links CRUD, preview/reorder JS, and the theming engine not started.
+**Status:** skeleton + profile editing + links CRUD complete. Next up:
+reorder/preview JS (the only JS, ≤200 lines), then the theming engine.
 
 ## File map
 
@@ -35,6 +34,8 @@ cutecumber/
     ├── auth.py              /signup /login (GET+POST, rate-limited POSTs), POST /logout
     ├── dash.py              GET /dash, POST /dash/claim (one-shot, race-safe),
     │                        POST /dash/profile (re-renders form on error)
+    ├── links.py             POST /dash/links (add), POST /dash/links/<id>
+    │                        (action=save|delete). IDOR rule on every query.
     ├── public.py            GET /, GET /<username> (OG tags), cute 404
     ├── templates/
     │   ├── public_page.html     standalone; inline nonce'd CSS; OG tags; ZERO JS
@@ -44,6 +45,8 @@ cutecumber/
     │   ├── auth_signup.html / auth_login.html / dash_home.html / error.html
     └── static/
         └── dash.css             dash side ONLY. Public pages never load static files.
+tests/
+    └── test_url_validation.py   run: python -m unittest -v  (from repo root)
 ```
 
 ## Conventions
@@ -70,12 +73,17 @@ its name to `RESERVED_USERNAMES` in the same commit.
 through `theme.load_theme()`'s migration registry. Shape change ⇒ version bump
 + migration function, same commit.
 
+**Tests.** Stdlib unittest, `python -m unittest -v` from the repo root.
+Only the URL validator, theme validator, and saved-shape migrations get
+tests; trivial code does not.
+
 **Copy voice.** Warm, soft, lowercase-ish, a little silly, never corporate.
 Errors are kind and say what to do next.
 
 **Rate limits** decorate POST handlers via `@limiter.limit(..., methods=["POST"])`
 (or plain `@limiter.limit` on POST-only routes). Current: signup 5/hour,
-login 10/15min, claim 10/hour, profile save 30/15min.
+login 10/15min, claim 10/hour, profile save 30/15min, link add/edit/delete
+60/15min each.
 
 ## How it runs
 
@@ -88,9 +96,8 @@ Prod: `gunicorn -w 1 'wsgi:app'` behind Caddy; `TRUST_PROXY=1`, `COOKIE_SECURE=1
 1. ~~Walking skeleton~~ ✅ this session
 2. ~~Profile editing~~ ✅ — `avatar_value` column added; curated emoji +
    gradient allowlists (DECISIONS.md #13).
-3. **Links CRUD** — add/edit/delete with title/url/emoji; URL scheme allowlist
-   validated at save AND render; `rel="noopener noreferrer nofollow"`;
-   **tests for the URL validator** (first tests in the repo).
+3. ~~Links CRUD~~ ✅ — validator at save AND render, IDOR-checked queries,
+   50-link cap, URL-validator tests (DECISIONS.md #15–17).
 4. **Reorder + live preview** — the only JS in the product, ≤200 lines total.
 5. **Theming engine** — token validator (server-side, hex colors, allowlisted
    values), presets, per-user `<style>` rendering into the public page;

@@ -10,7 +10,7 @@ import os
 from dotenv import load_dotenv
 from flask import Flask, g, render_template, session
 
-from . import auth, dash, db, public
+from . import auth, dash, db, links, public
 from .extensions import limiter
 from .security import apply_security_headers, check_csrf, get_csrf_token
 
@@ -58,6 +58,7 @@ def create_app() -> Flask:
 
     app.register_blueprint(auth.bp)
     app.register_blueprint(dash.bp)
+    app.register_blueprint(links.bp)
     app.register_blueprint(public.bp)
 
     app.jinja_env.globals["csrf_token"] = get_csrf_token

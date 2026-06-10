@@ -48,7 +48,52 @@ BIO_MAX = 500
 PRONOUNS_MAX = 40
 LINK_TITLE_MAX = 100
 LINK_URL_MAX = 2000
+LINK_EMOJI_MAX = 8  # generous enough for ZWJ sequences like 🏳️‍🌈
 MAX_LINKS_PER_PAGE = 50
+
+# Link URLs: scheme allowlist, validated at save AND at render (DECISIONS.md
+# #15). This is the XSS front line — a stored javascript: URL rendered into an
+# href is game over, so nothing gets stored OR rendered without passing here.
+ALLOWED_LINK_SCHEMES = ("http", "https")
+
+
+def validate_link_url(raw: str) -> tuple[str | None, str | None]:
+    """Validate and normalize a link URL.
+
+    Returns (normalized_url, error_message) — exactly one is None.
+    Scheme-less input ("example.com") gets https:// prepended, because that's
+    what people paste. Everything that isn't plain http(s) to a real host is
+    rejected: javascript:, data:, vbscript:, ftp:, protocol-relative, spaces,
+    control characters, missing or dotless hosts.
+    """
+    from urllib.parse import urlsplit
+
+    url = (raw or "").strip()
+    if not url:
+        return None, "links need a URL 🌱"
+    if len(url) > LINK_URL_MAX:
+        return None, f"that URL is a bit long — {LINK_URL_MAX} characters is the max 🙈"
+    if any(ch.isspace() or ord(ch) < 0x20 or ord(ch) == 0x7F for ch in url):
+        return None, "URLs can't contain spaces or control characters 🤏"
+
+    try:
+        parts = urlsplit(url)
+    except ValueError:
+        return None, "that URL doesn't look quite right 🤔"
+
+    if not parts.scheme:
+        url = "https://" + url
+        try:
+            parts = urlsplit(url)
+        except ValueError:
+            return None, "that URL doesn't look quite right 🤔"
+
+    if parts.scheme not in ALLOWED_LINK_SCHEMES:
+        return None, "links have to start with http:// or https:// 🔗"
+    if not parts.netloc or "." not in parts.netloc:
+        return None, "that doesn't look like a web address we can send people to 🤔"
+
+    return url, None
 
 # Avatars are curated tokens, never freeform input (DECISIONS.md #13).
 # Validated at save AND at render; render falls back to the default on

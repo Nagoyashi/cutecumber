@@ -194,3 +194,44 @@ textarea:focus-visible {
 .grad-cherry_cola     { background: linear-gradient(135deg, #e8a0b4, #fbe3ea); }
 .grad-seafoam         { background: linear-gradient(135deg, #c9ece4, #eafaf6); }
 .grad-midnight_snack  { background: linear-gradient(135deg, #4a4e69, #22223b); }
+
+/* --- links editor --- */
+
+.linklist { list-style: none; display: grid; gap: 10px; margin: 14px 0 4px; }
+
+.linkrow {
+  display: grid;
+  grid-template-columns: 52px 1fr;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+}
+
+.linkrow .emoji-in { text-align: center; padding: 8px 4px; }
+.linkrow input { min-width: 0; }
+.linkrow .fullrow { grid-column: 1 / -1; }
+
+.rowbtns {
+  grid-column: 1 / -1;
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+.rowbtns button {
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 7px 14px;
+  border: none;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #fff;
+  cursor: pointer;
+}
+.rowbtns button:hover { background: #d97da2; }
+.rowbtns button:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+.rowbtns .danger { background: #fff; color: var(--err-text); border: 2px solid var(--err-bg); }
+.rowbtns .danger:hover { background: var(--err-bg); }
+
+.addlink { border-top: 1px dashed var(--border); padding-top: 16px; margin-top: 14px; }

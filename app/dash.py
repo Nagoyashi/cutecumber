@@ -37,8 +37,9 @@ from .security import login_required
 bp = Blueprint("dash", __name__)
 
 
-def _render_home(form: dict | None = None):
-    """Render the dashboard. `form` overrides field values after a failed save."""
+def _render_home(form: dict | None = None, add_form: dict | None = None):
+    """Render the dashboard. `form` / `add_form` override field values after a
+    failed save so nothing the user typed gets lost."""
     if form is None:
         form = {
             "display_name": g.user["display_name"] or "",
@@ -46,10 +47,25 @@ def _render_home(form: dict | None = None):
             "pronouns": g.user["pronouns"] or "",
             "avatar": f"{g.user['avatar_kind']}:{g.user['avatar_value']}",
         }
+    if add_form is None:
+        add_form = {"title": "", "url": "", "emoji": ""}
+    user_links = []
+    if g.user["username"]:
+        user_links = (
+            get_db()
+            .execute(
+                "SELECT id, title, url, emoji FROM links"
+                " WHERE user_id = ? ORDER BY position, id",
+                (g.user["id"],),
+            )
+            .fetchall()
+        )
     return render_template(
         "dash_home.html",
         site_origin=current_app.config["SITE_ORIGIN"],
         form=form,
+        add_form=add_form,
+        links=user_links,
         avatar_emoji=AVATAR_EMOJI,
         avatar_gradients=AVATAR_GRADIENTS,
     )

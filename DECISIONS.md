@@ -124,3 +124,39 @@ columns via `_ensure_column` (PRAGMA table_info + ALTER). Re-running
 pre-launch. This is deliberately NOT a migration framework.
 **Revisit:** first destructive change (column drop/rename/type change) or
 first real users — that's when numbered migration scripts earn their keep.
+
+## 15. Link URLs: scheme allowlist + auto-https, validated at save AND render
+
+`validate_link_url()` in constants.py is the XSS front line for hrefs: only
+http/https to a dotted host; javascript:/data:/file:/protocol-relative, spaces
+and control characters all rejected. Scheme-less input gets https:// prepended
+because that's what people paste. The same validator runs again in public.py
+before render — a stored URL that stops passing (corrupted row, rule tightened
+later) is silently dropped from the public page. Every outbound link carries
+`rel="noopener noreferrer nofollow"` and `target="_blank"`.
+Known limitation: scheme-less host:port ("example.com:8080") is rejected
+because urlsplit reads the host as a scheme; users add http(s):// for
+non-standard ports. **Revisit:** never loosen the allowlist.
+
+## 16. Link emoji is a tiny freeform text field (unlike avatars)
+
+8-char cap, rendered escaped like any other text content. Avatars are curated
+because they feed a constrained visual system; a link emoji is just an inline
+text prefix — same injection class as the title, which is also freeform. A
+curated picker per link row would be UI bloat for zero security gain.
+**Revisit:** only if rendering ever becomes non-text (e.g. emoji-to-image).
+
+## 17. Tests use stdlib unittest, not pytest
+
+pytest isn't on the dependency list and the closed list is the point. unittest
+covers assert-style validator tests fine. `python -m unittest -v` from the
+repo root; tests/ is a package so discovery just works.
+**Revisit:** if fixtures/parametrization pain becomes real — that's the
+written-justification trigger for adding pytest as a dev dependency.
+
+## 18. Link deletes are one click, no confirmation step
+
+No JS means no confirm dialog, and a no-JS two-step confirm page is friction
+for a v0. The delete button is visually separated and styled as the danger
+action. **Revisit:** with the editor-JS session (a confirm fits in the 200-line
+budget) or the first "I deleted my link by accident" complaint.
