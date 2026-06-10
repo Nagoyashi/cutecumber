@@ -43,6 +43,10 @@ def send_email(to: str, subject: str, text: str) -> bool:
         headers={
             "Authorization": f"Bearer {api_key}",
             "Content-Type": "application/json",
+            # Cloudflare fronts api.resend.com and bans the default
+            # "Python-urllib" browser signature (their error 1010) before the
+            # request ever reaches Resend. Identifying ourselves fixes it.
+            "User-Agent": "cutecumber/1.0 (+https://cutecumber.cc)",
         },
         method="POST",
     )

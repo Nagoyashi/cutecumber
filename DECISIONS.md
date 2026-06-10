@@ -341,3 +341,8 @@ UI. So: HTTP errors from Resend now log the response BODY (where the actual
 reason lives — wrong From domain, sandbox restriction, bad key), and
 `flask --app wsgi send-test you@example.com` sends outside the masked path
 and prints the verdict. First stop for any future email mystery.
+Field note: the first real-world failure was Cloudflare's error 1010 —
+api.resend.com is fronted by Cloudflare, which bans the default Python-urllib
+User-Agent signature before requests reach Resend at all. Fixed by sending a
+proper User-Agent ("cutecumber/1.0"). If a stdlib HTTP call to any API ever
+403s with a non-JSON body, check for a Cloudflare block page first.
