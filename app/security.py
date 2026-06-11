@@ -11,7 +11,7 @@ import hmac
 import secrets
 from functools import wraps
 
-from flask import abort, g, redirect, request, session, url_for
+from flask import abort, current_app, g, redirect, request, session, url_for
 
 # Dash/auth pages: self-hosted stylesheet + the single editor script, plus
 # frame-src 'self' for the live-preview iframe of the public page. Nothing
@@ -91,7 +91,10 @@ def apply_security_headers(response):
         "camera=(), microphone=(), geolocation=()"
     )
     response.headers["Cross-Origin-Opener-Policy"] = "same-origin"
-    # HSTS is added by the TLS-terminating proxy (Caddy) at deploy time.
+    if current_app.config.get("SEND_HSTS"):
+        response.headers["Strict-Transport-Security"] = (
+            "max-age=31536000; includeSubDomains"
+        )
     return response
 
 

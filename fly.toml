@@ -1,0 +1,35 @@
+# cutecumber on Fly.io — single machine, volume-backed SQLite (DECISIONS #33)
+app = "cutecumber"
+primary_region = "fra"
+
+[env]
+  DATABASE = "/data/cutecumber.db"
+  SITE_ORIGIN = "https://cutecumber.cc"
+  MAIL_FROM = "cutecumber <hello@cutecumber.cc>"
+  TRUST_PROXY = "1"
+  COOKIE_SECURE = "1"
+  HSTS = "1"
+  ROBOTS_ALLOW = "0"   # stealth — flip to "1" on launch day, then `fly deploy`
+
+[mounts]
+  source = "cutecumber_data"
+  destination = "/data"
+
+[http_service]
+  internal_port = 8000
+  force_https = true
+  # Always-on: cold starts would eat the LCP < 1s budget. Costs ~$2-3/mo.
+  auto_stop_machines = "off"
+  auto_start_machines = true
+  min_machines_running = 1
+
+  [[http_service.checks]]
+    interval = "30s"
+    timeout = "5s"
+    grace_period = "10s"
+    method = "GET"
+    path = "/robots.txt"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "256mb"

@@ -11,6 +11,11 @@ launch prep, not features (see launch checklist at the bottom).
 ```
 cutecumber/
 ├── wsgi.py                  WSGI entrypoint. Dev: flask --app wsgi run --debug
+├── Dockerfile / entrypoint.sh / fly.toml / .dockerignore
+│                            Fly.io deploy (DEPLOY.md is the runbook):
+│                            restore-if-empty → init-db → gunicorn -w 1,
+│                            Litestream wraps it when configured
+├── DEPLOY.md                deploy + backup + launch-day runbook
 ├── requirements.txt         flask, bcrypt, python-dotenv, flask-limiter, gunicorn — closed list
 ├── .env.example             SECRET_KEY (mandatory), DATABASE, SITE_ORIGIN, COOKIE_SECURE, TRUST_PROXY
 ├── README.md                quickstart
@@ -150,8 +155,8 @@ Prod: `gunicorn -w 1 'wsgi:app'` behind Caddy; `TRUST_PROXY=1`, `COOKIE_SECURE=1
    (DECISIONS.md #29). Launch-time follow-up: username tombstone.
 1d. DESIGN_PACKS.md is the spec for designer-made decoration packs; the
    pack-registry build session starts when the first assets exist.
-2. Deploy target + Litestream-style backups — DECISIONS.md #11. **THE
-   blocker now**: nothing else on this list matters without a server.
+2. ~~Deploy target~~ ✅ Fly.io (DECISIONS.md #33, DEPLOY.md). User-side
+   steps remain: fly setup, DNS records, secrets, backup bucket + fire drill.
 2b. Marketing/launch approach for the ICP — genuinely open, zero budget
    (Product & Brand session).
 3. Real Lighthouse run in Chrome DevTools against a public URL (structural

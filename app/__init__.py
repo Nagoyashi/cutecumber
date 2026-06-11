@@ -50,6 +50,8 @@ def create_app() -> Flask:
         PERMANENT_SESSION_LIFETIME=60 * 60 * 24 * 30,  # 30 days
         # Stealth by default: robots.txt serves Disallow: / until launch day.
         ROBOTS_ALLOW=os.environ.get("ROBOTS_ALLOW", "0") == "1",
+        # HSTS comes from the app in prod (Fly terminates TLS, no Caddy layer).
+        SEND_HSTS=os.environ.get("HSTS", "0") == "1",
         # Raised from 64 KB when avatar uploads shipped; the CSRF hook parses
         # the body before routes run, so this cap must be global (DECISIONS #31).
         MAX_CONTENT_LENGTH=8 * 1024 * 1024,

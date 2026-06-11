@@ -101,7 +101,7 @@ gets added only when the ≤200-line editor JS ships.
 Single VPS + Caddy vs Fly.io/Render. SQLite either way; backups via Litestream
 or snapshot cron. App is deploy-agnostic: `TRUST_PROXY` env flag wires
 ProxyFix so rate limiting keys on real client IPs behind a proxy.
-**Decide before the first public user.**
+**RESOLVED (June 2026): Fly.io** — see #33 and DEPLOY.md.
 **Addendum (June 2026):** budget constraint is $0 for now; deploy deferred
 until v0 is done. Candidates at that point: Fly.io (~$3–5/mo, least ops),
 Oracle Always Free ARM ($0, signup/capacity friction, pair with Litestream so
@@ -346,3 +346,19 @@ api.resend.com is fronted by Cloudflare, which bans the default Python-urllib
 User-Agent signature before requests reach Resend at all. Fixed by sending a
 proper User-Agent ("cutecumber/1.0"). If a stdlib HTTP call to any API ever
 403s with a non-JSON body, check for a Cloudflare block page first.
+
+## 33. Deploy: Fly.io, one always-on machine, volume SQLite, optional Litestream
+
+shared-cpu-1x/256MB in fra, ~$3-5/mo, SQLite on a 1 GB volume at /data.
+Vercel was ruled out terminally: serverless functions have no persistent disk
+at any price — SQLite is architecturally impossible there. Always-on
+(auto_stop off) because cold starts would eat the LCP < 1s budget; revisit
+only if cost ever matters more than that budget. The entrypoint runs the
+idempotent init-db every boot, so schema upgrades ship with deploys. HSTS
+moved into the app (Fly terminates TLS; there is no Caddy layer). Litestream
+is baked into the image but OPT-IN via LITESTREAM_REPLICA_URL — the app
+deploys before backups exist, restores automatically onto an empty volume
+once they do, and DEPLOY.md mandates one restore fire-drill. Container runs
+as root inside the Firecracker microVM on purpose: the volume mount is
+root-owned and isolation is VM-level; revisit if Fly's guidance changes.
+Gunicorn stays at one worker (limiter counters are per-process, #7).
