@@ -176,6 +176,15 @@ action. **Resolved in the editor-JS session:** delete buttons now carry a
 data-confirm dialog (~8 lines of the JS budget). No-JS users keep one-click
 delete — acceptable residual.
 
+### Addendum to the reorder decision (field note, launch prep)
+Real-iPhone testing surfaced a WebKit trap: pointer capture set on the drag
+HANDLE dies silently when the captured element is moved in the DOM — which
+reordering does on every step — so pointerup never fires and UI driven by
+drag-end stalls until the next tap. Fix: capture on the LIST (never moves),
+`touch-action: none` on the handle in CSS (preventDefault alone does NOT stop
+iOS scroll-panning — that was the jank), a lostpointercapture safety net, and
+the save button now reveals on first order change, not on release.
+
 ## 19. Reordering: Pointer Events drag + arrow keys, batched, exact permutation
 
 HTML5 drag-and-drop doesn't fire on touchscreens, and the ICP edits from
@@ -300,10 +309,12 @@ One button on /dash/account behind the current password (the JS confirm is
 courtesy; the password is the gate). DELETE on the user row; links cascade
 via the FK; the session dies. No soft-delete, no grace period — privacy-first
 means gone-means-gone, and it keeps the GDPR erasure story one sentence long.
-**Accepted risk:** the freed username is instantly claimable, which enables
-impersonation of a deleted account's old audience. Pre-launch this is fine.
-**Revisit at launch:** a username tombstone (e.g. 30-day quarantine before
-re-claim) is a small table and worth adding once real audiences exist.
+**Resolved at launch prep:** freed usernames now rest in a
+username_tombstones table for TOMBSTONE_DAYS (30) before re-claim — recorded
+at deletion, enforced at claim, expired rows purged opportunistically during
+claims (no cron). Known acceptable edge: a person who deletes and regrets it
+cannot re-claim their own name for 30 days either; the kind error explains
+the rest period.
 
 ## 30. Kawaii decorations: curated pack registry, never user uploads
 

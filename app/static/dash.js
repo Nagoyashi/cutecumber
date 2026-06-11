@@ -43,8 +43,12 @@
       if (!handle) return;
       dragging = handle.closest("li");
       dragging.classList.add("dragging");
-      handle.setPointerCapture(event.pointerId);
-      event.preventDefault(); // stop text selection / page scroll on touch
+      // Capture on the LIST, never the handle: WebKit silently drops the
+      // capture (and the pointerup with it) if the captured element moves
+      // in the DOM mid-drag — which reordering does constantly. The list
+      // itself never moves. Scroll suppression is touch-action in the CSS.
+      list.setPointerCapture(event.pointerId);
+      event.preventDefault(); // stop text selection on desktop
     });
 
     list.addEventListener("pointermove", (event) => {
@@ -54,8 +58,13 @@
           li !== dragging &&
           event.clientY < li.getBoundingClientRect().top + li.offsetHeight / 2
       );
-      if (next) list.insertBefore(dragging, next);
-      else list.appendChild(dragging);
+      // Skip no-op mutations — fewer reflows, smoother drag on phones.
+      if (next && next !== dragging.nextElementSibling) {
+        list.insertBefore(dragging, next);
+      } else if (!next && dragging !== list.lastElementChild) {
+        list.appendChild(dragging);
+      }
+      refreshDirty(); // reveal the save button the moment order changes
     });
 
     const endDrag = () => {
@@ -66,6 +75,7 @@
     };
     list.addEventListener("pointerup", endDrag);
     list.addEventListener("pointercancel", endDrag);
+    list.addEventListener("lostpointercapture", endDrag); // WebKit belt & braces
 
     list.addEventListener("keydown", (event) => {
       const handle = event.target.closest(".drag");

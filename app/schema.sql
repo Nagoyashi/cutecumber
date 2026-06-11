@@ -31,3 +31,10 @@ CREATE TABLE IF NOT EXISTS links (
 );
 
 CREATE INDEX IF NOT EXISTS idx_links_user_position ON links (user_id, position);
+
+-- Freed usernames rest for TOMBSTONE_DAYS before anyone can re-claim them
+-- (DECISIONS.md #29). Rows are purged opportunistically during claims.
+CREATE TABLE IF NOT EXISTS username_tombstones (
+    username TEXT PRIMARY KEY,
+    freed_at INTEGER NOT NULL
+) STRICT;

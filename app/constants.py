@@ -101,6 +101,10 @@ def validate_link_url(raw: str) -> tuple[str | None, str | None]:
 
 # Uploaded avatars (DECISIONS.md #31): re-encoded to this exact display
 # size, EXIF (incl. GPS) stripped by re-encode, hard output cap per budget.
+# Freed usernames rest before re-claim — blocks day-one impersonation of a
+# deleted account's old audience (DECISIONS.md #29).
+TOMBSTONE_DAYS = 30
+
 AVATAR_IMAGE_SIZE = 176          # 88px circle at 2x for retina
 AVATAR_MAX_BYTES = 30 * 1024     # output budget: 30 KB
 AVATAR_MAX_UPLOAD = 8 * 1024 * 1024  # input cap: 8 MB (phone photos)

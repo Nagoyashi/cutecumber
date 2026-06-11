@@ -9,6 +9,7 @@ Profile saves re-render the form with submitted values on validation errors —
 nobody loses a 500-character bio to a redirect.
 """
 
+import time
 from sqlite3 import IntegrityError
 
 import bcrypt
@@ -29,6 +30,7 @@ from flask import (
 from .constants import (
     AVATAR_EMOJI,
     PASSWORD_MAX_BYTES,
+    TOMBSTONE_DAYS,
     AVATAR_GRADIENTS,
     BIO_MAX,
     DISPLAY_NAME_MAX,
@@ -131,6 +133,17 @@ def claim():
         return redirect(url_for("dash.home"))
 
     db = get_db()
+
+    # Tombstone gate: purge expired rows, then check the survivor list.
+    cutoff = int(time.time()) - TOMBSTONE_DAYS * 86400
+    db.execute("DELETE FROM username_tombstones WHERE freed_at <= ?", (cutoff,))
+    db.commit()
+    if db.execute(
+        "SELECT 1 FROM username_tombstones WHERE username = ?", (username,)
+    ).fetchone():
+        flash("that username was set free recently and is resting for a bit — try another? 🌱", "error")
+        return redirect(url_for("dash.home"))
+
     try:
         cursor = db.execute(
             "UPDATE users SET username = ? WHERE id = ? AND username IS NULL",
@@ -311,6 +324,12 @@ def account_delete():
     if g.user["avatar_kind"] == "image":
         delete_avatar_file(g.user["avatar_value"])
     db = get_db()
+    if g.user["username"]:
+        db.execute(
+            "INSERT OR REPLACE INTO username_tombstones (username, freed_at)"
+            " VALUES (?, ?)",
+            (g.user["username"], int(time.time())),
+        )
     db.execute("DELETE FROM users WHERE id = ?", (g.user["id"],))
     db.commit()
     session.clear()

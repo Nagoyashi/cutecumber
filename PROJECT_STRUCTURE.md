@@ -153,6 +153,8 @@ Prod: `gunicorn -w 1 'wsgi:app'` behind Caddy; `TRUST_PROXY=1`, `COOKIE_SECURE=1
    not legal advice (DECISIONS.md #27).
 1c. ~~Account deletion~~ ✅ — self-serve, password-gated, on /dash/account
    (DECISIONS.md #29). Launch-time follow-up: username tombstone.
+1e. ~~Username tombstone~~ ✅ — 30-day rest via username_tombstones
+   (DECISIONS.md #29 resolved).
 1d. DESIGN_PACKS.md is the spec for designer-made decoration packs; the
    pack-registry build session starts when the first assets exist.
 2. ~~Deploy target~~ ✅ Fly.io (DECISIONS.md #33, DEPLOY.md). User-side
