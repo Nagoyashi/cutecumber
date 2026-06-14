@@ -25,17 +25,19 @@ cutecumber/
     ├── __init__.py          create_app(): config, loud SECRET_KEY failure, blueprint
     │                        registration, g.user loader, error handlers (400/404/413/429/500)
     ├── constants.py         RESERVED_USERNAMES, USERNAME_RE, all length caps,
-    │                        validate_username(), AVATAR_EMOJI + AVATAR_GRADIENTS
-    │                        allowlists. ONE source of truth for limits.
+    │                        validate_username(), AVATAR_SETS registry +
+    │                        AVATAR_GRADIENTS, freeform-emoji validator. ONE
+    │                        source of truth for limits.
     ├── db.py                get_db() (per-request conn, WAL, busy_timeout),
     │                        init-db CLI command (also runs idempotent column
     │                        upgrades — always safe to re-run)
     ├── schema.sql           users + links (links table pre-created, CRUD later)
-    ├── theme.py             THE theming engine: PRESETS (6, AA-enforced by
-    │                        tests), validate_theme (save path, strict),
-    │                        resolve_theme (render path, tolerant), computed
+    ├── theme.py             THE theming engine (shape v2): PRESETS (6, AA-
+    │                        enforced), validate_theme (save, strict),
+    │                        resolve_theme (render, tolerant), computed
     │                        muted/accent_text/shadow, CSS + SVG-data-URI
-    │                        builders, load_theme + MIGRATIONS registry.
+    │                        builders, DECORATION_PACKS registry (multi, cap 5),
+    │                        load_theme + MIGRATIONS (v1→v2 string→list).
     ├── security.py          CSRF (get_csrf_token/check_csrf), security headers,
     │                        DASH_CSP / PUBLIC_CSP + use_public_csp(), login_required
     ├── extensions.py        limiter (flask-limiter, memory storage)
@@ -62,9 +64,19 @@ cutecumber/
     │   ├── dash_base.html       layout for everything logged-in/auth
     │   ├── auth_signup.html / auth_login.html / dash_home.html / error.html
     └── static/
+        ├── favicon.svg          brand slice mark (also the inlined landing
+        │                        logo); fixed colors, never themed (DECISIONS #34).
+        ├── avatars/             12 curated kawaii SVG tiles = the 'set' avatar
+        │                        kind; AVATAR_SETS in constants is the boundary
+        │                        (DECISIONS #13 addendum). Served as static <img>.
+        ├── packs/               decoration tiles, <pack>/<slug>.svg: 'basic'
+        │                        (glyph picker thumbs) + 4 house packs.
+        │                        DECORATION_PACKS in theme.py is the boundary
+        │                        (DECISIONS #21/#30 addenda). url() backgrounds.
         ├── dash.css             dash side ONLY (public pages: inline CSS only).
-        ├── fonts/               2 subsetted WOFF2 display fonts (fontsource
-        │                        via npm). At most ONE loads per public page.
+        ├── fonts/               2 subsetted WOFF2 display fonts (fontsource via
+        │                        npm). One loads per public page (h1); Fredoka
+        │                        is also the chrome wordmark (DECISIONS #34).
         └── dash.js              the ONLY JS in the product: reorder, live
                                  preview, delete confirm. HARD 200-line budget
                                  (currently 130) — count before adding.
@@ -94,9 +106,10 @@ touching a user-scoped table includes `AND user_id = ?` (or keys on it).
 **Limits and patterns** live in `constants.py` only. New top-level route ⇒ add
 its name to `RESERVED_USERNAMES` in the same commit.
 
-**Stored JSON shapes** (currently `theme_json`) always carry `version` and load
-through `theme.load_theme()`'s migration registry. Shape change ⇒ version bump
-+ migration function, same commit.
+**Stored JSON shapes** (currently `theme_json`, at v2) always carry `version`
+and load through `theme.load_theme()`'s migration registry. Shape change ⇒
+version bump + migration function + test, same commit. (v1→v2 shipped the
+decoration string→list change this way.)
 
 **JavaScript.** One file (`static/dash.js`), vanilla, no dependencies, dash
 side only, progressive enhancement (everything except reordering works with
@@ -155,8 +168,10 @@ Prod: `gunicorn -w 1 'wsgi:app'` behind Caddy; `TRUST_PROXY=1`, `COOKIE_SECURE=1
    (DECISIONS.md #29). Launch-time follow-up: username tombstone.
 1e. ~~Username tombstone~~ ✅ — 30-day rest via username_tombstones
    (DECISIONS.md #29 resolved).
-1d. DESIGN_PACKS.md is the spec for designer-made decoration packs; the
-   pack-registry build session starts when the first assets exist.
+1d. ~~Decoration packs~~ ✅ — 4 house packs + multi-decoration (list, cap 5)
+   shipped on the frontend-refactor branch (DECISIONS #21/#30 addenda). Plus
+   the 12-avatar SVG set (#13 addendum) and brand chrome (#34). DESIGN_PACKS.md
+   remains the spec for any future/third-party pack submissions.
 2. ~~Deploy target~~ ✅ Fly.io (DECISIONS.md #33, DEPLOY.md). User-side
    steps remain: fly setup, DNS records, secrets, backup bucket + fire drill.
 2b. Marketing/launch approach for the ICP — genuinely open, zero budget

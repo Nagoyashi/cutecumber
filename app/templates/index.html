@@ -11,15 +11,17 @@
 <meta property="og:site_name" content="cutecumber.cc">
 <meta name="twitter:card" content="summary">
 <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+<link rel="preload" href="/static/fonts/fredoka-latin-600-normal.woff2" as="font" type="font/woff2" crossorigin>
 <meta name="theme-color" content="#fff5f7">
 <style nonce="{{ csp_nonce }}">
+@font-face{font-family:Fredoka;src:url(/static/fonts/fredoka-latin-600-normal.woff2) format('woff2');font-weight:600;font-display:swap}
 *{margin:0;padding:0;box-sizing:border-box}
 body{min-height:100svh;display:flex;align-items:center;justify-content:center;padding:32px 24px;
 font-family:system-ui,-apple-system,sans-serif;color:#3c3c43;line-height:1.5;
 background:linear-gradient(160deg,#fff5f7 0%,#f3f9f4 100%)}
 main{width:100%;max-width:480px;text-align:center}
-.logo{font-size:56px;line-height:1}
-h1{margin-top:12px;font-size:1.75rem}
+.mark svg{display:block;width:64px;height:64px;margin:0 auto}
+h1{margin-top:10px;font-size:2rem;font-family:Fredoka,system-ui,sans-serif;font-weight:600;color:#3f5a39;letter-spacing:-.01em}
 .tagline{margin-top:8px;color:#6e6e78}
 .explain{margin:10px auto 0;max-width:400px;font-size:.9rem;color:#8a8a93}
 .ctabox{margin-top:24px;background:#fff;border:1px solid #f0d4de;border-radius:20px;
@@ -41,7 +43,7 @@ footer a:hover,footer a:focus-visible{color:#3c3c43}
 </head>
 <body>
 <main>
-  <div class="logo" aria-hidden="true">🥒</div>
+  <div class="mark" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="9 10 46 46"><circle cx="32" cy="33" r="21" fill="#8fcb72"></circle><circle cx="32" cy="33" r="17.5" fill="#ecf7df"></circle><g fill="#cde8b4"><ellipse cx="0" cy="-12" rx="2" ry="3.4" transform="translate(32 33) rotate(15)"></ellipse><ellipse cx="0" cy="-12" rx="2" ry="3.4" transform="translate(32 33) rotate(75)"></ellipse><ellipse cx="0" cy="-12" rx="2" ry="3.4" transform="translate(32 33) rotate(135)"></ellipse><ellipse cx="0" cy="-12" rx="2" ry="3.4" transform="translate(32 33) rotate(195)"></ellipse><ellipse cx="0" cy="-12" rx="2" ry="3.4" transform="translate(32 33) rotate(255)"></ellipse><ellipse cx="0" cy="-12" rx="2" ry="3.4" transform="translate(32 33) rotate(315)"></ellipse></g><g transform="translate(32 33) scale(0.92)"><circle cx="-5.5" cy="0" r="2" fill="#33502e"></circle><circle cx="-6.2" cy="-0.7" r="0.7" fill="#ffffff"></circle><circle cx="5.5" cy="0" r="2" fill="#33502e"></circle><circle cx="4.8" cy="-0.7" r="0.7" fill="#ffffff"></circle><path d="M-3.2 3.6 Q0 6.6 3.2 3.6" stroke="#33502e" stroke-width="1.7" fill="none" stroke-linecap="round"></path><ellipse cx="-9.2" cy="3.2" rx="2.6" ry="1.6" fill="#f7b1c8" opacity=".75"></ellipse><ellipse cx="9.2" cy="3.2" rx="2.6" ry="1.6" fill="#f7b1c8" opacity=".75"></ellipse></g></svg></div>
   <h1>cutecumber</h1>
   <p class="tagline">the cutest little home for all your links</p>
   <p class="explain">you make one tiny page with all your links on it — your socials, your shop,

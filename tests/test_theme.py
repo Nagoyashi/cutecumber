@@ -5,11 +5,15 @@ is a brand promise ("cute stays accessible") enforced here, not by eyeball.
 Run from the repo root:  python -m unittest -v
 """
 
+import os
+import re
 import unittest
 
 from app import theme
 from app.theme import (
     COLOR_KEYS,
+    DECORATION_TOKENS,
+    MAX_DECORATIONS,
     PRESETS,
     contrast,
     default_theme,
@@ -18,12 +22,16 @@ from app.theme import (
     validate_theme,
 )
 
+PACKS_DIR = os.path.join(os.path.dirname(__file__), "..", "app", "static", "packs")
+
 
 class TestValidateTheme(unittest.TestCase):
     def test_clean_preset_passes(self):
         clean, error = validate_theme({"version": 1, "preset": "seafoam", "overrides": {}})
         self.assertIsNone(error)
-        self.assertEqual(clean, {"version": 1, "preset": "seafoam", "overrides": {}})
+        self.assertEqual(
+            clean, {"version": theme.THEME_VERSION, "preset": "seafoam", "overrides": {}}
+        )
 
     def test_real_override_kept(self):
         clean, error = validate_theme(
@@ -146,9 +154,130 @@ class TestPresetAccessibility(unittest.TestCase):
                 self.assertGreaterEqual(contrast(t["accent_text"], t["accent"]), self.AA)
 
     def test_every_preset_is_a_complete_token_set(self):
-        expected = set(COLOR_KEYS) | set(theme.ENUM_KEYS)
+        expected = set(COLOR_KEYS) | set(theme.ENUM_KEYS) | {"decoration"}
         for name, preset in PRESETS.items():
             self.assertEqual(set(preset), expected, name)
+
+    def test_every_preset_decoration_is_a_valid_capped_list(self):
+        for name, preset in PRESETS.items():
+            deco = preset["decoration"]
+            self.assertIsInstance(deco, list, name)
+            self.assertLessEqual(len(deco), MAX_DECORATIONS, name)
+            for token in deco:
+                self.assertIn(token, DECORATION_TOKENS, f"{name}: {token}")
+
+
+class TestDecorationValidation(unittest.TestCase):
+    """Decoration is a multi list now: validated against the registry, capped
+    at MAX_DECORATIONS, de-duplicated — at save (strict) and render (tolerant)."""
+
+    def test_valid_list_kept(self):
+        clean, error = validate_theme({"version": 2, "preset": "seafoam",
+            "overrides": {"decoration": ["basic/hearts", "garden_patch/daisy"]}})
+        self.assertIsNone(error)
+        self.assertEqual(clean["overrides"]["decoration"],
+                         ["basic/hearts", "garden_patch/daisy"])
+
+    def test_unknown_token_rejected(self):
+        clean, error = validate_theme({"version": 2, "preset": "seafoam",
+            "overrides": {"decoration": ["basic/hearts", "evil/script"]}})
+        self.assertIsNone(clean)
+        self.assertIsNotNone(error)
+
+    def test_over_cap_rejected(self):
+        toks = ["basic/hearts", "basic/stars", "basic/sparkles",
+                "garden_patch/daisy", "garden_patch/leaf", "garden_patch/sprout"]
+        clean, error = validate_theme({"version": 2, "preset": "seafoam",
+            "overrides": {"decoration": toks}})
+        self.assertIsNone(clean)
+        self.assertIsNotNone(error)
+
+    def test_non_list_rejected(self):
+        clean, error = validate_theme({"version": 2, "preset": "seafoam",
+            "overrides": {"decoration": "basic/hearts"}})
+        self.assertIsNone(clean)
+        self.assertIsNotNone(error)
+
+    def test_duplicates_collapsed(self):
+        clean, _ = validate_theme({"version": 2, "preset": "seafoam",
+            "overrides": {"decoration": ["basic/hearts", "basic/hearts"]}})
+        self.assertEqual(clean["overrides"]["decoration"], ["basic/hearts"])
+
+    def test_explicit_empty_persists_against_decorated_preset(self):
+        # strawberry_milk defaults to ["basic/hearts"]; an explicit [] is a real
+        # choice ("no decorations") and must survive, not collapse to default.
+        clean, _ = validate_theme({"version": 2, "preset": "strawberry_milk",
+            "overrides": {"decoration": []}})
+        self.assertEqual(clean["overrides"].get("decoration"), [])
+
+    def test_decoration_equal_to_preset_dropped(self):
+        clean, _ = validate_theme({"version": 2, "preset": "strawberry_milk",
+            "overrides": {"decoration": ["basic/hearts"]}})
+        self.assertNotIn("decoration", clean["overrides"])
+
+    def test_render_drops_unknown_and_caps(self):
+        toks = ["garden_patch/daisy", "evil/x", "basic/hearts", "basic/stars",
+                "basic/sparkles", "garden_patch/leaf", "garden_patch/sprout"]
+        t = resolve_theme({"version": 2, "preset": "seafoam",
+            "overrides": {"decoration": toks}})
+        self.assertNotIn("evil/x", t["decoration"])
+        self.assertLessEqual(len(t["decoration"]), MAX_DECORATIONS)
+
+    def test_render_non_list_falls_back_to_preset(self):
+        t = resolve_theme({"version": 2, "preset": "strawberry_milk",
+            "overrides": {"decoration": "garbage"}})
+        self.assertEqual(t["decoration"], PRESETS["strawberry_milk"]["decoration"])
+
+
+class TestThemeMigrationV1toV2(unittest.TestCase):
+    """v1 (single string) -> v2 (list of tokens). Real migration, not the
+    generic mechanism test above."""
+
+    def test_string_decoration_becomes_basic_token_list(self):
+        out = load_theme('{"version":1,"preset":"seafoam","overrides":{"decoration":"hearts"}}')
+        self.assertEqual(out["version"], 2)
+        self.assertEqual(out["overrides"]["decoration"], ["basic/hearts"])
+
+    def test_none_decoration_becomes_empty_list(self):
+        out = load_theme('{"version":1,"preset":"strawberry_milk","overrides":{"decoration":"none"}}')
+        self.assertEqual(out["overrides"]["decoration"], [])
+
+    def test_untouched_v1_theme_just_version_bumps(self):
+        out = load_theme('{"version":1,"preset":"seafoam","overrides":{}}')
+        self.assertEqual(out["version"], 2)
+        self.assertEqual(out["overrides"], {})
+
+    def test_migrated_theme_resolves_cleanly(self):
+        out = load_theme('{"version":1,"preset":"lavender_haze","overrides":{"decoration":"sparkles"}}')
+        self.assertEqual(resolve_theme(out)["decoration"], ["basic/sparkles"])
+
+
+class TestDecorationPackAssets(unittest.TestCase):
+    """The DECORATION_TOKENS registry IS the boundary; it must match the shipped
+    tiles exactly, and the tiles must obey the DESIGN_PACKS safety rules."""
+
+    def test_every_token_has_a_static_tile(self):
+        for token in DECORATION_TOKENS:
+            pack, slug = token.split("/")
+            self.assertTrue(os.path.isfile(os.path.join(PACKS_DIR, pack, slug + ".svg")),
+                            f"missing tile for {token}")
+
+    def test_no_stray_tiles_outside_the_registry(self):
+        on_disk = set()
+        for pack in os.listdir(PACKS_DIR):
+            pdir = os.path.join(PACKS_DIR, pack)
+            if os.path.isdir(pdir):
+                on_disk |= {f"{pack}/{f[:-4]}" for f in os.listdir(pdir) if f.endswith(".svg")}
+        self.assertEqual(on_disk, set(DECORATION_TOKENS))
+
+    def test_tiles_are_small_and_inert(self):
+        unsafe = re.compile(r"(?i)<script|<foreignobject|<image|xlink:href|data:|\son\w+=")
+        for token in DECORATION_TOKENS:
+            pack, slug = token.split("/")
+            with open(os.path.join(PACKS_DIR, pack, slug + ".svg"), encoding="utf-8") as fh:
+                svg = fh.read()
+            self.assertLessEqual(len(svg.encode("utf-8")), 8192, f"{token} over 8 KB")
+            self.assertIsNone(unsafe.search(svg), f"{token} carries an unsafe construct")
 
 
 if __name__ == "__main__":

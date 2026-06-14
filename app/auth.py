@@ -31,7 +31,7 @@ from .db import get_db
 from .extensions import limiter
 from .mail import send_email
 from .security import session_auth_fragment
-from .theme import default_theme_json
+from .theme import THEME_VERSION, default_theme_json
 
 bp = Blueprint("auth", __name__)
 
@@ -69,9 +69,9 @@ def signup():
             db = get_db()
             try:
                 cursor = db.execute(
-                    "INSERT INTO users (email, password_hash, theme_json)"
-                    " VALUES (?, ?, ?)",
-                    (email, password_hash, default_theme_json()),
+                    "INSERT INTO users (email, password_hash, theme_json, theme_version)"
+                    " VALUES (?, ?, ?, ?)",
+                    (email, password_hash, default_theme_json(), THEME_VERSION),
                 )
                 db.commit()
             except IntegrityError:

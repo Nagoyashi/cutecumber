@@ -77,28 +77,39 @@
     <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
 
     <span class="field-label">your avatar</span>
-    <div class="picker" role="radiogroup" aria-label="avatar">
-      {% if g.user.avatar_kind == 'image' %}
-      <label class="pick">
-        <input type="radio" name="avatar" value="image:keep"
-               {% if form.avatar.startswith('image:') %}checked{% endif %}>
-        <span class="swatch photo-swatch"><img src="/a/{{ g.user.avatar_value }}" alt="your photo"></span>
+    <div role="radiogroup" aria-label="avatar">
+      <div class="picker">
+        {% if g.user.avatar_kind == 'image' %}
+        <label class="pick">
+          <input type="radio" name="avatar" value="image:keep"
+                 {% if form.avatar_kind == 'image' %}checked{% endif %}>
+          <span class="swatch photo-swatch"><img src="/a/{{ g.user.avatar_value }}" alt="your photo"></span>
+        </label>
+        {% endif %}
+        {% for slug in avatar_sets %}
+        <label class="pick">
+          <input type="radio" name="avatar" value="set:{{ slug }}"
+                 {% if form.avatar_kind == 'set' and form.avatar_value == slug %}checked{% endif %}>
+          <span class="swatch set-swatch"><img src="{{ url_for('static', filename='avatars/' ~ slug ~ '.svg') }}" alt="{{ slug }}"></span>
+        </label>
+        {% endfor %}
+        {% for name in avatar_gradients %}
+        <label class="pick">
+          <input type="radio" name="avatar" value="gradient:{{ name }}"
+                 {% if form.avatar_kind == 'gradient' and form.avatar_value == name %}checked{% endif %}>
+          <span class="swatch grad grad-{{ name }}" title="{{ name.replace('_', ' ') }}"></span>
+        </label>
+        {% endfor %}
+      </div>
+      <label class="emoji-pick">
+        <input type="radio" name="avatar" value="emoji"
+               {% if form.avatar_kind == 'emoji' %}checked{% endif %}>
+        <span>or use any emoji</span>
+        <input class="emoji-avatar-in" name="avatar_emoji" maxlength="8"
+               autocomplete="off" autocapitalize="off" spellcheck="false"
+               value="{{ form.avatar_value if form.avatar_kind == 'emoji' else '' }}"
+               placeholder="🥰" aria-label="your own emoji">
       </label>
-      {% endif %}
-      {% for e in avatar_emoji %}
-      <label class="pick">
-        <input type="radio" name="avatar" value="emoji:{{ e }}"
-               {% if form.avatar == 'emoji:' ~ e %}checked{% endif %}>
-        <span class="swatch">{{ e }}</span>
-      </label>
-      {% endfor %}
-      {% for name in avatar_gradients %}
-      <label class="pick">
-        <input type="radio" name="avatar" value="gradient:{{ name }}"
-               {% if form.avatar == 'gradient:' ~ name %}checked{% endif %}>
-        <span class="swatch grad grad-{{ name }}" title="{{ name.replace('_', ' ') }}"></span>
-      </label>
-      {% endfor %}
     </div>
 
     <label for="avatar_file">or upload a photo <span class="optional">(we strip all location data — promise 🍃)</span></label>
@@ -171,11 +182,25 @@
         <select id="t-background" name="background">
           {% for v in enums['background'] %}<option value="{{ v }}" {% if t.background == v %}selected{% endif %}>{{ v }}</option>{% endfor %}
         </select>
-        <label for="t-decoration">decoration</label>
-        <select id="t-decoration" name="decoration">
-          {% for v in enums['decoration'] %}<option value="{{ v }}" {% if t.decoration == v %}selected{% endif %}>{{ v }}</option>{% endfor %}
-        </select>
       </div>
+      <span class="field-label">decorations <span class="optional">(up to 5)</span></span>
+      <div class="decopicker">
+        {% for pack in decoration_catalog %}
+        <fieldset class="decopack">
+          <legend>{{ pack.emoji }} {{ pack.name }}</legend>
+          <div class="decogrid">
+            {% for slug in pack.slugs %}
+            <label class="decotile" title="{{ slug.replace('_', ' ') }}">
+              <input type="checkbox" name="decoration" value="{{ pack.pack }}/{{ slug }}"
+                     {% if (pack.pack ~ '/' ~ slug) in t.decoration %}checked{% endif %}>
+              <span class="decoswatch"><img src="{{ url_for('static', filename='packs/' ~ pack.pack ~ '/' ~ slug ~ '.svg') }}" alt=""></span>
+            </label>
+            {% endfor %}
+          </div>
+        </fieldset>
+        {% endfor %}
+      </div>
+      <p class="hint">pick up to 5 — they tile softly behind your page ✨</p>
       <div class="rowbtns themebtns">
         <button type="submit" name="action" value="save">save fine-tuning 💾</button>
         <button type="submit" name="action" value="reset" class="danger"
