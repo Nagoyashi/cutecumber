@@ -34,12 +34,18 @@ def create_app() -> Flask:
 
     app = Flask(__name__)
     os.makedirs(app.instance_path, exist_ok=True)
-    os.makedirs(os.path.join(app.instance_path, "avatars"), exist_ok=True)
 
     app.config.update(
         SECRET_KEY=secret,
         DATABASE=os.environ.get(
             "DATABASE", os.path.join(app.instance_path, "cutecumber.db")
+        ),
+        # Uploaded avatars MUST land on persistent storage. On Fly the app dir
+        # is ephemeral (wiped every deploy/restart), so prod points this at the
+        # mounted volume (AVATAR_DIR=/data/avatars in fly.toml). Local dev keeps
+        # them in instance/avatars. See issue #2.
+        AVATAR_DIR=os.environ.get(
+            "AVATAR_DIR", os.path.join(app.instance_path, "avatars")
         ),
         # Used to build canonical/OG URLs; never trust the Host header for those.
         SITE_ORIGIN=os.environ.get("SITE_ORIGIN", "http://localhost:5000").rstrip("/"),
@@ -56,6 +62,8 @@ def create_app() -> Flask:
         # the body before routes run, so this cap must be global (DECISIONS #31).
         MAX_CONTENT_LENGTH=8 * 1024 * 1024,
     )
+
+    os.makedirs(app.config["AVATAR_DIR"], exist_ok=True)
 
     # Behind Caddy/nginx in prod, set TRUST_PROXY=1 so rate limiting keys on the
     # real client IP instead of the proxy's. Never set this when directly exposed.

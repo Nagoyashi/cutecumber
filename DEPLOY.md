@@ -71,6 +71,12 @@ Then by hand: sign up, claim, upload an avatar, run a password reset
 Litestream streams every SQLite change to object storage; the entrypoint
 auto-restores onto an empty volume, so losing the machine loses nothing.
 
+> Scope: Litestream backs up the **database** only. Uploaded avatars live on
+> the volume at `/data/avatars` (`AVATAR_DIR`) and survive deploys/restarts,
+> but are **not** in the Litestream replica — destroying the volume loses
+> them. They're user-re-uploadable, so this is acceptable; if that changes,
+> add object-storage sync for `/data/avatars`.
+
 1. Create a free bucket: Cloudflare R2 (10 GB free) or Backblaze B2.
 2. Create an access key pair for it.
 3. ```bash

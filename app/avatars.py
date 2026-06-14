@@ -30,7 +30,7 @@ class AvatarError(ValueError):
 
 
 def avatar_dir() -> str:
-    return os.path.join(current_app.instance_path, "avatars")
+    return current_app.config["AVATAR_DIR"]
 
 
 def process_avatar(stream) -> bytes:

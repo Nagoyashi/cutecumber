@@ -8,11 +8,13 @@ Run from the repo root:  python -m unittest -v
 import io
 import os
 import re
+import tempfile
 import unittest
 
 from PIL import Image
 
-from app.avatars import AVATAR_FILE_RE, AvatarError, process_avatar
+from app import create_app
+from app.avatars import AVATAR_FILE_RE, AvatarError, avatar_dir, process_avatar
 from app.constants import (
     AVATAR_EMOJI_MAX,
     AVATAR_IMAGE_SIZE,
@@ -138,6 +140,29 @@ class TestFreeformAvatarEmoji(unittest.TestCase):
 
     def test_rejects_overlong(self):
         self.assertIsNotNone(validate_avatar_emoji("x" * (AVATAR_EMOJI_MAX + 1)))
+
+
+class TestAvatarStorageLocation(unittest.TestCase):
+    """Uploaded avatars must live in a configurable directory — the persistent
+    Fly volume in prod, not the ephemeral app instance folder (issue #2)."""
+
+    def test_avatar_dir_follows_config_and_is_created_at_startup(self):
+        prev = {k: os.environ.get(k) for k in ("SECRET_KEY", "AVATAR_DIR")}
+        target = os.path.join(tempfile.mkdtemp(), "avatars")
+        os.environ["SECRET_KEY"] = "x" * 40
+        os.environ["AVATAR_DIR"] = target
+        try:
+            app = create_app()
+            self.assertEqual(app.config["AVATAR_DIR"], target)
+            self.assertTrue(os.path.isdir(target), "avatar dir created at startup")
+            with app.app_context():
+                self.assertEqual(avatar_dir(), target)
+        finally:
+            for key, value in prev.items():
+                if value is None:
+                    os.environ.pop(key, None)
+                else:
+                    os.environ[key] = value
 
 
 if __name__ == "__main__":

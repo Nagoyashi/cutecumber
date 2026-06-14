@@ -4,6 +4,8 @@ primary_region = "fra"
 
 [env]
   DATABASE = "/data/cutecumber.db"
+  # Uploaded avatars on the persistent volume (NOT the ephemeral app dir).
+  AVATAR_DIR = "/data/avatars"
   SITE_ORIGIN = "https://cutecumber.cc"
   MAIL_FROM = "cutecumber <hello@cutecumber.cc>"
   TRUST_PROXY = "1"
