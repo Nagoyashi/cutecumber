@@ -13,7 +13,7 @@ never on feature breadth.
 
 ## Current phase
 
-**Phase 3 — Design-spec v1 (brand integration)** · status: **in review** (PR #1)
+**Phase 4 — Production hardening** · status: **in progress**
 Per-task status → the *cutecumber.cc* GitHub Project board ↗
 
 ## Roadmap
@@ -32,24 +32,22 @@ username tombstone, avatar uploads (Pillow EXIF/GPS strip), legal pages, and the
 Fly.io deploy config (volume SQLite, optional Litestream). Production baseline
 tagged `pre-refactor-prod` (2026-06-13).
 
-### ▶ Phase 3 — Design-spec v1 (current, 2026-06-13 → )
+### ✅ Phase 3 — Design-spec v1 (shipped v0.1.0 · 2026-06-14)
 
-**Scope:** brand chrome (slice-mark favicon + Fredoka wordmark) · 12-avatar SVG
-`set` avatar kind + freeform emoji · decoration packs + multi-decoration (theme
-shape v1 → v2). Production hardening landed alongside on `main`: the
-avatar-volume persistence fix, legal-placeholder fills, and CI.
+Brand chrome (slice-mark favicon + Fredoka wordmark), the 12-avatar SVG `set`
+kind + freeform emoji, and decoration packs + multi-decoration (theme shape
+v1 → v2, migrated). Shipped to production within the full perf/security budget
+and tagged `v0.1.0`.
 
-**Acceptance:** design art integrated with every `RULES.md` invariant intact
-(0 JS, 0 third-party requests, ≤15 KB, Lighthouse-100 budget); the theme
-migration is tested; the full suite is green in CI; PR #1 reviewed and merged
-to `main`.
-
-### ⬜ Phase 4 — Production hardening (planned — prose)
+### ▶ Phase 4 — Production hardening (current)
 
 Close the post-launch audit backlog: security regression tests (CSRF / IDOR /
 cookie-free), dependency scanning, error monitoring, doc & comment
-reconciliation, reset-token log hygiene, static-tile caching, and backup
-verification. Tracked as issues on the board.
+reconciliation, reset-token log hygiene, static-tile caching, backup
+verification, and reset-email deliverability. Tracked as issues on the board.
+
+**Acceptance:** the high/med audit issues closed; DB backups and password-reset
+email verified working in production.
 
 ### ⬜ Phase 5 — Launch & growth (planned — speculative)
 
@@ -64,6 +62,17 @@ avatars. *Best guess; correct as direction firms up.*
 ## Phase log
 
 Durable completion notes, newest first. Rationale → `DECISIONS.md`.
+
+### Phase 3 — Design-spec v1 — shipped 2026-06-14 (`v0.1.0`)
+
+- Brand chrome: slice-mark favicon + Fredoka wordmark; CLS handled via preload
+  + `font-display: swap` (DECISIONS #34).
+- Avatars: 12-tile SVG `set` kind + freeform emoji, registry-validated at save
+  AND render (DECISIONS #13 addendum).
+- Decorations: 4 house packs + multi-decoration; theme shape v1 → v2 with a
+  tested migration (DECISIONS #21/#30 addenda).
+- Hardening landed alongside: avatar-volume persistence fix, legal-placeholder
+  fills, GitHub Actions CI. Merged via PRs #1/#14/#15; deployed to Fly.io.
 
 ### Phase 2 — Launch readiness — shipped 2026-06-11
 
