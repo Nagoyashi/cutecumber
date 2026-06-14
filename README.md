@@ -20,16 +20,17 @@ flask --app wsgi run --debug
 Then open http://localhost:5000 — sign up, claim a username, and your public
 page is live at http://localhost:5000/yourname.
 
-## Production (sketch — deploy target not yet decided, see DECISIONS.md #11)
+## Production
 
-```bash
-gunicorn -w 1 'wsgi:app'
-```
+Deployed on Fly.io — one always-on machine, SQLite on a volume. See `DEPLOY.md`
+for the full runbook. Workers stay at 1 (rate-limiter counters are per-process,
+DECISIONS.md #7).
 
-Keep workers at 1 until the rate-limiter storage decision is made
-(DECISIONS.md #7). TLS, HSTS, and gzip belong to the reverse proxy (Caddy).
+## Project docs
 
-## Read these first, every session
-
-- `PROJECT_STRUCTURE.md` — file map, conventions, roadmap.
+- `project.md` — roadmap, current phase, and phase log.
+- `RULES.md` — the hard invariants: perf budget, security, stack, voice.
+- `CLAUDE.md` — agent operating manual + task tracking.
 - `DECISIONS.md` — why things are the way they are, and when to revisit.
+- `PROJECT_STRUCTURE.md` — file tree + code-placement conventions.
+- `DEPLOY.md` — Fly.io deploy + backup runbook.
