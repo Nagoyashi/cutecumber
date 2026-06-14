@@ -6,11 +6,14 @@ Run from the repo root:  python -m unittest -v
 """
 
 import io
+import os
+import tempfile
 import unittest
 
 from PIL import Image
 
-from app.avatars import AVATAR_FILE_RE, AvatarError, process_avatar
+from app import create_app
+from app.avatars import AVATAR_FILE_RE, AvatarError, avatar_dir, process_avatar
 from app.constants import AVATAR_IMAGE_SIZE, AVATAR_MAX_BYTES, AVATAR_MAX_UPLOAD
 
 
@@ -88,6 +91,29 @@ class TestProcessAvatar(unittest.TestCase):
         for bad in ("../../etc/passwd", "7-a1b2c3d4e5f6.svg", "x-zzzz.webp",
                     "7-a1b2c3d4e5f6.webp.html", "7-A1B2C3D4E5F6.webp"):
             self.assertFalse(AVATAR_FILE_RE.match(bad), bad)
+
+
+class TestAvatarStorageLocation(unittest.TestCase):
+    """Uploaded avatars must live in a configurable directory — the persistent
+    Fly volume in prod, not the ephemeral app instance folder (issue #2)."""
+
+    def test_avatar_dir_follows_config_and_is_created_at_startup(self):
+        prev = {k: os.environ.get(k) for k in ("SECRET_KEY", "AVATAR_DIR")}
+        target = os.path.join(tempfile.mkdtemp(), "avatars")
+        os.environ["SECRET_KEY"] = "x" * 40
+        os.environ["AVATAR_DIR"] = target
+        try:
+            app = create_app()
+            self.assertEqual(app.config["AVATAR_DIR"], target)
+            self.assertTrue(os.path.isdir(target), "avatar dir created at startup")
+            with app.app_context():
+                self.assertEqual(avatar_dir(), target)
+        finally:
+            for key, value in prev.items():
+                if value is None:
+                    os.environ.pop(key, None)
+                else:
+                    os.environ[key] = value
 
 
 if __name__ == "__main__":
