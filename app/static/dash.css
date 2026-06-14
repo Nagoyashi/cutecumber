@@ -16,6 +16,14 @@
   --err-text: #a33a52;
 }
 
+/* Brand wordmark font (display font, chrome only — h1s stay system here). */
+@font-face {
+  font-family: Fredoka;
+  src: url(fonts/fredoka-latin-600-normal.woff2) format('woff2');
+  font-weight: 600;
+  font-display: swap;
+}
+
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 body {
@@ -34,10 +42,17 @@ body {
 }
 
 .brand {
-  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-family: Fredoka, system-ui, sans-serif;
+  font-weight: 600;
+  font-size: 1.1rem;
   text-decoration: none;
-  color: var(--text);
+  color: #3f5a39;
 }
+.brand .brandmark { display: block; }
+.brandfoot img { vertical-align: -2px; margin-right: 4px; }
 
 .topnav { display: flex; gap: 16px; align-items: center; }
 
@@ -186,6 +201,32 @@ textarea:focus-visible {
   outline-offset: 2px;
 }
 
+/* curated avatar-set tiles (square, distinct from circular photo crops) */
+.set-swatch { padding: 0; overflow: hidden; }
+.set-swatch img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+/* freeform emoji avatar (DECISIONS.md #13, revisited) — its own visible radio
+   sits outside .pick, so it is not hidden by the .pick input rule. */
+.emoji-pick {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  font-size: 0.95rem;
+  color: var(--muted);
+  cursor: pointer;
+}
+.emoji-avatar-in {
+  width: 4.5rem;
+  font-size: 1.2rem;
+  text-align: center;
+  padding: 6px 8px;
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  background: #fff;
+}
+.emoji-pick input[type="radio"]:checked ~ .emoji-avatar-in { border-color: var(--accent-deep); }
+
 /* gradient swatches — keep colors in sync with constants.AVATAR_GRADIENTS */
 .grad { border-radius: 50%; }
 .grad-strawberry_milk { background: linear-gradient(135deg, #ffd3e0, #fff0f3); }
@@ -194,6 +235,39 @@ textarea:focus-visible {
 .grad-cherry_cola     { background: linear-gradient(135deg, #e8a0b4, #fbe3ea); }
 .grad-seafoam         { background: linear-gradient(135deg, #c9ece4, #eafaf6); }
 .grad-midnight_snack  { background: linear-gradient(135deg, #4a4e69, #22223b); }
+
+/* decoration picker — grouped checkbox tiles, multi-select up to 5 */
+.decopicker { display: grid; gap: 12px; }
+.decopack {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 8px 10px 10px;
+}
+.decopack legend { font-size: 0.85rem; color: var(--muted); padding: 0 4px; }
+.decogrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(48px, 1fr));
+  gap: 8px;
+}
+.decotile { position: relative; display: block; cursor: pointer; }
+.decotile input { position: absolute; opacity: 0; pointer-events: none; }
+.decoswatch {
+  display: block;
+  aspect-ratio: 1;
+  border-radius: 10px;
+  border: 2px solid var(--border);
+  background: #fff;
+  overflow: hidden;
+}
+.decoswatch img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.decotile input:checked + .decoswatch {
+  border-color: var(--accent-deep);
+  box-shadow: 0 0 0 3px rgba(229, 143, 177, 0.35);
+}
+.decotile input:focus-visible + .decoswatch {
+  outline: 3px solid var(--accent-deep);
+  outline-offset: 2px;
+}
 
 /* --- links editor --- */
 

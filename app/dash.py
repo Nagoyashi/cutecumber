@@ -28,13 +28,14 @@ from flask import (
 )
 
 from .constants import (
-    AVATAR_EMOJI,
+    AVATAR_GRADIENTS,
+    AVATAR_SETS,
     PASSWORD_MAX_BYTES,
     TOMBSTONE_DAYS,
-    AVATAR_GRADIENTS,
     BIO_MAX,
     DISPLAY_NAME_MAX,
     PRONOUNS_MAX,
+    validate_avatar_emoji,
     validate_username,
 )
 from .avatars import (
@@ -48,6 +49,7 @@ from .extensions import limiter
 from .security import login_required
 from .theme import (
     COLOR_KEYS,
+    DECORATION_CATALOG,
     ENUM_KEYS,
     PRESETS,
     THEME_VERSION,
@@ -78,7 +80,8 @@ def _render_home(
             "display_name": g.user["display_name"] or "",
             "bio": g.user["bio"] or "",
             "pronouns": g.user["pronouns"] or "",
-            "avatar": f"{g.user['avatar_kind']}:{g.user['avatar_value']}",
+            "avatar_kind": g.user["avatar_kind"],
+            "avatar_value": g.user["avatar_value"] or "",
         }
     if add_form is None:
         add_form = {"title": "", "url": "", "emoji": ""}
@@ -100,13 +103,14 @@ def _render_home(
         form=form,
         add_form=add_form,
         links=user_links,
-        avatar_emoji=AVATAR_EMOJI,
+        avatar_sets=sorted(AVATAR_SETS),
         avatar_gradients=AVATAR_GRADIENTS,
         t=resolve_theme(stored_theme),
         theme_preset=stored_theme["preset"],
         theme_overridden=bool(stored_theme.get("overrides")),
         presets=list(PRESETS),
         enums=ENUM_KEYS,
+        decoration_catalog=DECORATION_CATALOG,
         open_section=open_section,
     )
 
@@ -162,8 +166,13 @@ def claim():
     return redirect(url_for("dash.home"))
 
 
-def _validate_profile(display_name: str, bio: str, pronouns: str, avatar: str):
-    """Return (error_message, avatar_kind, avatar_value). error is None if ok."""
+def _validate_profile(display_name: str, bio: str, pronouns: str, avatar: str,
+                      emoji_value: str):
+    """Return (error_message, avatar_kind, avatar_value). error is None if ok.
+
+    `avatar` is the picked radio ("set:sprout", "gradient:matcha_latte",
+    "image:keep", or bare "emoji"); `emoji_value` is the freeform emoji text,
+    used only when the emoji option is selected (DECISIONS.md #13, revisited)."""
     if len(display_name) > DISPLAY_NAME_MAX:
         return f"display names max out at {DISPLAY_NAME_MAX} characters 🌷", None, None
     if len(bio) > BIO_MAX:
@@ -172,16 +181,16 @@ def _validate_profile(display_name: str, bio: str, pronouns: str, avatar: str):
         return f"the pronouns field maxes out at {PRONOUNS_MAX} characters 🌱", None, None
 
     kind, _, value = avatar.partition(":")
-    valid_avatar = (
-        (kind == "emoji" and value in AVATAR_EMOJI)
-        or (kind == "gradient" and value in AVATAR_GRADIENTS)
-        or (kind == "image" and value == "keep" and g.user["avatar_kind"] == "image")
-    )
-    if not valid_avatar:
-        return "that avatar isn't one of ours — pick one from the grid 🎀", None, None
-    if kind == "image":
-        value = g.user["avatar_value"]  # keep the existing upload
-    return None, kind, value
+    if kind == "emoji":
+        error = validate_avatar_emoji(emoji_value)
+        return (error, None, None) if error else (None, "emoji", emoji_value)
+    if kind == "set" and value in AVATAR_SETS:
+        return None, "set", value
+    if kind == "gradient" and value in AVATAR_GRADIENTS:
+        return None, "gradient", value
+    if kind == "image" and value == "keep" and g.user["avatar_kind"] == "image":
+        return None, "image", g.user["avatar_value"]  # keep the existing upload
+    return "that avatar isn't one of ours — pick one from the grid 🎀", None, None
 
 
 @bp.post("/dash/profile")
@@ -196,6 +205,20 @@ def profile():
     bio = (request.form.get("bio") or "").strip()
     pronouns = (request.form.get("pronouns") or "").strip()
     avatar = (request.form.get("avatar") or "").strip()
+    emoji_value = (request.form.get("avatar_emoji") or "").strip()
+
+    # Rebuild the picker's selected state for any error re-render so nothing
+    # the user picked gets lost.
+    sel_kind, _, sel_value = avatar.partition(":")
+    if sel_kind == "emoji":
+        sel_value = emoji_value
+    form_state = {
+        "display_name": display_name,
+        "bio": bio,
+        "pronouns": pronouns,
+        "avatar_kind": sel_kind,
+        "avatar_value": sel_value,
+    }
 
     upload = request.files.get("avatar_file")
     if upload is not None and upload.filename:
@@ -204,29 +227,15 @@ def profile():
             blob = process_avatar(upload.stream)
         except AvatarError as exc:
             flash(str(exc), "error")
-            return _render_home(
-                form={
-                    "display_name": display_name,
-                    "bio": bio,
-                    "pronouns": pronouns,
-                    "avatar": avatar,
-                },
-                open_section="profile",
-            )
+            return _render_home(form=form_state, open_section="profile")
         error, kind, value = None, "image", store_avatar(g.user["id"], blob)
     else:
-        error, kind, value = _validate_profile(display_name, bio, pronouns, avatar)
+        error, kind, value = _validate_profile(
+            display_name, bio, pronouns, avatar, emoji_value
+        )
     if error:
         flash(error, "error")
-        return _render_home(
-            form={
-                "display_name": display_name,
-                "bio": bio,
-                "pronouns": pronouns,
-                "avatar": avatar,
-            },
-            open_section="profile",
-        )
+        return _render_home(form=form_state, open_section="profile")
 
     # Data minimization: an uploaded photo that's been replaced or switched
     # away from gets deleted, not orphaned (DECISIONS.md #31).
@@ -280,6 +289,11 @@ def theme_save():
             value = (request.form.get(key) or "").strip()
             if value:
                 overrides[key] = value
+        # Decoration is multi now: the fine-tune form always carries the full
+        # checkbox state, so include it even when empty (that IS "no
+        # decorations"). validate_theme enforces the registry + the cap of 5
+        # and drops it if it equals the preset's default.
+        overrides["decoration"] = request.form.getlist("decoration")
         candidate = {"version": THEME_VERSION, "preset": preset, "overrides": overrides}
     else:
         abort(400)

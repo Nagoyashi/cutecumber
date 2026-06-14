@@ -130,6 +130,26 @@ forbids inline styles) — sync comment in both files.
 **Revisit (freeform emoji):** real user demand. It's a validation-rule change,
 not a schema change.
 
+### Addendum (frontend-refactor, June 2026): freeform emoji + designer set
+Both shipped together, both ADDITIVE — `avatar_kind` has no DB CHECK, so adding
+'set' is pure app validation: no schema change, no theme-version bump, no data
+migration. Emoji + gradient + photo + set all coexist (owner's call).
+- **Freeform emoji** acts on this entry's own "real user demand" revisit
+  trigger (owner request). The emoji is now any value from the OS keyboard,
+  capped at `AVATAR_EMOJI_MAX` (8) and rendered escaped — same injection class
+  as the link emoji (#16) and the display name, so NO new XSS surface (a render
+  test confirms `<b>x` stays escaped). We deliberately do NOT validate "is it
+  really an emoji" (the ZWJ swamp this entry named); length is the only bound.
+  `validate_avatar_emoji()` runs at save, `public.py` re-checks length at render.
+  The curated emoji grid is gone — no predefined emoji.
+- **Designer avatar set** ('set' kind, value = slug) = the 12 kawaii SVG tiles
+  from the design spec, served as cached static `<img>` from `app/static/avatars/`
+  and validated against the `AVATAR_SETS` registry at save AND render (the
+  registry IS the boundary; an unknown slug falls back to 🥒). Tiles render
+  SQUARE so they stay visually distinct from circle-cropped photos (per the
+  design spec). `tests/test_avatar.py` enforces registry↔file parity and the
+  no-script / ≤8 KB tile rules, the way EXIF/AA are enforced.
+
 ## 14. Schema upgrades via idempotent `init-db` column checks
 
 `init_db()` applies `schema.sql` (CREATE IF NOT EXISTS) then adds any missing
@@ -220,6 +240,23 @@ run (`default-src 'none'`), so this is a cosmetic loosening, not a security
 one. Generated CSS deliberately contains no quotes/ampersands/angle brackets,
 which keeps every template insert autoescape-transparent — `|safe` remains
 banned project-wide (a test enforces the character set).
+
+### Addendum (frontend-refactor, June 2026): decorations went multi (v2)
+`decoration` is now a LIST of `<pack>/<slug>` tokens (was a single string),
+capped at `MAX_DECORATIONS` (5), validated against the `DECORATION_PACKS`
+registry at save AND render. **`THEME_VERSION` 1→2** with a migration
+(string→list: `"hearts"`→`["basic/hearts"]`, `"none"`→`[]`) — the first real
+entry in `MIGRATIONS`, with tests, exactly as the versioned-data rule requires.
+Two render paths: `basic/*` stay accent-tinted inline `data:` URIs (this entry);
+designer-pack tiles are full_color STATIC svgs referenced as
+`url(/static/packs/<pack>/<slug>.svg)`. Static over inlined was deliberate — it
+protects the ≤15 KB page budget: a 5-decoration page is ~1.3 KB gzipped because
+only the `url()` refs are inline; the tiles are separate cached requests under
+`img-src 'self'`. The picker is a no-JS checkbox catalog grouped by pack, and
+the cap of 5 is enforced server-side in `validate_theme`, not just in the UI.
+An explicit empty list is a real choice (`[]` = no decorations) distinct from a
+preset's default. **Revisit:** stagger tile positions when stacking many (a
+browser-verified polish pass), and re-check the gzipped budget if tiles grow.
 
 ## 22. Scalloped button shape: deferred, not faked
 
@@ -326,6 +363,15 @@ token. End users PICK packs; they never upload SVG (script-bearing format +
 moderation burden + page-weight risk). Packs are also the natural paid unit
 if monetization happens — selling cuteness, not data.
 
+### Addendum (frontend-refactor, June 2026): packs built
+First assets landed — 4 house packs (`garden_patch`, `cozy_cafe`,
+`little_friends`, `sakura_dreams`) × 5 tiles each, plus a `basic` trio that
+carries the original inline glyphs — so the registry shipped (see the #21
+addendum for the multi-decoration shape + version bump). Tiles live at
+`app/static/packs/<pack>/<slug>.svg`; `tests/test_theme.py` enforces
+registry↔file parity and the no-script / ≤8 KB rules, like EXIF/AA. The avatar
+SVG set shipped the same way (#13 addendum). Still curated-only, no user uploads.
+
 ## 31. Avatar uploads: byte-identified, re-encoded, metadata-free, tidy
 
 Pipeline per the original spec: the client's filename and content-type are
@@ -373,3 +419,24 @@ once they do, and DEPLOY.md mandates one restore fire-drill. Container runs
 as root inside the Firecracker microVM on purpose: the volume mount is
 root-owned and isolation is VM-level; revisit if Fly's guidance changes.
 Gunicorn stays at one worker (limiter counters are per-process, #7).
+
+## 34. Brand chrome: slice mark + live-text wordmark (design spec v1)
+
+The favicon IS the slice mark — one 1.3 KB cucumber-face SVG with the fixed
+brand colors (rind `#8fcb72`, flesh `#ecf7df`, seeds `#cde8b4`, ink `#33502e`),
+never recolored/rotated/boxed. Landing inlines it (zero extra requests, per the
+spec); dash/auth chrome references it as a cached same-origin `<img>` (img-src
+'self' already allows it, no markup duplication). Wordmark is live text in the
+already-self-hosted Fredoka 600, `#3f5a39` — not an image, not a second font.
+On the landing the wordmark IS the h1, so "one display font, h1 only" still
+holds; on the dash it styles `.brand` (chrome, not a perf-budgeted public page).
+**Flagged-item #1 (CLS), decided deliberately:** the landing previously loaded
+ZERO fonts; the wordmark adds Fredoka. Shipped the essential fix — `<link
+rel=preload>` + `font-display: swap` (the proven public_page pattern) so the
+font is present at first paint. `size-adjust`/`ascent-override` tuning is
+DEFERRED to the real-browser Lighthouse pass (#25): a wrong metric value makes
+CLS worse, and it needs Fredoka's real metrics measured in Chrome. Verified the
+landing still ships 0 `<script>`, 0 external URLs, 0 cookies, ~2 KB gzipped.
+Public profile footer stays system-font "cutecumber.cc" (no emoji, no font, no
+mark) to protect the per-profile budget. **Revisit:** tune size-adjust when the
+real Lighthouse run happens; revisit the wordmark font only via the #23 pipeline.

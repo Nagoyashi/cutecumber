@@ -27,6 +27,7 @@ main{width:100%;max-width:420px;text-align:center}
 {% if gradient %}.avatar-g{width:88px;height:88px;border-radius:50%;margin:0 auto;
 background:linear-gradient(135deg,{{ gradient[0] }},{{ gradient[1] }})}
 {% endif %}{% if avatar_image %}.avatar-img{width:88px;height:88px;border-radius:50%;object-fit:cover}
+{% endif %}{% if avatar_set %}.avatar-set{width:88px;height:88px;display:block;margin:0 auto}
 {% endif %}h1{margin-top:12px;font-size:1.6rem;font-weight:{{ t.heading_weight }};overflow-wrap:break-word;
 font-family:{{ t.heading_stack }}}
 .pronouns{margin-top:2px;color:var(--muted);font-size:.9rem}
@@ -48,6 +49,7 @@ footer a:hover,footer a:focus-visible{color:var(--text)}
 <body>
 <main>
   {% if avatar_image %}<img class="avatar-img" src="/a/{{ avatar_image }}" width="88" height="88" alt="">
+  {% elif avatar_set %}<img class="avatar-set" src="/static/avatars/{{ avatar_set }}.svg" width="88" height="88" alt="">
   {% elif gradient %}<div class="avatar avatar-g" aria-hidden="true"></div>
   {% else %}<div class="avatar" aria-hidden="true">{{ avatar_emoji }}</div>
   {% endif %}<h1>{{ title }}</h1>
@@ -57,7 +59,7 @@ footer a:hover,footer a:focus-visible{color:var(--text)}
   {% for link in links %}<a href="{{ link.url }}" target="_blank" rel="noopener noreferrer nofollow">{% if link.emoji %}<span aria-hidden="true">{{ link.emoji }}</span> {% endif %}{{ link.title }}</a>
   {% endfor %}</nav>
   {% else %}<p class="empty">no links here yet — check back soon ✨</p>
-  {% endif %}<footer><a href="/">made with cutecumber 🥒</a> · <a href="/privacy">privacy</a> · <a href="/imprint">imprint</a></footer>
+  {% endif %}<footer><a href="/">cutecumber.cc</a> · <a href="/privacy">privacy</a> · <a href="/imprint">imprint</a></footer>
 </main>
 </body>
 </html>

@@ -20,8 +20,9 @@ from flask import (
 )
 
 from .constants import (
-    AVATAR_EMOJI,
+    AVATAR_EMOJI_MAX,
     AVATAR_GRADIENTS,
+    AVATAR_SETS,
     DEFAULT_AVATAR_EMOJI,
     RESERVED_USERNAMES,
     USERNAME_RE,
@@ -127,13 +128,17 @@ def profile(username: str):
     # never break a public page.
     gradient = None
     avatar_image = None
+    avatar_set = None
     avatar_emoji = DEFAULT_AVATAR_EMOJI
-    if user["avatar_kind"] == "gradient":
-        gradient = AVATAR_GRADIENTS.get(user["avatar_value"])
-    elif user["avatar_kind"] == "image" and AVATAR_FILE_RE.match(user["avatar_value"] or ""):
-        avatar_image = user["avatar_value"]
-    elif user["avatar_value"] in AVATAR_EMOJI:
-        avatar_emoji = user["avatar_value"]
+    kind, value = user["avatar_kind"], user["avatar_value"] or ""
+    if kind == "gradient":
+        gradient = AVATAR_GRADIENTS.get(value)
+    elif kind == "image" and AVATAR_FILE_RE.match(value):
+        avatar_image = value
+    elif kind == "set" and value in AVATAR_SETS:
+        avatar_set = value
+    elif kind == "emoji" and 0 < len(value) <= AVATAR_EMOJI_MAX:
+        avatar_emoji = value
 
     title = user["display_name"] or f"@{user['username']}"
     description = (user["bio"] or DEFAULT_DESCRIPTION).strip()
@@ -155,6 +160,7 @@ def profile(username: str):
         canonical=canonical,
         gradient=gradient,
         avatar_image=avatar_image,
+        avatar_set=avatar_set,
         avatar_emoji=avatar_emoji,
         links=links,
         csp_nonce=use_public_csp(),

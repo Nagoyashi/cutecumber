@@ -109,17 +109,35 @@ AVATAR_IMAGE_SIZE = 176          # 88px circle at 2x for retina
 AVATAR_MAX_BYTES = 30 * 1024     # output budget: 30 KB
 AVATAR_MAX_UPLOAD = 8 * 1024 * 1024  # input cap: 8 MB (phone photos)
 
-# Avatars are curated tokens, never freeform input (DECISIONS.md #13).
-# Validated at save AND at render; render falls back to the default on
-# anything unrecognised so a bad row can never break a public page.
+# Avatar emoji is FREEFORM (DECISIONS.md #13, revisited at owner request — the
+# documented "real user demand" trigger). It renders as autoescaped text, the
+# same injection class as the link emoji (#16) and the display name, so there
+# is NO new XSS surface; we deliberately do not try to prove a string is
+# "really" an emoji (the ZWJ-validation swamp #13 named) and only cap length.
+# Validated at save AND at render; falls back to the default on empty/oversize.
 DEFAULT_AVATAR_EMOJI = "🥒"
+AVATAR_EMOJI_MAX = 8  # generous for ZWJ sequences (matches LINK_EMOJI_MAX)
 
-AVATAR_EMOJI = (
-    "🥒", "🍓", "🍵", "🍒", "🌊", "🌙",
-    "⭐", "🌷", "🌸", "🌼", "🍄", "🐸",
-    "🐱", "🐰", "🦋", "🐝", "🍑", "🍋",
-    "🫐", "🍰", "🧸", "🎀", "✨", "💖",
-)
+# Curated designer avatar set (DECISIONS.md #13/#30): kawaii SVG tiles the user
+# PICKS, never uploads. The registry IS the security boundary — checked at save
+# AND at render like every other token. Each slug has a matching static file at
+# app/static/avatars/<slug>.svg (enforced by tests/test_avatar.py).
+AVATAR_SETS = frozenset({
+    "berry", "blossom", "boo", "bun", "froggy", "matcha",
+    "moonbeam", "riceball", "shroom", "sprout", "twinkle", "whiskers",
+})
+
+
+def validate_avatar_emoji(value: str) -> str | None:
+    """Return a user-facing error, or None if the freeform emoji is acceptable.
+    Caller strips first. Length is the only thing worth bounding — the value is
+    rendered escaped, so a non-emoji string is harmless, just the user's odd
+    choice."""
+    if not value:
+        return "pick an emoji, or choose an avatar above 🌱"
+    if len(value) > AVATAR_EMOJI_MAX:
+        return f"that's a lot of emoji — {AVATAR_EMOJI_MAX} characters is the max 🙈"
+    return None
 
 # name -> (color_from, color_to). Rendered as linear-gradient(135deg, …).
 # Names line up with the working theme-preset list on purpose.

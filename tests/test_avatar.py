@@ -7,6 +7,7 @@ Run from the repo root:  python -m unittest -v
 
 import io
 import os
+import re
 import tempfile
 import unittest
 
@@ -14,7 +15,16 @@ from PIL import Image
 
 from app import create_app
 from app.avatars import AVATAR_FILE_RE, AvatarError, avatar_dir, process_avatar
-from app.constants import AVATAR_IMAGE_SIZE, AVATAR_MAX_BYTES, AVATAR_MAX_UPLOAD
+from app.constants import (
+    AVATAR_EMOJI_MAX,
+    AVATAR_IMAGE_SIZE,
+    AVATAR_MAX_BYTES,
+    AVATAR_MAX_UPLOAD,
+    AVATAR_SETS,
+    validate_avatar_emoji,
+)
+
+AVATARS_DIR = os.path.join(os.path.dirname(__file__), "..", "app", "static", "avatars")
 
 
 def _jpeg_with_exif() -> io.BytesIO:
@@ -91,6 +101,45 @@ class TestProcessAvatar(unittest.TestCase):
         for bad in ("../../etc/passwd", "7-a1b2c3d4e5f6.svg", "x-zzzz.webp",
                     "7-a1b2c3d4e5f6.webp.html", "7-A1B2C3D4E5F6.webp"):
             self.assertFalse(AVATAR_FILE_RE.match(bad), bad)
+
+
+class TestAvatarSetRegistry(unittest.TestCase):
+    """The AVATAR_SETS registry IS the security boundary (validated at save AND
+    render). It must line up exactly with the shipped static tiles, and those
+    tiles must obey the design-spec safety rules — enforced here, not by trust,
+    like the EXIF and AA promises."""
+
+    def test_every_slug_has_a_static_tile(self):
+        for slug in AVATAR_SETS:
+            path = os.path.join(AVATARS_DIR, slug + ".svg")
+            self.assertTrue(os.path.isfile(path), f"missing tile for {slug!r}")
+
+    def test_no_stray_tiles_outside_the_registry(self):
+        on_disk = {f[:-4] for f in os.listdir(AVATARS_DIR) if f.endswith(".svg")}
+        self.assertEqual(on_disk, set(AVATAR_SETS))
+
+    def test_tiles_are_small_and_inert(self):
+        unsafe = re.compile(r"(?i)<script|<foreignobject|<image|xlink:href|data:|\son\w+=")
+        for slug in AVATAR_SETS:
+            with open(os.path.join(AVATARS_DIR, slug + ".svg"), encoding="utf-8") as fh:
+                svg = fh.read()
+            self.assertLessEqual(len(svg.encode("utf-8")), 8192, f"{slug} over 8 KB")
+            self.assertIsNone(unsafe.search(svg), f"{slug} carries an unsafe construct")
+
+
+class TestFreeformAvatarEmoji(unittest.TestCase):
+    """Freeform emoji (DECISIONS.md #13, revisited): we only bound length — the
+    value renders escaped, so we never try to prove it is 'really' an emoji."""
+
+    def test_accepts_simple_and_zwj_emoji(self):
+        for good in ("🥒", "🌸", "🏳️‍🌈", "👩‍👩‍👧"):
+            self.assertIsNone(validate_avatar_emoji(good), good)
+
+    def test_rejects_empty(self):
+        self.assertIsNotNone(validate_avatar_emoji(""))
+
+    def test_rejects_overlong(self):
+        self.assertIsNotNone(validate_avatar_emoji("x" * (AVATAR_EMOJI_MAX + 1)))
 
 
 class TestAvatarStorageLocation(unittest.TestCase):
