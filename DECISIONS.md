@@ -440,3 +440,24 @@ landing still ships 0 `<script>`, 0 external URLs, 0 cookies, ~2 KB gzipped.
 Public profile footer stays system-font "cutecumber.cc" (no emoji, no font, no
 mark) to protect the per-profile budget. **Revisit:** tune size-adjust when the
 real Lighthouse run happens; revisit the wordmark font only via the #23 pipeline.
+
+## 35. Dependency hygiene: digest-pinned base + blocking pip-audit (issue #7)
+
+Two hardening moves for the live product, both deploy-agnostic:
+- **Reproducible builds:** the Dockerfile base is pinned to the `python:3.12-slim`
+  *index* digest (`@sha256:…`), not the floating tag — the tag is kept inline for
+  readability and to mirror the CI Python pin. A given commit now builds the same
+  base bytes forever. Dependabot's `docker` ecosystem updates the digest on a
+  schedule, so pinning doesn't freeze us on stale CVEs.
+- **Vulnerability scanning:** CI runs `pipx run pip-audit -r requirements.txt` as
+  a step in the required `test` job — **blocking**, so a known CVE in our declared
+  deps stops a merge to `main`. `pipx` isolates the tool so its own deps don't
+  enter the audit. An advisory with no upstream fix is waived narrowly with
+  `--ignore-vuln GHSA-…` in `ci.yml` (a visible, reviewed exception) rather than
+  by dropping the gate. Update cadence is Dependabot weekly (`.github/dependabot.yml`).
+**Lockstep rule:** the base image and `ci.yml`'s `python-version` are pinned to
+the SAME minor (3.12) on purpose — a Python minor bump (e.g. the held 3.14 base
+PR) moves BOTH in one change, or CI tests a runtime prod doesn't use.
+**Revisit:** GitHub Dependency-graph + Dependabot security alerts are the
+repo-settings complement (owner-toggled); if pip-audit noise from unfixable
+transitive advisories becomes routine, reconsider scoping it to direct deps.

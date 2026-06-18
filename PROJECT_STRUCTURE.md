@@ -93,8 +93,9 @@ tests/
     ├── dependabot.yml           weekly pip + docker + github-actions updates
     │                            (no npm — 0-JS); targets main, grouped, chore:
     └── workflows/
-        ├── ci.yml               runs the unittest suite on push + PRs to main
-        │                        (check name: `test` — required on main)
+        ├── ci.yml               runs the unittest suite + blocking pip-audit on
+        │                        push + PRs to main (check name: `test` —
+        │                        required on main; DECISIONS #35)
         └── release.yml          on a vX.Y.Z tag push, publishes the GitHub
                                  Release from docs/releases/<tag>.md + closes the
                                  same-named milestone. Canonical/unedited copy.
