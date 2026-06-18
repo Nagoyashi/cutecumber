@@ -1,0 +1,67 @@
+name: Publish release
+
+# Fires when an annotated tag vX.Y.Z (or a pre-release vX.Y.Z-rc.N) is pushed.
+# Pushing the tag is the human "ship it" approval; everything below is automated.
+# It reads docs/releases/<tag>.md (the single source of release notes) and
+# publishes the GitHub Release from it — the step that used to be done by hand
+# and forgotten, which is why the Releases page lagged behind the tags.
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+# Least privilege: only what's needed to create a Release and close a milestone.
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GH_REPO: ${{ github.repository }}
+      TAG: ${{ github.ref_name }}
+    steps:
+      - name: Check out the tagged commit
+        uses: actions/checkout@v4
+
+      - name: Publish the GitHub Release from its notes file
+        run: |
+          set -euo pipefail
+          NOTES_FILE="docs/releases/${TAG}.md"
+
+          # Enforce the ordering rule: notes must be on the tagged commit already.
+          if [ ! -f "$NOTES_FILE" ]; then
+            echo "::error::No release notes at ${NOTES_FILE}. Write and merge it onto the tagged commit BEFORE pushing the tag."
+            exit 1
+          fi
+
+          # Title = the file's H1 (without the leading "# "); body = everything after it.
+          TITLE="$(head -n 1 "$NOTES_FILE" | sed -E 's/^#[[:space:]]*//')"
+          BODY_FILE="$(mktemp)"
+          tail -n +2 "$NOTES_FILE" > "$BODY_FILE"
+
+          # A hyphen in the tag marks a semver pre-release (e.g. v0.9.0-rc.1) — never "latest".
+          FLAGS=(--title "$TITLE" --notes-file "$BODY_FILE")
+          if [[ "$TAG" == *-* ]]; then
+            FLAGS+=(--prerelease)
+          else
+            FLAGS+=(--latest)
+          fi
+
+          gh release create "$TAG" "${FLAGS[@]}"
+          echo "Published release ${TAG}"
+
+      - name: Close the matching milestone (cycle releases only)
+        run: |
+          set -euo pipefail
+          # Patches skip milestones, so only act if an open milestone shares the tag's name.
+          NUMBER="$(gh api "repos/${GH_REPO}/milestones?state=open" \
+            --jq ".[] | select(.title == \"${TAG}\") | .number")"
+          if [ -n "${NUMBER:-}" ]; then
+            gh api -X PATCH "repos/${GH_REPO}/milestones/${NUMBER}" -f state=closed >/dev/null
+            echo "Closed milestone ${TAG} (#${NUMBER})"
+          else
+            echo "No open milestone titled ${TAG} — nothing to close (expected for a patch)."
+          fi

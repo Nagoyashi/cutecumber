@@ -1,0 +1,41 @@
+# Dependabot — keep the closed dependency list patched without manual polling.
+# No npm ecosystem on purpose: cutecumber's public pages ship 0 bytes of JS and
+# there is no node_modules / build step (RULES.md, the stack contract).
+# All updates target `main` — the single integration branch (branch model A).
+version: 2
+updates:
+  # Python runtime deps — requirements.txt lives at the repo root.
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    target-branch: "main"
+    commit-message:
+      prefix: "chore"
+    groups:
+      pip-minor-patch:
+        update-types: ["minor", "patch"]
+
+  # Docker base image (the Dockerfile at the repo root pins python:3.x).
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    target-branch: "main"
+    commit-message:
+      prefix: "chore"
+    groups:
+      docker-minor-patch:
+        update-types: ["minor", "patch"]
+
+  # GitHub Actions pinned in .github/workflows/*.yml (ci.yml, release.yml).
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    target-branch: "main"
+    commit-message:
+      prefix: "chore"
+    groups:
+      actions-minor-patch:
+        update-types: ["minor", "patch"]
