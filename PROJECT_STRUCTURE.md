@@ -89,8 +89,18 @@ tests/
     ├── test_url_validation.py   run: python -m unittest -v  (from repo root)
     ├── test_theme.py            validator, migrations, WCAG AA on all presets
     └── test_avatar.py           EXIF/GPS stripping, sizing, rejection, storage dir
-.github/workflows/
-    └── ci.yml                   runs the unittest suite on push + PRs to main
+.github/
+    ├── dependabot.yml           weekly pip + docker + github-actions updates
+    │                            (no npm — 0-JS); targets main, grouped, chore:
+    └── workflows/
+        ├── ci.yml               runs the unittest suite on push + PRs to main
+        │                        (check name: `test` — required on main)
+        └── release.yml          on a vX.Y.Z tag push, publishes the GitHub
+                                 Release from docs/releases/<tag>.md + closes the
+                                 same-named milestone. Canonical/unedited copy.
+docs/releases/
+    ├── README.md                release-notes index + the write-before-tag rule
+    └── vX.Y.Z.md                one per release; H1 → Release title, body → notes
 ```
 
 ## Conventions
