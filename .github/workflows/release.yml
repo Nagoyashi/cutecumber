@@ -14,6 +14,7 @@ on:
 # Least privilege: only what's needed to create a Release and close a milestone.
 permissions:
   contents: write
+  issues: write
 
 jobs:
   publish:
