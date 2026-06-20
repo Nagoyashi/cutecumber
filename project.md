@@ -13,7 +13,9 @@ never on feature breadth.
 
 ## Current phase
 
-**Phase 4 — Production hardening** · status: **in progress**
+**Between cycles.** Phase 4 — Production hardening shipped as **`v0.2.0`**
+(2026-06-20). Next up: **Phase 5 — Launch & growth** — propose the cycle scope
+and get the owner's OK before starting (see the Release cycle in CLAUDE.md).
 Per-task status → the *cutecumber.cc* GitHub Project board ↗
 
 ## Roadmap
@@ -39,15 +41,15 @@ kind + freeform emoji, and decoration packs + multi-decoration (theme shape
 v1 → v2, migrated). Shipped to production within the full perf/security budget
 and tagged `v0.1.0`.
 
-### ▶ Phase 4 — Production hardening (current)
+### ✅ Phase 4 — Production hardening (shipped v0.2.0 · 2026-06-20)
 
-Close the post-launch audit backlog: security regression tests (CSRF / IDOR /
-cookie-free), dependency scanning, error monitoring, doc & comment
-reconciliation, reset-token log hygiene, static-tile caching, backup
-verification, and reset-email deliverability. Tracked as issues on the board.
+Closed the post-launch audit backlog: security regression tests (CSRF / IDOR /
+cookie-free), dependency vuln scanning + reproducible builds, legal-placeholder
+fills, reset-email deliverability, and DB backup setup. Tracked as the `v0.2.0`
+milestone.
 
-**Acceptance:** the high/med audit issues closed; DB backups and password-reset
-email verified working in production.
+**Acceptance (met):** the high/med audit issues closed; DB backups (Litestream →
+R2) and password-reset email verified working in production.
 
 ### ⬜ Phase 5 — Launch & growth (planned — speculative)
 
@@ -62,6 +64,20 @@ avatars. *Best guess; correct as direction firms up.*
 ## Phase log
 
 Durable completion notes, newest first. Rationale → `DECISIONS.md`.
+
+### Phase 4 — Production hardening — shipped 2026-06-20 (`v0.2.0`)
+
+- DB backups now live: Litestream → Cloudflare R2 (EU jurisdiction). Production
+  had been running with **no** replica configured. Switched from the bare
+  `s3://` URL to a `litestream.yml` config file so the S3 `region` can be pinned
+  (`region: auto`) — the URL form forces an AWS `GetBucketLocation` lookup that
+  R2 rejects with `InvalidAccessKeyId`. Restore fire-drill passed. Issue #9, PR #30.
+- Password-reset email deliverability verified in production. Issue #4.
+- Legal placeholders (imprint + privacy) filled for the live EU site. Issue #3.
+- Security regression tests: CSRF, IDOR, cookie-free guarantee. Issue #6, PR #28.
+- Dependency vuln scanning + reproducible (digest-pinned) builds. Issue #7, PR #27.
+- Deferred to `v0.2.1`: Dependabot runtime bumps (`actions/checkout` v7,
+  `actions/setup-python` v6, python 3.14-slim, gunicorn 26).
 
 ### Phase 3 — Design-spec v1 — shipped 2026-06-14 (`v0.1.0`)
 

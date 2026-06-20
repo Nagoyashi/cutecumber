@@ -22,9 +22,10 @@ page is live at http://localhost:5000/yourname.
 
 ## Production
 
-Deployed on Fly.io — one always-on machine, SQLite on a volume. See `DEPLOY.md`
-for the full runbook. Workers stay at 1 (rate-limiter counters are per-process,
-DECISIONS.md #7).
+Deployed on Fly.io — one always-on machine, SQLite on a volume, streamed
+off-machine to Cloudflare R2 via Litestream so the machine is disposable. See
+`DEPLOY.md` for the full runbook. Workers stay at 1 (rate-limiter counters are
+per-process, DECISIONS.md #7).
 
 ## Project docs
 
