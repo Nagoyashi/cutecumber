@@ -2,7 +2,7 @@
 -- Idempotent: safe to run via `flask --app wsgi init-db` on an existing DB.
 --
 -- links exists from day one even though link CRUD ships in a later session:
--- the table costs nothing empty and saves a migration mid-v0 (DECISIONS.md #6).
+-- the table costs nothing empty and saves a migration mid-v0 (DECISIONS.md #5).
 
 CREATE TABLE IF NOT EXISTS users (
     id            INTEGER PRIMARY KEY,
@@ -12,8 +12,8 @@ CREATE TABLE IF NOT EXISTS users (
     display_name  TEXT,
     bio           TEXT,
     pronouns      TEXT,
-    avatar_kind   TEXT    NOT NULL DEFAULT 'emoji',  -- 'emoji' | 'gradient' (uploads: later, maybe)
-    avatar_value  TEXT    NOT NULL DEFAULT '🥒',     -- emoji char OR gradient name; allowlists in constants.py
+    avatar_kind   TEXT    NOT NULL DEFAULT 'emoji',  -- 'emoji' | 'gradient' | 'image' | 'set'
+    avatar_value  TEXT    NOT NULL DEFAULT '🥒',     -- emoji char | gradient name | uploaded filename | set slug; validated in constants.py
     theme_json    TEXT    NOT NULL,                  -- versioned JSON, see app/theme.py
     theme_version INTEGER NOT NULL DEFAULT 1,
     reset_token_hash TEXT,                            -- sha256 of the emailed token; NULL when none active

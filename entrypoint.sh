@@ -12,7 +12,8 @@ fi
 # Idempotent by design: applies schema + any missing-column upgrades.
 flask --app wsgi init-db
 
-GUNICORN="gunicorn -w 1 -b 0.0.0.0:8000 --access-logfile - wsgi:app"
+# -c gunicorn.conf.py installs the access logger that redacts reset tokens (#11).
+GUNICORN="gunicorn -c gunicorn.conf.py -w 1 -b 0.0.0.0:8000 --access-logfile - wsgi:app"
 
 # Backups are config-file driven (litestream.yml) so the S3 region can be set —
 # the bare s3:// URL form can't, and R2 needs it (see litestream.yml).

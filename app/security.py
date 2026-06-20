@@ -8,6 +8,7 @@ exemption mechanism on purpose — if a route needs one, that's a design smell.
 
 import hashlib
 import hmac
+import re
 import secrets
 from functools import wraps
 
@@ -45,6 +46,19 @@ def use_public_csp() -> str:
     return nonce
 
 
+# The password-reset link carries a single-use token in the URL path
+# (GET /reset/<token>). It's short-lived and Referrer-Policy already blocks
+# referer leakage, but logging it is avoidable exposure — a log reader could
+# replay it inside the 1h window (issue #11). gunicorn's access logger runs
+# this over each request path before writing the line (see gunicorn.conf.py).
+_RESET_TOKEN_PATH_RE = re.compile(r"^(/reset/)[^/?\s]+")
+
+
+def scrub_sensitive_path(uri: str) -> str:
+    """Redact the reset token from a request target so it never hits the logs."""
+    return _RESET_TOKEN_PATH_RE.sub(r"\g<1>[redacted]", uri)
+
+
 def session_auth_fragment(password_hash: str) -> str:
     """Derived from the password hash and stored in the session at login.
     load_user rejects sessions whose fragment no longer matches — so changing
@@ -74,10 +88,21 @@ def check_csrf() -> None:
             abort(400)
 
 
+# Static asset prefixes that are safe to cache forever. Fonts carry their
+# version in the filename (fontsource naming); avatar/pack tiles are curated
+# art whose filename IS the contract (the registry in constants.py / theme.py
+# maps a token to a fixed path). They never change in place — a future art
+# swap ships a NEW filename + registry entry (DECISIONS.md), so old URLs can
+# stay cached without going stale. css/js keep Flask's default max-age.
+_IMMUTABLE_STATIC_PREFIXES = (
+    "/static/fonts/",
+    "/static/avatars/",
+    "/static/packs/",
+)
+
+
 def apply_security_headers(response):
-    # Font files carry their version in the filename (fontsource naming), so
-    # they're safe to cache forever; css/js keep Flask's default max-age.
-    if request.path.startswith("/static/fonts/"):
+    if request.path.startswith(_IMMUTABLE_STATIC_PREFIXES):
         response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
     response.headers.setdefault(
         "Content-Security-Policy", getattr(g, "csp", DASH_CSP)

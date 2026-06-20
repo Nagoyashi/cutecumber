@@ -328,9 +328,10 @@ does — which is verifiable from this repo. Legal links sit in the site footer
 on dash/auth/landing pages AND as tiny muted links on public profile footers
 (German "immediately reachable" practice favors this; **revisit** removing
 them from profile pages only if qualified counsel says the two-click path via
-the landing page suffices). Known gap, stated honestly in the privacy page:
-account deletion is manual-by-email until a delete button ships (launch
-checklist 1c). These pages are drafts by a software project, not legal advice.
+the landing page suffices). Self-service account deletion shipped (#29: a
+password-gated delete button under /dash/account), so the privacy page describes
+that path rather than a manual-by-email gap. These pages are drafts by a
+software project, not legal advice.
 
 ## 28. Landing "why" claims must stay literally true
 
@@ -444,7 +445,7 @@ real Lighthouse run happens; revisit the wordmark font only via the #23 pipeline
 ## 35. Dependency hygiene: digest-pinned base + blocking pip-audit (issue #7)
 
 Two hardening moves for the live product, both deploy-agnostic:
-- **Reproducible builds:** the Dockerfile base is pinned to the `python:3.12-slim`
+- **Reproducible builds:** the Dockerfile base is pinned to the `python:3.14-slim`
   *index* digest (`@sha256:…`), not the floating tag — the tag is kept inline for
   readability and to mirror the CI Python pin. A given commit now builds the same
   base bytes forever. Dependabot's `docker` ecosystem updates the digest on a
@@ -456,8 +457,32 @@ Two hardening moves for the live product, both deploy-agnostic:
   `--ignore-vuln GHSA-…` in `ci.yml` (a visible, reviewed exception) rather than
   by dropping the gate. Update cadence is Dependabot weekly (`.github/dependabot.yml`).
 **Lockstep rule:** the base image and `ci.yml`'s `python-version` are pinned to
-the SAME minor (3.12) on purpose — a Python minor bump (e.g. the held 3.14 base
-PR) moves BOTH in one change, or CI tests a runtime prod doesn't use.
+the SAME minor (3.14) on purpose — a Python minor bump moves BOTH in one change,
+or CI tests a runtime prod doesn't use. (The 3.12→3.14 bump in `v0.2.1` did
+exactly this: the Dockerfile digest came via Dependabot, `ci.yml` moved with it.)
 **Revisit:** GitHub Dependency-graph + Dependabot security alerts are the
 repo-settings complement (owner-toggled); if pip-audit noise from unfixable
 transitive advisories becomes routine, reconsider scoping it to direct deps.
+
+## 36. Error reporting: optional webhook over raw HTTPS, no SDK (issue #13)
+
+Live 500s previously reached only stdout / Fly logs — no aggregation, no alert,
+so a silent error could sit unseen. The fix is an **opt-in** reporter: when
+`ERROR_WEBHOOK_URL` is set, `app/monitoring.py` POSTs a small JSON object
+(service, method, reset-token-scrubbed path, exception + traceback) to that URL
+on Flask's `got_request_exception` signal. Unset = a no-op.
+
+**Why a webhook, not the Sentry SDK** (this is the written closed-deps
+justification the stack rule requires): the job is "POST JSON when something
+breaks," which the stdlib does — exactly the reasoning that kept Resend SDK-free
+(#26). `sentry-sdk` pulls a transitive tree and a background-thread transport
+for what one `urllib` call covers, so it doesn't clear the bar in `RULES.md`.
+The env var accepts any JSON sink (a Sentry ingest URL, a Slack/Discord webhook,
+a self-hosted collector), so we keep the integration without the dependency.
+
+**Privacy:** method + scrubbed path + traceback only — never the request body,
+headers, cookies, or user identity; stdlib tracebacks carry no local variables.
+Delivery never raises (a monitoring outage must not turn one 500 into two).
+**Revisit:** if we ever need breadcrumbs / release health / sampling that a
+hand-rolled POST can't carry, re-evaluate `sentry-sdk` as a written dep here —
+with the transitive tree counted against the budget.
