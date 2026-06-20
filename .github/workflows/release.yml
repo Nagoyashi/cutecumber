@@ -25,7 +25,7 @@ jobs:
       TAG: ${{ github.ref_name }}
     steps:
       - name: Check out the tagged commit
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Publish the GitHub Release from its notes file
         run: |
