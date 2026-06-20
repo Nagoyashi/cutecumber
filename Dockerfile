@@ -1,6 +1,6 @@
-# Base image digest-pinned for reproducible builds (issue #7). The 3.12-slim
+# Base image digest-pinned for reproducible builds (issue #7). The 3.14-slim
 # tag is kept for readability and to match the CI Python pin; the @sha256 digest
-# is the actual contract. Dependabot updates the digest; a 3.12->3.x bump is a
+# is the actual contract. Dependabot updates the digest; a 3.x->3.y bump is a
 # deliberate, separate change (must move the ci.yml python-version in lockstep).
 FROM python:3.14-slim@sha256:44dd04494ee8f3b538294360e7c4b3acb87c8268e4d0a4828a6500b1eff50061
 

@@ -280,5 +280,117 @@ class TestLoginEnumeration(SecurityTestBase):
         self.assertIn(self.NEUTRAL, resp.data)
 
 
+class TestResetTokenScrub(unittest.TestCase):
+    """The reset token must never reach an access log (issue #11). The pure
+    scrubber gunicorn runs over each request path is the boundary."""
+
+    def test_reset_token_is_redacted(self):
+        from app.security import scrub_sensitive_path
+
+        self.assertEqual(
+            scrub_sensitive_path("/reset/super-secret-token"), "/reset/[redacted]"
+        )
+
+    def test_other_paths_untouched(self):
+        from app.security import scrub_sensitive_path
+
+        for path in ("/reset", "/login", "/alice", "/static/avatars/berry.svg"):
+            self.assertEqual(scrub_sensitive_path(path), path)
+
+
+class TestImmutableStaticCaching(SecurityTestBase):
+    """Curated art (avatars, pack tiles, fonts) is immutable-cached so public
+    pages stop revalidating it every load (issue #12)."""
+
+    def setUp(self):
+        super().setUp()
+        self.client = self.app.test_client()
+
+    def _cache_control(self, path):
+        resp = self.client.get(path)
+        try:
+            return resp.headers.get("Cache-Control", "")
+        finally:
+            resp.close()
+
+    def test_avatar_and_pack_tiles_are_immutable(self):
+        for path in (
+            "/static/avatars/berry.svg",
+            "/static/packs/sakura_dreams/sparkle.svg",
+            "/static/fonts/fredoka-latin-600-normal.woff2",
+        ):
+            self.assertIn("immutable", self._cache_control(path), path)
+
+    def test_css_is_not_force_cached(self):
+        # dash.css can change between deploys without a new name — must revalidate.
+        self.assertNotIn("immutable", self._cache_control("/static/dash.css"))
+
+
+class TestErrorWebhook(SecurityTestBase):
+    """Optional error reporting: no-op when unset, scrubbed payload when set,
+    and never raises (issue #13, DECISIONS #36)."""
+
+    def test_noop_when_unset(self):
+        from app import monitoring
+
+        os.environ.pop("ERROR_WEBHOOK_URL", None)
+        sent = []
+        with self.app.test_request_context("/reset/secret-token"):
+            # urlopen must never be called; if it were, this would record it.
+            orig = monitoring.urllib.request.urlopen
+            monitoring.urllib.request.urlopen = lambda *a, **k: sent.append(a)
+            try:
+                monitoring._report(self.app, ValueError("boom"))
+            finally:
+                monitoring.urllib.request.urlopen = orig
+        self.assertEqual(sent, [], "reported despite ERROR_WEBHOOK_URL unset")
+
+    def test_reports_scrubbed_payload_when_set(self):
+        import json
+
+        from app import monitoring
+
+        captured = {}
+
+        class _Resp:
+            def close(self):
+                pass
+
+        def _fake_urlopen(req, timeout=None):
+            captured["url"] = req.full_url
+            captured["body"] = json.loads(req.data.decode("utf-8"))
+            return _Resp()
+
+        os.environ["ERROR_WEBHOOK_URL"] = "https://sink.test/hook"
+        orig = monitoring.urllib.request.urlopen
+        monitoring.urllib.request.urlopen = _fake_urlopen
+        try:
+            with self.app.test_request_context("/reset/secret-token"):
+                monitoring._report(self.app, ValueError("boom"))
+        finally:
+            monitoring.urllib.request.urlopen = orig
+            os.environ.pop("ERROR_WEBHOOK_URL", None)
+
+        self.assertEqual(captured["url"], "https://sink.test/hook")
+        self.assertEqual(captured["body"]["path"], "/reset/[redacted]")
+        self.assertIn("ValueError: boom", captured["body"]["exception"])
+
+    def test_delivery_failure_never_raises(self):
+        from app import monitoring
+
+        def _boom(*a, **k):
+            raise monitoring.urllib.error.URLError("network down")
+
+        os.environ["ERROR_WEBHOOK_URL"] = "https://sink.test/hook"
+        orig = monitoring.urllib.request.urlopen
+        monitoring.urllib.request.urlopen = _boom
+        try:
+            with self.app.test_request_context("/x"):
+                monitoring._report(self.app, ValueError("boom"))  # must not raise
+        finally:
+            monitoring.urllib.request.urlopen = orig
+            os.environ.pop("ERROR_WEBHOOK_URL", None)
+
+
 if __name__ == "__main__":
     unittest.main()

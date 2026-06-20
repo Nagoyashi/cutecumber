@@ -14,6 +14,8 @@ cutecumber/
 │                            Fly.io deploy (DEPLOY.md is the runbook):
 │                            restore-if-empty → init-db → gunicorn -w 1,
 │                            Litestream wraps it when configured
+├── gunicorn.conf.py         gunicorn config: access logger that redacts the
+│                            reset token from logged paths (issue #11)
 ├── DEPLOY.md                Fly.io deploy + backup + launch-day runbook
 ├── requirements.txt         flask, bcrypt, python-dotenv, flask-limiter, gunicorn, pillow — closed list
 ├── .env.example             SECRET_KEY (mandatory), DATABASE, AVATAR_DIR, SITE_ORIGIN, COOKIE_SECURE, TRUST_PROXY
@@ -34,7 +36,7 @@ cutecumber/
     ├── db.py                get_db() (per-request conn, WAL, busy_timeout),
     │                        init-db CLI command (also runs idempotent column
     │                        upgrades — always safe to re-run)
-    ├── schema.sql           users + links (links table pre-created, CRUD later)
+    ├── schema.sql           users + links + username_tombstones (idempotent)
     ├── theme.py             THE theming engine (shape v2): PRESETS (6, AA-
     │                        enforced), validate_theme (save, strict),
     │                        resolve_theme (render, tolerant), computed
@@ -53,6 +55,9 @@ cutecumber/
     │                        reset: hashed single-use tokens, anti-enumeration)
     ├── mail.py              send_email() via Resend HTTP API (stdlib urllib,
     │                        no SDK). Dev mode: logs instead of sending.
+    ├── monitoring.py        optional error reporting: POSTs unhandled-exception
+    │                        JSON to ERROR_WEBHOOK_URL (stdlib urllib, no SDK,
+    │                        no-op when unset). DECISIONS #36.
     ├── dash.py              GET /dash, POST /dash/claim (one-shot, race-safe),
     │                        POST /dash/profile (re-renders form on error),
     │                        GET /dash/account + POST /dash/account/delete
