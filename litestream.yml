@@ -1,0 +1,21 @@
+# Litestream replication config (issue #9).
+#
+# Why a config file instead of the bare s3:// replica URL: Litestream v0.3.13's
+# URL form has no way to set the S3 region, so it falls back to an AWS
+# GetBucketLocation lookup — which Cloudflare R2 rejects with InvalidAccessKeyId
+# (the lookup hits AWS, not R2). Setting `region` explicitly here skips that
+# lookup. R2 is region-agnostic, so `auto` is correct.
+#
+# Non-secret values (bucket, path, endpoint) come from fly.toml [env];
+# credentials come from fly secrets. The entrypoint only enables replication
+# when LITESTREAM_BUCKET is set, so the app still deploys before backups exist.
+dbs:
+  - path: ${DATABASE}
+    replicas:
+      - type: s3
+        bucket: ${LITESTREAM_BUCKET}
+        path: ${LITESTREAM_PATH}
+        endpoint: ${LITESTREAM_ENDPOINT}
+        region: auto
+        access-key-id: ${LITESTREAM_ACCESS_KEY_ID}
+        secret-access-key: ${LITESTREAM_SECRET_ACCESS_KEY}

@@ -1,10 +1,12 @@
 #!/bin/sh
 set -e
 
+CONFIG=/app/litestream.yml
+
 # Disaster recovery: empty volume + configured replica -> restore the DB.
-if [ -n "$LITESTREAM_REPLICA_URL" ] && [ ! -f "$DATABASE" ]; then
+if [ -n "$LITESTREAM_BUCKET" ] && [ ! -f "$DATABASE" ]; then
   echo "no database found — attempting restore from replica…"
-  litestream restore -if-replica-exists "$DATABASE"
+  litestream restore -if-replica-exists -config "$CONFIG" "$DATABASE"
 fi
 
 # Idempotent by design: applies schema + any missing-column upgrades.
@@ -12,10 +14,12 @@ flask --app wsgi init-db
 
 GUNICORN="gunicorn -w 1 -b 0.0.0.0:8000 --access-logfile - wsgi:app"
 
-if [ -n "$LITESTREAM_REPLICA_URL" ]; then
-  echo "replicating to $LITESTREAM_REPLICA_URL"
-  exec litestream replicate -exec "$GUNICORN" "$DATABASE" "$LITESTREAM_REPLICA_URL"
+# Backups are config-file driven (litestream.yml) so the S3 region can be set —
+# the bare s3:// URL form can't, and R2 needs it (see litestream.yml).
+if [ -n "$LITESTREAM_BUCKET" ]; then
+  echo "replicating to s3://$LITESTREAM_BUCKET/$LITESTREAM_PATH"
+  exec litestream replicate -config "$CONFIG" -exec "$GUNICORN"
 else
-  echo "LITESTREAM_REPLICA_URL not set — running WITHOUT backups"
+  echo "LITESTREAM_BUCKET not set — running WITHOUT backups"
   exec $GUNICORN
 fi

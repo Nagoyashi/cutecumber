@@ -77,20 +77,38 @@ auto-restores onto an empty volume, so losing the machine loses nothing.
 > them. They're user-re-uploadable, so this is acceptable; if that changes,
 > add object-storage sync for `/data/avatars`.
 
+Config lives in `litestream.yml` (a config file, not the bare `s3://` URL —
+Litestream v0.3.13's URL form can't set the S3 `region`, so it does an AWS
+region lookup that R2 rejects with `InvalidAccessKeyId`; the config file pins
+`region: auto`). Non-secret values are in `fly.toml [env]`; credentials are
+secrets. Replication turns on only when `LITESTREAM_BUCKET` is set.
+
 1. Create a free bucket: Cloudflare R2 (10 GB free) or Backblaze B2.
-2. Create an access key pair for it.
-3. ```bash
+2. Create an "Object Read & Write" access key pair for it. For an **EU**
+   R2 bucket the token scope must be **all buckets** (or EU-jurisdiction) and
+   the endpoint must be the `.eu.` form — `<account>.eu.r2.cloudflarestorage.com`.
+3. Non-secret config in `fly.toml [env]` (commit it):
+   ```toml
+   LITESTREAM_BUCKET   = "your-bucket"
+   LITESTREAM_PATH     = "cutecumber"
+   LITESTREAM_ENDPOINT = "https://<account>.eu.r2.cloudflarestorage.com"
+   ```
+   Credentials as secrets:
+   ```bash
    fly secrets set \
      LITESTREAM_ACCESS_KEY_ID="..." \
-     LITESTREAM_SECRET_ACCESS_KEY="..." \
-     LITESTREAM_REPLICA_URL="s3://your-bucket/cutecumber"
+     LITESTREAM_SECRET_ACCESS_KEY="..."
    ```
-   For R2, the replica URL needs the account endpoint — use the exact form
-   from the Litestream docs page "Replicating to Cloudflare R2".
-4. `fly deploy`, then confirm `fly logs` shows "replicating to …".
-5. **Fire drill (do it once):** `fly volumes destroy` on a throwaway test
-   app, redeploy, watch the restore happen. A backup you've never restored
-   is a hope, not a backup.
+4. `fly deploy`, then confirm `fly logs` shows "replicating to …" followed by
+   "snapshot written" / "wal segment written" (not "WITHOUT backups" or any
+   `monitor error`). Tip: validate creds out-of-band first — a quick boto3
+   `put_object`/`get_object` against the endpoint catches key/scope/jurisdiction
+   mistakes before a redeploy.
+5. **Fire drill (do it once):** `fly ssh console`, then
+   `litestream restore -config /app/litestream.yml -o /tmp/verify.db "$DATABASE"`
+   and confirm it rebuilds a valid DB (`sqlite3 /tmp/verify.db .tables`). A
+   backup you've never restored is a hope, not a backup. (Destroying a
+   throwaway app's volume and watching the auto-restore is the heavier variant.)
 
 ## 7. Launch day
 

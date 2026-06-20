@@ -12,6 +12,13 @@ primary_region = "fra"
   COOKIE_SECURE = "1"
   HSTS = "1"
   ROBOTS_ALLOW = "0"   # stealth — flip to "1" on launch day, then `fly deploy`
+  # Litestream DB backups (issue #9). Non-secret config; credentials are in
+  # fly secrets (LITESTREAM_ACCESS_KEY_ID / LITESTREAM_SECRET_ACCESS_KEY).
+  # LITESTREAM_BUCKET being set is what enables replication (entrypoint.sh).
+  # EU-jurisdiction R2 bucket -> the `.eu.` endpoint is required.
+  LITESTREAM_BUCKET = "cutecumber-litestream"
+  LITESTREAM_PATH = "cutecumber"
+  LITESTREAM_ENDPOINT = "https://905c8589bb44634314a4c2bb5a809021.eu.r2.cloudflarestorage.com"
 
 [mounts]
   source = "cutecumber_data"
