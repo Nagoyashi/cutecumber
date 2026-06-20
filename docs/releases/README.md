@@ -22,4 +22,5 @@ Pre-releases use a hyphenated tag (`vX.Y.Z-rc.N`) and the Action marks them
 
 _(newest first — add a line when a release ships)_
 
-- _none yet — `v0.1.0` predates this system and has no notes file._
+- [`v0.2.0`](v0.2.0.md) — Production hardening (Phase 4): backups, reset email, legal, security tests.
+- _`v0.1.0` predates this system and has no notes file._
