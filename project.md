@@ -76,8 +76,11 @@ Durable completion notes, newest first. Rationale → `DECISIONS.md`.
 - Legal placeholders (imprint + privacy) filled for the live EU site. Issue #3.
 - Security regression tests: CSRF, IDOR, cookie-free guarantee. Issue #6, PR #28.
 - Dependency vuln scanning + reproducible (digest-pinned) builds. Issue #7, PR #27.
-- Deferred to `v0.2.1`: Dependabot runtime bumps (`actions/checkout` v7,
-  `actions/setup-python` v6, python 3.14-slim, gunicorn 26).
+- Shipped in `v0.2.1` (2026-06-20, patch): the deferred Dependabot runtime
+  bumps (`actions/checkout` v7, `actions/setup-python` v6, python 3.14-slim,
+  gunicorn 26) plus the four `prio:low` backlog items — reset-token log
+  scrubbing (#11), immutable caching for avatar/pack tiles (#12), an optional
+  error-reporting webhook (#13, DECISIONS #36), and a docs reconcile (#10).
 
 ### Phase 3 — Design-spec v1 — shipped 2026-06-14 (`v0.1.0`)
 
