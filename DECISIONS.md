@@ -487,3 +487,21 @@ Delivery never raises (a monitoring outage must not turn one 500 into two).
 **Revisit:** if we ever need breadcrumbs / release health / sampling that a
 hand-rolled POST can't carry, re-evaluate `sentry-sdk` as a written dep here —
 with the transitive tree counted against the budget.
+
+## 37. Lighthouse SEO < 100 is a false negative from our strict CSP — don't "fix" it
+
+At launch (v0.3.0) the live landing page scores Performance / Accessibility /
+Best-Practices **100** but **SEO ~91**, on a single failing audit: `robots-txt`
+→ "Lighthouse was unable to download a robots.txt file." It is served correctly
+(HTTP 200, `text/plain`, valid `User-agent: * / Disallow:`); `curl` fetches it
+fine. The cause is that Lighthouse's audit measures via an **in-page `fetch()`**,
+which the public-page CSP (`default-src 'none'`, no `connect-src`) blocks by
+design — the same zero-fetch posture that keeps public pages cookie- and
+JS-free. **Real crawlers (Googlebot et al.) fetch `robots.txt` as a top-level
+request, unaffected by CSP**, so discoverability is fine.
+
+**Decision:** do NOT add `connect-src 'self'` (or otherwise loosen the public
+CSP) to make a Lighthouse audit pass — that would weaken a real security control
+to satisfy a measurement artifact. Tie-break order puts privacy/security above a
+lint. **Revisit:** only if a real crawler is ever shown to be blocked (it
+won't be by CSP), or if Lighthouse changes the audit to a top-level fetch.
