@@ -107,6 +107,9 @@ tests/
 docs/releases/
     ├── README.md                release-notes index + the write-before-tag rule
     └── vX.Y.Z.md                one per release; H1 → Release title, body → notes
+docs/design/
+    └── refresh-v2.md            design-refresh v2 spec (tokens/screens/motion);
+                                 canonical reference for the v0.4.0 cycle
 ```
 
 ## Conventions
