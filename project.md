@@ -13,10 +13,12 @@ never on feature breadth.
 
 ## Current phase
 
-**Between cycles.** Phase 4 — Production hardening shipped as **`v0.2.0`**
-(2026-06-20). Next up: **Phase 5 — Launch & growth** — propose the cycle scope
-and get the owner's OK before starting (see the Release cycle in CLAUDE.md).
-Per-task status → the *cutecumber.cc* GitHub Project board ↗
+**Between cycles.** Phase 5 — Launch shipped as **`v0.3.0`** (2026-06-21):
+cutecumber.cc is **public** (`ROBOTS_ALLOW` on). Next up: **Phase 6 — Growth**
+(paid decoration packs, more themes/avatars) — propose the cycle scope and get
+the owner's OK before starting (see the Release cycle in CLAUDE.md). The paid
+side needs a payment-processor decision in `DECISIONS.md` first. Per-task status
+→ the *cutecumber.cc* GitHub Project board ↗
 
 ## Roadmap
 
@@ -51,11 +53,20 @@ milestone.
 **Acceptance (met):** the high/med audit issues closed; DB backups (Litestream →
 R2) and password-reset email verified working in production.
 
-### ⬜ Phase 5 — Launch & growth (planned — speculative)
+### ✅ Phase 5 — Launch (shipped v0.3.0 · 2026-06-21)
 
-Public launch (flip `ROBOTS_ALLOW`, real Lighthouse pass in Chrome, phone QA),
-then growth — paid decoration packs (see `DESIGN_PACKS.md`) and more themes /
-avatars. *Best guess; correct as direction firms up.*
+Public launch: flipped `ROBOTS_ALLOW` so `robots.txt` allows crawling, and held
+the front door to the same accessibility bar as the rest of the app (a headless
+Lighthouse pass caught the landing CTA failing WCAG AA — fixed). Authoritative
+Chrome DevTools Lighthouse + on-phone QA (#34) run as owner-driven post-launch
+verification.
+
+### ⬜ Phase 6 — Growth (planned — speculative)
+
+Paid decoration packs (see `DESIGN_PACKS.md`) and more themes / avatars. Paid
+packs need a payment-processor decision (a new dependency + attack surface) in
+`DECISIONS.md` before they're cycle-ready. *Best guess; correct as direction
+firms up.*
 
 > Versioning: shipped phases above are dated from git history — no semver tags
 > exist for them. Going forward, each phase release gets a semver tag
@@ -64,6 +75,25 @@ avatars. *Best guess; correct as direction firms up.*
 ## Phase log
 
 Durable completion notes, newest first. Rationale → `DECISIONS.md`.
+
+### Phase 5 — Launch — shipped 2026-06-21 (`v0.3.0`)
+
+- Public launch: `ROBOTS_ALLOW = "1"` in `fly.toml`; `robots.txt` now serves
+  `Disallow:` (allow all). No page-weight or behavior change — same zero-JS,
+  cookie-free public pages, now crawlable. Issue #35, PR #38.
+- Accessibility fix found by the launch readiness pass: the landing primary CTA
+  was white-on-pink at 2.36:1 (below WCAG AA). Switched to a deep-cherry ink on
+  the same pink (6.32:1 rest / 5.26:1 hover) + a brand-chrome contrast
+  regression test — the preset AA tests never covered chrome. Issue #36.
+- Post-launch headless Lighthouse (landing): Performance / Accessibility /
+  Best-Practices all **100**. SEO reads 91 due to one false-negative audit:
+  Lighthouse fetches `robots.txt` via an in-page `fetch()` that the public-page
+  CSP (`default-src 'none'`, no `connect-src`) blocks by design; real crawlers
+  fetch it top-level and are unaffected — CSP deliberately not weakened. The
+  authoritative Chrome DevTools run + on-phone walkthrough stay owner-driven (#34).
+- Patch `v0.2.1` (2026-06-20) preceded this: deferred dependency bumps + the
+  prio:low backlog (log scrubbing, art caching, optional error webhook, doc
+  reconcile).
 
 ### Phase 4 — Production hardening — shipped 2026-06-20 (`v0.2.0`)
 
