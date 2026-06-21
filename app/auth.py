@@ -104,13 +104,18 @@ def login():
         return redirect(url_for("dash.home"))
 
     if request.method == "POST":
-        email = (request.form.get("email") or "").strip().lower()
+        identifier = (request.form.get("identifier") or "").strip().lower()
         password_bytes = (request.form.get("password") or "").encode("utf-8")
 
+        # Log in with either email OR username (#54). They never collide — a
+        # username can't contain '@' and an email must — so a single lookup is
+        # unambiguous. Usernames are already public (they're the page URL), so
+        # this adds no account-enumeration surface.
         row = (
             get_db()
             .execute(
-                "SELECT id, password_hash FROM users WHERE email = ?", (email,)
+                "SELECT id, password_hash FROM users WHERE email = ? OR username = ?",
+                (identifier, identifier),
             )
             .fetchone()
         )
