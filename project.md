@@ -13,12 +13,15 @@ never on feature breadth.
 
 ## Current phase
 
-**Between cycles.** Phase 5 — Launch shipped as **`v0.3.0`** (2026-06-21):
-cutecumber.cc is **public** (`ROBOTS_ALLOW` on). Next up: **Phase 6 — Growth**
-(paid decoration packs, more themes/avatars) — propose the cycle scope and get
-the owner's OK before starting (see the Release cycle in CLAUDE.md). The paid
-side needs a payment-processor decision in `DECISIONS.md` first. Per-task status
-→ the *cutecumber.cc* GitHub Project board ↗
+**In cycle.** Public launch shipped (`v0.3.0`); the **design refresh** landed in
+two cycles: **`v0.4.0`** (landing + dashboard, shipped 2026-06-21) and **`v0.5.0`
+— public profile + auth refresh, in progress** (milestone `v0.5.0`). Done in
+v0.5.0: email-or-username login (#54) and the theme-v3 page settings +
+circle-crop avatars (#55). Remaining: public-page restyle (#50), auth-screen
+restyle + hidden magic-link UI (#51, #53), and the taken/404 states (#52).
+Deferred: magic-link **backend** → v0.6.0; a v0.6.0 cleanup release will also
+pick up the post-launch QA (#34). Growth (paid packs) needs a payment-processor
+decision in `DECISIONS.md` first. Per-task status → the *cutecumber.cc* board ↗
 
 ## Roadmap
 
@@ -75,6 +78,19 @@ firms up.*
 ## Phase log
 
 Durable completion notes, newest first. Rationale → `DECISIONS.md`.
+
+### Design refresh v2 — landing + dashboard — shipped 2026-06-21 (`v0.4.0`)
+
+- Re-implemented a designer handoff (delivered as React prototypes) as Jinja +
+  vanilla CSS: split-hero landing, restyled dashboard, and a shared inline-SVG
+  `<symbol>` ambient background (`_motif_sprite.html`), CSS-only motion. Drawn
+  avatars lead the picker; new default `set:sprout`; emoji/gradient kept
+  rendering for existing users (no migration). Issues #40–#44.
+- Caught pre-tag by Lighthouse: the prototype re-introduced the white-on-pink
+  CTA contrast fail (kept the #36 dark-ink fix as a token), and the ambient
+  motifs' inline `style=` was CSP-blocked (moved placement into the nonce'd
+  `<style>` / `dash.css`). Verified live at Lighthouse 100/100/100, 0 console
+  errors. Landing 4.7 KB gz.
 
 ### Phase 5 — Launch — shipped 2026-06-21 (`v0.3.0`)
 
