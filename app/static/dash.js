@@ -134,6 +134,33 @@
       bind("display_name", () => h1, "@" + frame.dataset.username);
       bind("pronouns", () => ensure(".pronouns", "pronouns"));
       bind("bio", () => ensure(".bio", "bio"));
+
+      // live avatar preview: swap the iframe's avatar the moment a tile is
+      // picked or a photo is chosen (it otherwise only changed on save).
+      const swapAvatar = (src, cls) => {
+        const current = doc.querySelector(".avatar-img, .avatar-set, .avatar");
+        if (!current) return;
+        const img = doc.createElement("img");
+        img.className = cls;
+        img.src = src;
+        img.width = img.height = 88;
+        img.alt = "";
+        current.replaceWith(img);
+      };
+      document.querySelectorAll('input[name="avatar"]').forEach((radio) => {
+        radio.addEventListener("change", () => {
+          if (radio.value.startsWith("set:")) {
+            swapAvatar("/static/avatars/" + radio.value.slice(4) + ".svg", "avatar-set");
+          }
+        });
+      });
+      const photo = document.getElementById("avatar_file");
+      if (photo) {
+        photo.addEventListener("change", () => {
+          const file = photo.files && photo.files[0];
+          if (file) swapAvatar(URL.createObjectURL(file), "avatar-img");
+        });
+      }
     };
     frame.addEventListener("load", wire);
   }

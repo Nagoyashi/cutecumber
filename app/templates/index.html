@@ -26,8 +26,6 @@ background:linear-gradient(160deg,var(--bg1) 0%,var(--bg2) 100%);background-atta
 
 /* ambient background (decorative) */
 .ambient{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
-.watermark{position:absolute;right:-180px;bottom:-200px;opacity:.07}
-.watermark svg{display:block}
 .motif{position:absolute;transform:translate(-50%,-50%) rotate(var(--rot,0deg))}
 .motif svg{display:block;filter:drop-shadow(0 6px 12px rgba(83,52,63,.06))}
 /* per-motif placement lives here (not inline style=) so the strict public CSP
@@ -50,7 +48,6 @@ background:linear-gradient(160deg,var(--bg1) 0%,var(--bg2) 100%);background-atta
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 @media (prefers-reduced-motion:no-preference){
 .motif{animation:drift var(--dur,14s) ease-in-out var(--delay,0s) infinite}
-.watermark{animation:bob 22s ease-in-out infinite}
 .phone{animation:bob 7s ease-in-out infinite}
 }
 @keyframes drift{0%,100%{transform:translate(-50%,-50%) rotate(var(--rot,0deg))}
@@ -99,7 +96,9 @@ padding:30px 22px 22px;text-align:center;box-shadow:0 24px 60px rgba(83,52,63,.1
 /* features */
 .features{padding:8px 0 72px}
 .features-grid{display:grid;grid-template-columns:1fr;gap:16px}
-.feat{background:rgba(255,255,255,.82);backdrop-filter:blur(6px);border:1px solid var(--border);border-radius:20px;padding:22px}
+.feat{background:rgba(255,255,255,.82);backdrop-filter:blur(6px);border:1px solid var(--border);border-radius:20px;padding:22px;transition:transform .16s ease,box-shadow .16s ease}
+.feat:hover{transform:translateY(-4px);box-shadow:0 12px 26px rgba(229,143,177,.18)}
+@media (prefers-reduced-motion:reduce){.feat{transition:none}.feat:hover{transform:none}}
 .feat-ic{width:40px;height:40px;border-radius:12px;background:var(--bg1);display:flex;align-items:center;justify-content:center}
 .feat h3{margin-top:14px;font-size:1.05rem;color:var(--green)}
 .feat p{margin-top:6px;font-size:.95rem;color:var(--muted)}
@@ -128,7 +127,6 @@ footer a:hover,footer a:focus-visible{color:var(--ink)}
 {% include "_motif_sprite.html" %}
 
 <div class="ambient" aria-hidden="true">
-  <div class="watermark"><svg width="640" height="640"><use href="#m-slice"/></svg></div>
   <div class="motif m1"><svg width="96" height="96"><use href="#m-slice"/></svg></div>
   <div class="motif m2"><svg width="60" height="60"><use href="#m-blossom"/></svg></div>
   <div class="motif m3"><svg width="30" height="30"><use href="#m-sparkle"/></svg></div>
@@ -178,7 +176,7 @@ footer a:hover,footer a:focus-visible{color:var(--ink)}
           <span>commission info</span>
           <span>everywhere else i live</span>
         </div>
-        <p class="phone-foot">made with 🥒 cutecumber</p>
+        <p class="phone-foot">made with cutecumber</p>
       </div>
     </div>
   </section>

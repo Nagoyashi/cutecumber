@@ -125,6 +125,7 @@ AVATAR_EMOJI_MAX = 8  # generous for ZWJ sequences (matches LINK_EMOJI_MAX)
 AVATAR_SETS = frozenset({
     "berry", "blossom", "boo", "bun", "froggy", "matcha",
     "moonbeam", "riceball", "shroom", "sprout", "twinkle", "whiskers",
+    "cutecumber",  # the slice mark itself, pickable as an avatar
 })
 
 # New accounts start on a drawn set tile, not the 🥒 emoji (DECISIONS.md #13
