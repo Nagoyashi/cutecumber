@@ -21,8 +21,14 @@
 <div class="col-main">
 
 <section class="card pagebar">
-  <p class="pagelink">🎉 <a href="{{ site_origin }}/{{ g.user.username }}">cutecumber.cc/{{ g.user.username }}</a></p>
-  <p class="hint">your page is live — pop that link in your bios 💕</p>
+  <div class="pagebar-main">
+    <p class="pagebar-label">your page is live 🎉</p>
+    <a class="pagebar-url fred" href="{{ site_origin }}/{{ g.user.username }}">cutecumber.cc/<strong>{{ g.user.username }}</strong></a>
+  </div>
+  <div class="pagebar-btns">
+    <button type="button" class="pill ghost" id="copy-link" data-copy="{{ site_origin }}/{{ g.user.username }}">copy link</button>
+    <a class="pill" href="{{ site_origin }}/{{ g.user.username }}" target="_blank" rel="noopener">visit ↗</a>
+  </div>
 </section>
 
 <details class="card section" id="links" {% if open_section == 'links' %}open{% endif %}>
@@ -77,43 +83,39 @@
     <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
 
     <span class="field-label">your avatar</span>
-    <div role="radiogroup" aria-label="avatar">
-      <div class="picker">
-        {% if g.user.avatar_kind == 'image' %}
-        <label class="pick">
-          <input type="radio" name="avatar" value="image:keep"
-                 {% if form.avatar_kind == 'image' %}checked{% endif %}>
-          <span class="swatch photo-swatch"><img src="/a/{{ g.user.avatar_value }}" alt="your photo"></span>
-        </label>
-        {% endif %}
-        {% for slug in avatar_sets %}
-        <label class="pick">
-          <input type="radio" name="avatar" value="set:{{ slug }}"
-                 {% if form.avatar_kind == 'set' and form.avatar_value == slug %}checked{% endif %}>
-          <span class="swatch set-swatch"><img src="{{ url_for('static', filename='avatars/' ~ slug ~ '.svg') }}" alt="{{ slug }}"></span>
-        </label>
-        {% endfor %}
-        {% for name in avatar_gradients %}
-        <label class="pick">
-          <input type="radio" name="avatar" value="gradient:{{ name }}"
-                 {% if form.avatar_kind == 'gradient' and form.avatar_value == name %}checked{% endif %}>
-          <span class="swatch grad grad-{{ name }}" title="{{ name.replace('_', ' ') }}"></span>
-        </label>
-        {% endfor %}
-      </div>
-      <label class="emoji-pick">
-        <input type="radio" name="avatar" value="emoji"
-               {% if form.avatar_kind == 'emoji' %}checked{% endif %}>
-        <span>or use any emoji</span>
-        <input class="emoji-avatar-in" name="avatar_emoji" maxlength="8"
-               autocomplete="off" autocapitalize="off" spellcheck="false"
-               value="{{ form.avatar_value if form.avatar_kind == 'emoji' else '' }}"
-               placeholder="🥰" aria-label="your own emoji">
+    <div class="avgrid" role="radiogroup" aria-label="avatar">
+      {# emoji + flat gradients are retired from the picker (design refresh v2),
+         but if the user already has one — or a photo — we keep it as a tile so
+         editing the profile never silently changes their avatar (#43). #}
+      {% if g.user.avatar_kind == 'image' %}
+      <label class="av-pick photo">
+        <input type="radio" name="avatar" value="image:keep" {% if form.avatar_kind == 'image' %}checked{% endif %}>
+        <img src="/a/{{ g.user.avatar_value }}" alt="your photo">
+      </label>
+      {% elif g.user.avatar_kind == 'gradient' and g.user.avatar_value in avatar_gradients %}
+      <label class="av-pick" title="your current gradient">
+        <input type="radio" name="avatar" value="gradient:{{ g.user.avatar_value }}" {% if form.avatar_kind == 'gradient' %}checked{% endif %}>
+        <span class="av-swatch grad grad-{{ g.user.avatar_value }}"></span>
+      </label>
+      {% elif g.user.avatar_kind == 'emoji' %}
+      <label class="av-pick emoji-keep" title="your current emoji">
+        <input type="radio" name="avatar" value="emoji" {% if form.avatar_kind == 'emoji' %}checked{% endif %}>
+        <input type="hidden" name="avatar_emoji" value="{{ g.user.avatar_value }}">
+        <span aria-hidden="true">{{ g.user.avatar_value }}</span>
+      </label>
+      {% endif %}
+      {% for slug in avatar_sets %}
+      <label class="av-pick">
+        <input type="radio" name="avatar" value="set:{{ slug }}" {% if form.avatar_kind == 'set' and form.avatar_value == slug %}checked{% endif %}>
+        <img src="{{ url_for('static', filename='avatars/' ~ slug ~ '.svg') }}" alt="{{ slug }}">
+      </label>
+      {% endfor %}
+      <label class="av-up">
+        <span>＋ photo</span>
+        <input type="file" id="avatar_file" name="avatar_file" accept="image/*">
       </label>
     </div>
-
-    <label for="avatar_file">or upload a photo <span class="optional">(we strip all location data — promise 🍃)</span></label>
-    <input type="file" id="avatar_file" name="avatar_file" accept="image/*">
+    <p class="hint">pick a character, or upload a photo — we strip all location data 🍃</p>
 
     <label for="display_name">display name</label>
     <input id="display_name" name="display_name" maxlength="60"
