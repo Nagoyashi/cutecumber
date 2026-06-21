@@ -96,7 +96,7 @@ scripts or load anything. Dash: `style-src 'self'`, and `script-src 'self'`
 gets added only when the ≤200-line editor JS ships.
 **Revisit:** only to tighten.
 
-## 11. Deploy target — OPEN
+## 11. Deploy target — RESOLVED (Fly.io)
 
 Single VPS + Caddy vs Fly.io/Render. SQLite either way; backups via Litestream
 or snapshot cron. App is deploy-agnostic: `TRUST_PROXY` env flag wires
@@ -315,9 +315,10 @@ returns an identical message whether the email exists or not (no account
 enumeration) and is rate-limited 5/hour. A password change also rotates a
 session "auth fragment" (derived from the password hash, checked in
 load_user), which invalidates every existing session despite sessions being
-stateless cookies. Free-tier caveat: until cutecumber.cc is verified in the
-Resend dashboard, the resend.dev sender delivers only to the account owner's
-own address — verify the domain before launch.
+stateless cookies. Deliverability: the cutecumber.cc domain is verified in the
+Resend dashboard, so the configured sender delivers to any recipient (reset
+email verified end-to-end in production, #4) — the early "owner-only until the
+domain is verified" free-tier caveat no longer applies.
 
 ## 27. Legal pages: honest drafts with placeholders, footer links everywhere
 
