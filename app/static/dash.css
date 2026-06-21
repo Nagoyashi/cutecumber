@@ -34,6 +34,14 @@
   50% { transform: translate(-50%, calc(-50% - 22px)) rotate(calc(var(--rot, 0deg) + 5deg)); }
 }
 @keyframes bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-12px); } }
+/* per-motif placement in CSS (not inline style=) — DASH_CSP style-src 'self'
+   does not cover style attributes, so inline placement would be blocked */
+.dm1 { left: 6%; top: 18%; --rot: -10deg; --dur: 16s; --delay: 0s; opacity: 0.5; }
+.dm2 { left: 92%; top: 14%; --rot: 18deg; --dur: 14s; --delay: 1.2s; opacity: 0.5; }
+.dm3 { left: 8%; top: 78%; --rot: -6deg; --dur: 15s; --delay: 0.8s; opacity: 0.5; }
+.dm4 { left: 72%; top: 88%; --rot: 0deg; --dur: 18s; --delay: 0.4s; opacity: 0.55; }
+.dm5 { left: 95%; top: 54%; --rot: 0deg; --dur: 12s; --delay: 1.6s; opacity: 0.45; }
+.dm6 { left: 14%; top: 48%; --rot: 0deg; --dur: 11s; --delay: 1s; opacity: 0.45; }
 
 /* Brand wordmark font (display font, chrome only — h1s stay system here). */
 @font-face {

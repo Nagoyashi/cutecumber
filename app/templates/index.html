@@ -30,6 +30,24 @@ background:linear-gradient(160deg,var(--bg1) 0%,var(--bg2) 100%);background-atta
 .watermark svg{display:block}
 .motif{position:absolute;transform:translate(-50%,-50%) rotate(var(--rot,0deg))}
 .motif svg{display:block;filter:drop-shadow(0 6px 12px rgba(83,52,63,.06))}
+/* per-motif placement lives here (not inline style=) so the strict public CSP
+   — style-src 'nonce-…', which does NOT cover style attributes — never blocks it */
+.m1{left:4%;top:16%;--rot:-12deg;--dur:15s;--delay:0s;opacity:.5}
+.m2{left:88%;top:10%;--rot:20deg;--dur:13s;--delay:1.4s;opacity:.65}
+.m3{left:80%;top:30%;--rot:0deg;--dur:9s;--delay:.5s;opacity:.6}
+.m4{left:92%;top:64%;--rot:14deg;--dur:17s;--delay:2.1s;opacity:.6}
+.m5{left:8%;top:70%;--rot:-6deg;--dur:14s;--delay:.8s;opacity:.6}
+.m6{left:16%;top:90%;--rot:8deg;--dur:16s;--delay:1.1s;opacity:.55}
+.m7{left:70%;top:86%;--rot:0deg;--dur:19s;--delay:.3s;opacity:.7}
+.m8{left:50%;top:6%;--rot:0deg;--dur:11s;--delay:1.8s;opacity:.5}
+.m9{left:95%;top:44%;--rot:18deg;--dur:13s;--delay:2.6s;opacity:.5}
+.m10{left:2%;top:44%;--rot:-10deg;--dur:12s;--delay:1.2s;opacity:.55}
+.m11{left:30%;top:92%;--rot:0deg;--dur:8s;--delay:.6s;opacity:.55}
+.m12{left:62%;top:70%;--rot:24deg;--dur:15s;--delay:2.3s;opacity:.5}
+.phone-deco .pd1{left:12%;top:16%}
+.phone-deco .pd2{right:12%;top:12%}
+.phone-deco .pd3{right:18%;bottom:14%}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 @media (prefers-reduced-motion:no-preference){
 .motif{animation:drift var(--dur,14s) ease-in-out var(--delay,0s) infinite}
 .watermark{animation:bob 22s ease-in-out infinite}
@@ -111,18 +129,18 @@ footer a:hover,footer a:focus-visible{color:var(--ink)}
 
 <div class="ambient" aria-hidden="true">
   <div class="watermark"><svg width="640" height="640"><use href="#m-slice"/></svg></div>
-  <div class="motif" style="left:4%;top:16%;--rot:-12deg;--dur:15s;--delay:0s;opacity:.5"><svg width="96" height="96"><use href="#m-slice"/></svg></div>
-  <div class="motif" style="left:88%;top:10%;--rot:20deg;--dur:13s;--delay:1.4s;opacity:.65"><svg width="60" height="60"><use href="#m-blossom"/></svg></div>
-  <div class="motif" style="left:80%;top:30%;--rot:0deg;--dur:9s;--delay:.5s;opacity:.6"><svg width="30" height="30"><use href="#m-sparkle"/></svg></div>
-  <div class="motif" style="left:92%;top:64%;--rot:14deg;--dur:17s;--delay:2.1s;opacity:.6"><svg width="50" height="50"><use href="#m-strawberry"/></svg></div>
-  <div class="motif" style="left:8%;top:70%;--rot:-6deg;--dur:14s;--delay:.8s;opacity:.6"><svg width="60" height="60"><use href="#m-sprout"/></svg></div>
-  <div class="motif" style="left:16%;top:90%;--rot:8deg;--dur:16s;--delay:1.1s;opacity:.55"><svg width="54" height="54"><use href="#m-frog"/></svg></div>
-  <div class="motif" style="left:70%;top:86%;--rot:0deg;--dur:19s;--delay:.3s;opacity:.7"><svg width="64" height="64"><use href="#m-cloud"/></svg></div>
-  <div class="motif" style="left:50%;top:6%;--rot:0deg;--dur:11s;--delay:1.8s;opacity:.5"><svg width="30" height="30"><use href="#m-heart"/></svg></div>
-  <div class="motif" style="left:95%;top:44%;--rot:18deg;--dur:13s;--delay:2.6s;opacity:.5"><svg width="44" height="44"><use href="#m-babyCuke"/></svg></div>
-  <div class="motif" style="left:2%;top:44%;--rot:-10deg;--dur:12s;--delay:1.2s;opacity:.55"><svg width="40" height="40"><use href="#m-bow"/></svg></div>
-  <div class="motif" style="left:30%;top:92%;--rot:0deg;--dur:8s;--delay:.6s;opacity:.55"><svg width="26" height="26"><use href="#m-sparklePink"/></svg></div>
-  <div class="motif" style="left:62%;top:70%;--rot:24deg;--dur:15s;--delay:2.3s;opacity:.5"><svg width="40" height="40"><use href="#m-leaf"/></svg></div>
+  <div class="motif m1"><svg width="96" height="96"><use href="#m-slice"/></svg></div>
+  <div class="motif m2"><svg width="60" height="60"><use href="#m-blossom"/></svg></div>
+  <div class="motif m3"><svg width="30" height="30"><use href="#m-sparkle"/></svg></div>
+  <div class="motif m4"><svg width="50" height="50"><use href="#m-strawberry"/></svg></div>
+  <div class="motif m5"><svg width="60" height="60"><use href="#m-sprout"/></svg></div>
+  <div class="motif m6"><svg width="54" height="54"><use href="#m-frog"/></svg></div>
+  <div class="motif m7"><svg width="64" height="64"><use href="#m-cloud"/></svg></div>
+  <div class="motif m8"><svg width="30" height="30"><use href="#m-heart"/></svg></div>
+  <div class="motif m9"><svg width="44" height="44"><use href="#m-babyCuke"/></svg></div>
+  <div class="motif m10"><svg width="40" height="40"><use href="#m-bow"/></svg></div>
+  <div class="motif m11"><svg width="26" height="26"><use href="#m-sparklePink"/></svg></div>
+  <div class="motif m12"><svg width="40" height="40"><use href="#m-leaf"/></svg></div>
 </div>
 
 <div class="shell">
@@ -134,6 +152,7 @@ footer a:hover,footer a:focus-visible{color:var(--ink)}
     </nav>
   </header>
 
+  <main>
   <section class="hero">
     <div class="hero-copy">
       <h1 class="fred">the cutest little home for all your links</h1>
@@ -147,9 +166,9 @@ footer a:hover,footer a:focus-visible{color:var(--ink)}
     <div class="hero-visual">
       <div class="phone" aria-label="example cutecumber page">
         <div class="phone-deco" aria-hidden="true">
-          <span style="left:12%;top:16%"><svg width="26" height="26"><use href="#m-sprout"/></svg></span>
-          <span style="right:12%;top:12%"><svg width="22" height="22"><use href="#m-blossom"/></svg></span>
-          <span style="right:18%;bottom:14%"><svg width="16" height="16"><use href="#m-sparklePink"/></svg></span>
+          <span class="pd1"><svg width="26" height="26"><use href="#m-sprout"/></svg></span>
+          <span class="pd2"><svg width="22" height="22"><use href="#m-blossom"/></svg></span>
+          <span class="pd3"><svg width="16" height="16"><use href="#m-sparklePink"/></svg></span>
         </div>
         <img class="phone-avatar" src="/static/avatars/bun.svg" alt="" width="84" height="84">
         <p class="phone-name fred">mochi</p>
@@ -165,6 +184,7 @@ footer a:hover,footer a:focus-visible{color:var(--ink)}
   </section>
 
   <section class="features">
+    <h2 class="sr-only">why cutecumber</h2>
     <div class="features-grid">
       <div class="feat">
         <div class="feat-ic"><svg width="24" height="24" aria-hidden="true"><use href="#m-leaf"/></svg></div>
@@ -188,6 +208,7 @@ footer a:hover,footer a:focus-visible{color:var(--ink)}
       </div>
     </div>
   </section>
+  </main>
 </div>
 
 <footer><a href="/privacy">privacy</a> · <a href="/imprint">imprint</a></footer>
