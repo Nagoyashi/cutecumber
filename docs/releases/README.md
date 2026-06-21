@@ -22,6 +22,7 @@ Pre-releases use a hyphenated tag (`vX.Y.Z-rc.N`) and the Action marks them
 
 _(newest first — add a line when a release ships)_
 
+- [`v0.4.0`](v0.4.0.md) — Design refresh v2: modernized landing + dashboard, ambient SVG background, drawn-avatar picker.
 - [`v0.3.0`](v0.3.0.md) — Launch: public (robots flip), landing CTA WCAG-AA fix + brand-chrome contrast guard.
 - [`v0.2.1`](v0.2.1.md) — Maintenance & polish: held dependency bumps, log scrubbing, art caching, optional error webhook, doc reconcile.
 - [`v0.2.0`](v0.2.0.md) — Production hardening (Phase 4): backups, reset email, legal, security tests.
