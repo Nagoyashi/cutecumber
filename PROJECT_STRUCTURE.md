@@ -69,7 +69,11 @@ cutecumber/
     ├── templates/
     │   ├── public_page.html     standalone; inline nonce'd CSS; OG tags; ZERO JS
     │   ├── public_404.html      standalone; same rules
-    │   ├── index.html           landing; same rules
+    │   ├── index.html           landing (design refresh v2): split hero +
+    │   │                        ambient SVG layer + feature grid; same rules
+    │   ├── _motif_sprite.html   shared inline-SVG <symbol> sprite (slice + 11
+    │   │                        brand motifs); {% include %}'d, <use>'d by the
+    │   │                        ambient layer (landing now; dashboard next)
     │   ├── dash_base.html       layout for everything logged-in/auth
     │   ├── auth_signup.html / auth_login.html / dash_home.html / error.html
     │   ├── imprint.html / privacy.html   legal pages (§5 DDG / GDPR)
