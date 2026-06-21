@@ -280,5 +280,40 @@ class TestDecorationPackAssets(unittest.TestCase):
             self.assertIsNone(unsafe.search(svg), f"{token} carries an unsafe construct")
 
 
+INDEX_HTML = os.path.join(os.path.dirname(__file__), "..", "app", "templates", "index.html")
+
+
+class TestLandingChromeContrast(unittest.TestCase):
+    """Brand chrome lives outside the preset engine, so the AA tests above
+    never covered it — and the landing CTA shipped at 2.36:1 (issue #36). This
+    guards the served colors so it can't silently regress."""
+
+    AA = 4.5
+
+    def _index_css(self):
+        with open(INDEX_HTML, encoding="utf-8") as fh:
+            return fh.read()
+
+    def test_primary_cta_text_meets_aa_in_both_states(self):
+        css = self._index_css()
+        base = re.search(
+            r"\.primary\{background:(#[0-9a-fA-F]{3,6});color:(#[0-9a-fA-F]{3,6})\}", css
+        )
+        self.assertIsNotNone(base, "could not find the .primary CTA rule in index.html")
+        bg, fg = base.group(1), base.group(2)
+        self.assertGreaterEqual(
+            contrast(fg, bg), self.AA, f"primary CTA text {fg} on {bg} fails AA"
+        )
+        # The hover/focus state darkens the pill; the same ink must still pass.
+        hover = re.search(
+            r"\.primary:hover[^{]*\{background:(#[0-9a-fA-F]{3,6})\}", css
+        )
+        self.assertIsNotNone(hover, "could not find the .primary hover rule in index.html")
+        self.assertGreaterEqual(
+            contrast(fg, hover.group(1)), self.AA,
+            f"primary CTA text {fg} on hover {hover.group(1)} fails AA",
+        )
+
+
 if __name__ == "__main__":
     unittest.main()

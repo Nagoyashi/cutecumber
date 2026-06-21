@@ -11,7 +11,7 @@ primary_region = "fra"
   TRUST_PROXY = "1"
   COOKIE_SECURE = "1"
   HSTS = "1"
-  ROBOTS_ALLOW = "0"   # stealth — flip to "1" on launch day, then `fly deploy`
+  ROBOTS_ALLOW = "1"   # launched 2026-06-21 (v0.3.0); robots.txt now allows crawling
   # Litestream DB backups (issue #9). Non-secret config; credentials are in
   # fly secrets (LITESTREAM_ACCESS_KEY_ID / LITESTREAM_SECRET_ACCESS_KEY).
   # LITESTREAM_BUCKET being set is what enables replication (entrypoint.sh).
