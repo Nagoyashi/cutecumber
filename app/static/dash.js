@@ -137,4 +137,17 @@
     };
     frame.addEventListener("load", wire);
   }
+
+  /* ---- copy-link button (progressive: no JS → the visit link still works) ---- */
+  const copyBtn = $("#copy-link");
+  if (copyBtn && navigator.clipboard) {
+    copyBtn.addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(copyBtn.dataset.copy);
+        const original = copyBtn.textContent;
+        copyBtn.textContent = "copied ✓";
+        setTimeout(() => { copyBtn.textContent = original; }, 1600);
+      } catch (_e) { /* clipboard blocked — leave the label as-is */ }
+    });
+  }
 })();

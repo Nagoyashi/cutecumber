@@ -11,19 +11,29 @@
 <script src="{{ url_for('static', filename='dash.js') }}" defer></script>
 </head>
 <body>
+{% include "_motif_sprite.html" %}
+<div class="ambient" aria-hidden="true">
+  <div class="watermark"><svg width="560" height="560"><use href="#m-slice"/></svg></div>
+  <div class="motif" style="left:6%;top:18%;--rot:-10deg;--dur:16s;--delay:0s;opacity:.5"><svg width="78" height="78"><use href="#m-slice"/></svg></div>
+  <div class="motif" style="left:92%;top:14%;--rot:18deg;--dur:14s;--delay:1.2s;opacity:.5"><svg width="46" height="46"><use href="#m-blossom"/></svg></div>
+  <div class="motif" style="left:8%;top:78%;--rot:-6deg;--dur:15s;--delay:.8s;opacity:.5"><svg width="50" height="50"><use href="#m-sprout"/></svg></div>
+  <div class="motif" style="left:72%;top:88%;--rot:0deg;--dur:18s;--delay:.4s;opacity:.55"><svg width="58" height="58"><use href="#m-cloud"/></svg></div>
+  <div class="motif" style="left:95%;top:54%;--rot:0deg;--dur:12s;--delay:1.6s;opacity:.45"><svg width="26" height="26"><use href="#m-heart"/></svg></div>
+  <div class="motif" style="left:14%;top:48%;--rot:0deg;--dur:11s;--delay:1s;opacity:.45"><svg width="22" height="22"><use href="#m-sparkle"/></svg></div>
+</div>
 <header class="topbar">
-  <a class="brand" href="{{ url_for('public.index') }}"><img class="brandmark" src="{{ url_for('static', filename='favicon.svg') }}" alt="" width="24" height="24">cutecumber</a>
+  <a class="brand" href="{{ url_for('public.index') }}"><img class="brandmark" src="{{ url_for('static', filename='favicon.svg') }}" alt="" width="32" height="32"><span>cutecumber</span></a>
   <nav class="topnav">
     {% if g.user %}
-      <a href="{{ url_for('dash.home') }}">my page</a>
-      <a href="{{ url_for('dash.account') }}">account</a>
+      <a class="navlink{% if request.endpoint == 'dash.home' %} active{% endif %}" href="{{ url_for('dash.home') }}">my page</a>
+      <a class="navlink" href="{{ url_for('dash.account') }}">account</a>
       <form method="post" action="{{ url_for('auth.logout') }}">
         <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
-        <button class="linkish" type="submit">log out</button>
+        <button class="pill logout" type="submit">log out</button>
       </form>
     {% else %}
-      <a href="{{ url_for('auth.login') }}">log in</a>
-      <a href="{{ url_for('auth.signup') }}">sign up</a>
+      <a class="navlink" href="{{ url_for('auth.login') }}">log in</a>
+      <a class="navlink" href="{{ url_for('auth.signup') }}">sign up</a>
     {% endif %}
   </nav>
 </header>
