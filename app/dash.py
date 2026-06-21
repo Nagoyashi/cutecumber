@@ -297,6 +297,9 @@ def theme_save():
         # Page settings (#55): the fine-tune form always carries the checkbox,
         # so include it; validate_theme drops it when it equals the default.
         overrides["show_credit"] = request.form.get("show_credit") == "on"
+        layout = request.form.get("layout")
+        if layout:
+            overrides["layout"] = layout
         candidate = {"version": THEME_VERSION, "preset": preset, "overrides": overrides}
     else:
         abort(400)

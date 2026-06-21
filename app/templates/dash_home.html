@@ -184,6 +184,11 @@
         <select id="t-background" name="background">
           {% for v in enums['background'] %}<option value="{{ v }}" {% if t.background == v %}selected{% endif %}>{{ v }}</option>{% endfor %}
         </select>
+        <label for="t-layout">page layout</label>
+        <select id="t-layout" name="layout">
+          <option value="centered" {% if t.layout == 'centered' %}selected{% endif %}>centered (phone-style)</option>
+          <option value="wide" {% if t.layout == 'wide' %}selected{% endif %}>wide (desktop)</option>
+        </select>
       </div>
       <span class="field-label">decorations <span class="optional">(up to 5)</span></span>
       <div class="decopicker">
