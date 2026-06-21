@@ -115,7 +115,7 @@ AVATAR_MAX_UPLOAD = 8 * 1024 * 1024  # input cap: 8 MB (phone photos)
 # is NO new XSS surface; we deliberately do not try to prove a string is
 # "really" an emoji (the ZWJ-validation swamp #13 named) and only cap length.
 # Validated at save AND at render; falls back to the default on empty/oversize.
-DEFAULT_AVATAR_EMOJI = "🥒"
+DEFAULT_AVATAR_EMOJI = "🥒"  # render-time fallback for an unrecognised/corrupt row
 AVATAR_EMOJI_MAX = 8  # generous for ZWJ sequences (matches LINK_EMOJI_MAX)
 
 # Curated designer avatar set (DECISIONS.md #13/#30): kawaii SVG tiles the user
@@ -126,6 +126,13 @@ AVATAR_SETS = frozenset({
     "berry", "blossom", "boo", "bun", "froggy", "matcha",
     "moonbeam", "riceball", "shroom", "sprout", "twinkle", "whiskers",
 })
+
+# New accounts start on a drawn set tile, not the 🥒 emoji (DECISIONS.md #13
+# addendum). Signup sets this explicitly so the change reaches existing prod —
+# the schema column default is only a backstop for an omitted insert.
+DEFAULT_AVATAR_KIND = "set"
+DEFAULT_AVATAR_VALUE = "sprout"
+assert DEFAULT_AVATAR_VALUE in AVATAR_SETS
 
 
 def validate_avatar_emoji(value: str) -> str | None:

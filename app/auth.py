@@ -26,7 +26,13 @@ from flask import (
     url_for,
 )
 
-from .constants import EMAIL_MAX, PASSWORD_MAX_BYTES, PASSWORD_MIN
+from .constants import (
+    DEFAULT_AVATAR_KIND,
+    DEFAULT_AVATAR_VALUE,
+    EMAIL_MAX,
+    PASSWORD_MAX_BYTES,
+    PASSWORD_MIN,
+)
 from .db import get_db
 from .extensions import limiter
 from .mail import send_email
@@ -69,9 +75,11 @@ def signup():
             db = get_db()
             try:
                 cursor = db.execute(
-                    "INSERT INTO users (email, password_hash, theme_json, theme_version)"
-                    " VALUES (?, ?, ?, ?)",
-                    (email, password_hash, default_theme_json(), THEME_VERSION),
+                    "INSERT INTO users (email, password_hash, theme_json,"
+                    " theme_version, avatar_kind, avatar_value)"
+                    " VALUES (?, ?, ?, ?, ?, ?)",
+                    (email, password_hash, default_theme_json(), THEME_VERSION,
+                     DEFAULT_AVATAR_KIND, DEFAULT_AVATAR_VALUE),
                 )
                 db.commit()
             except IntegrityError:
