@@ -203,6 +203,10 @@
         {% endfor %}
       </div>
       <p class="hint">pick up to 5 — they tile softly behind your page ✨</p>
+      <label class="credit-toggle">
+        <input type="checkbox" name="show_credit" {% if t.show_credit %}checked{% endif %}>
+        show the “made with 🥒 cutecumber” credit on your page footer
+      </label>
       <div class="rowbtns themebtns">
         <button type="submit" name="action" value="save">save fine-tuning 💾</button>
         <button type="submit" name="action" value="reset" class="danger"

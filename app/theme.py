@@ -30,8 +30,16 @@ import json
 import re
 from urllib.parse import quote
 
-THEME_VERSION = 2
+THEME_VERSION = 3
 DEFAULT_PRESET = "strawberry_milk"
+
+# Page-level settings (design refresh v2 / #55), stored as theme overrides but
+# NOT part of any colour preset — their defaults live here, not in PRESETS.
+# layout: page shape; ambient: opt-in decorative motif background (default OFF —
+# protects the public page's ~2 KB budget); show_credit: the footer credit.
+LAYOUTS = ("centered", "wide")
+BOOL_KEYS = ("ambient", "show_credit")
+PAGE_DEFAULTS = {"layout": "centered", "ambient": False, "show_credit": True}
 
 HEX_RE = re.compile(r"^#[0-9a-f]{6}$")
 
@@ -220,7 +228,15 @@ def _migrate_v1_to_v2(data: dict) -> dict:
     return data
 
 
-MIGRATIONS: dict[int, callable] = {1: _migrate_v1_to_v2}
+def _migrate_v2_to_v3(data: dict) -> dict:
+    """v3 adds page settings (layout / ambient / show_credit). They default via
+    PAGE_DEFAULTS at resolve time, so an existing theme needs no override
+    rewriting — just stamp the version (same as an untouched v1→v2)."""
+    data["version"] = 3
+    return data
+
+
+MIGRATIONS: dict[int, callable] = {1: _migrate_v1_to_v2, 2: _migrate_v2_to_v3}
 
 
 def load_theme(raw: str | None) -> dict:
@@ -278,9 +294,18 @@ def validate_theme(data: dict) -> tuple[dict | None, str | None]:
         elif key in ENUM_KEYS:
             if value not in ENUM_KEYS[key]:
                 return None, "that option isn't one of ours — pick from the list 🤔"
+        elif key == "layout":
+            if value not in LAYOUTS:
+                return None, "that layout isn't one of ours 🤔"
+        elif key in BOOL_KEYS:
+            if not isinstance(value, bool):
+                return None, "that theme didn't make sense to us 🤔"
         else:
             return None, "that theme has settings we don't recognise 🤔"
-        if value != preset[key]:
+        # page settings default via PAGE_DEFAULTS (not in any preset); colour/
+        # enum/decoration keys default from the preset. Store only real diffs.
+        default = preset[key] if key in preset else PAGE_DEFAULTS[key]
+        if value != default:
             clean[key] = value
 
     return {"version": THEME_VERSION, "preset": preset_name, "overrides": clean}, None
@@ -358,6 +383,7 @@ def resolve_theme(theme: dict) -> dict:
     if preset is None:
         preset = PRESETS[DEFAULT_PRESET]
     tokens = dict(preset)
+    tokens.update(PAGE_DEFAULTS)  # layout / ambient / show_credit — not in presets
 
     overrides = theme.get("overrides") if isinstance(theme, dict) else None
     if isinstance(overrides, dict):
@@ -367,6 +393,10 @@ def resolve_theme(theme: dict) -> dict:
             elif key == "decoration" and isinstance(value, list):
                 tokens["decoration"] = clean_decorations(value)
             elif key in ENUM_KEYS and value in ENUM_KEYS[key]:
+                tokens[key] = value
+            elif key == "layout" and value in LAYOUTS:
+                tokens["layout"] = value
+            elif key in BOOL_KEYS and isinstance(value, bool):
                 tokens[key] = value
 
     # computed, never stored

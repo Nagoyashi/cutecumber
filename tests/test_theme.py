@@ -235,7 +235,7 @@ class TestThemeMigrationV1toV2(unittest.TestCase):
 
     def test_string_decoration_becomes_basic_token_list(self):
         out = load_theme('{"version":1,"preset":"seafoam","overrides":{"decoration":"hearts"}}')
-        self.assertEqual(out["version"], 2)
+        self.assertEqual(out["version"], theme.THEME_VERSION)  # migrates all the way forward
         self.assertEqual(out["overrides"]["decoration"], ["basic/hearts"])
 
     def test_none_decoration_becomes_empty_list(self):
@@ -244,8 +244,60 @@ class TestThemeMigrationV1toV2(unittest.TestCase):
 
     def test_untouched_v1_theme_just_version_bumps(self):
         out = load_theme('{"version":1,"preset":"seafoam","overrides":{}}')
-        self.assertEqual(out["version"], 2)
+        self.assertEqual(out["version"], theme.THEME_VERSION)
+
+
+class TestThemeMigrationV2toV3(unittest.TestCase):
+    """v3 adds page settings (layout/ambient/show_credit); a v2 theme just gets
+    its version stamped and the new settings default at resolve."""
+
+    def test_v2_theme_version_bumps_and_gains_defaults(self):
+        out = load_theme('{"version":2,"preset":"seafoam","overrides":{}}')
+        self.assertEqual(out["version"], theme.THEME_VERSION)
         self.assertEqual(out["overrides"], {})
+        t = resolve_theme(out)
+        self.assertEqual(t["layout"], "centered")
+        self.assertFalse(t["ambient"])
+        self.assertTrue(t["show_credit"])
+
+    def test_v2_overrides_survive_the_bump(self):
+        out = load_theme('{"version":2,"preset":"seafoam","overrides":{"accent":"#123456"}}')
+        self.assertEqual(out["overrides"]["accent"], "#123456")
+
+
+class TestPageSettings(unittest.TestCase):
+    """layout / ambient / show_credit validate, drop-if-default, and resolve."""
+
+    def test_valid_settings_kept(self):
+        clean, err = validate_theme({"version": 3, "preset": "seafoam", "overrides": {
+            "layout": "wide", "ambient": True, "show_credit": False}})
+        self.assertIsNone(err)
+        self.assertEqual(clean["overrides"],
+                         {"layout": "wide", "ambient": True, "show_credit": False})
+
+    def test_default_valued_settings_dropped(self):
+        clean, _ = validate_theme({"version": 3, "preset": "seafoam", "overrides": {
+            "layout": "centered", "ambient": False, "show_credit": True}})
+        self.assertEqual(clean["overrides"], {})
+
+    def test_bad_layout_rejected(self):
+        clean, err = validate_theme({"version": 3, "preset": "seafoam",
+            "overrides": {"layout": "diagonal"}})
+        self.assertIsNone(clean)
+        self.assertIsNotNone(err)
+
+    def test_non_bool_setting_rejected(self):
+        clean, err = validate_theme({"version": 3, "preset": "seafoam",
+            "overrides": {"ambient": "yes"}})
+        self.assertIsNone(clean)
+        self.assertIsNotNone(err)
+
+    def test_resolve_applies_overrides_and_defaults(self):
+        t = resolve_theme({"version": 3, "preset": "seafoam",
+            "overrides": {"layout": "wide", "ambient": True}})
+        self.assertEqual(t["layout"], "wide")
+        self.assertTrue(t["ambient"])
+        self.assertTrue(t["show_credit"])  # untouched → default
 
     def test_migrated_theme_resolves_cleanly(self):
         out = load_theme('{"version":1,"preset":"lavender_haze","overrides":{"decoration":"sparkles"}}')
