@@ -12,8 +12,8 @@ CREATE TABLE IF NOT EXISTS users (
     display_name  TEXT,
     bio           TEXT,
     pronouns      TEXT,
-    avatar_kind   TEXT    NOT NULL DEFAULT 'emoji',  -- 'emoji' | 'gradient' | 'image' | 'set'
-    avatar_value  TEXT    NOT NULL DEFAULT '🥒',     -- emoji char | gradient name | uploaded filename | set slug; validated in constants.py
+    avatar_kind   TEXT    NOT NULL DEFAULT 'set',     -- 'set' | 'image' | 'gradient' | 'emoji' (last two: legacy, render-only)
+    avatar_value  TEXT    NOT NULL DEFAULT 'sprout',  -- set slug | uploaded filename | gradient name | emoji char; validated in constants.py (signup sets the default explicitly)
     theme_json    TEXT    NOT NULL,                  -- versioned JSON, see app/theme.py
     theme_version INTEGER NOT NULL DEFAULT 1,
     reset_token_hash TEXT,                            -- sha256 of the emailed token; NULL when none active

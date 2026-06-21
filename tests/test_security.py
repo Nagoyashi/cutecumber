@@ -392,5 +392,51 @@ class TestErrorWebhook(SecurityTestBase):
             os.environ.pop("ERROR_WEBHOOK_URL", None)
 
 
+class TestAvatarDefaultAndLegacy(SecurityTestBase):
+    """v0.4.0 (#43): new accounts default to set:sprout; legacy emoji and
+    gradient avatars still render even though the picker no longer offers them
+    (retired from the picker, kept at render — DECISIONS #13 addendum)."""
+
+    def _set_avatar(self, user_id, kind, value):
+        with self.app.app_context():
+            db = get_db()
+            db.execute(
+                "UPDATE users SET avatar_kind = ?, avatar_value = ? WHERE id = ?",
+                (kind, value, user_id),
+            )
+            db.commit()
+
+    def test_signup_defaults_to_set_sprout(self):
+        client = self.app.test_client()
+        self._arm_csrf(client)
+        resp = client.post(
+            "/signup",
+            data={"_csrf": "tok", "email": "new@test.test", "password": "a-cozy-password"},
+        )
+        self.assertEqual(resp.status_code, 302)
+        with self.app.app_context():
+            row = (
+                get_db()
+                .execute(
+                    "SELECT avatar_kind, avatar_value FROM users WHERE email = ?",
+                    ("new@test.test",),
+                )
+                .fetchone()
+            )
+        self.assertEqual((row["avatar_kind"], row["avatar_value"]), ("set", "sprout"))
+
+    def test_legacy_emoji_avatar_still_renders(self):
+        uid, _ = self._create_user("emoji@test.test", username="emojiuser")
+        self._set_avatar(uid, "emoji", "🌸")
+        body = self.app.test_client().get("/emojiuser").get_data(as_text=True)
+        self.assertIn("🌸", body)  # not the 🥒 fallback
+
+    def test_legacy_gradient_avatar_still_renders(self):
+        uid, _ = self._create_user("grad@test.test", username="graduser")
+        self._set_avatar(uid, "gradient", "matcha_latte")
+        body = self.app.test_client().get("/graduser").get_data(as_text=True)
+        self.assertIn("avatar-g", body)
+
+
 if __name__ == "__main__":
     unittest.main()

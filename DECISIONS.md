@@ -150,6 +150,24 @@ migration. Emoji + gradient + photo + set all coexist (owner's call).
   design spec). `tests/test_avatar.py` enforces registry↔file parity and the
   no-script / ≤8 KB tile rules, the way EXIF/AA are enforced.
 
+### Addendum (design refresh v2, June 2026): set is the default; emoji/gradient leave the picker
+The v2 dashboard leads with the drawn set, so two changes (issue #43, owner-approved):
+- **Default avatar is now `set:sprout`, not the 🥒 emoji.** `signup` sets
+  `avatar_kind`/`avatar_value` explicitly (`DEFAULT_AVATAR_KIND`/`_VALUE` in
+  `constants.py`), so the change reaches the existing prod table without an
+  ALTER — the schema column default (also moved to `set`/`sprout`) is just a
+  backstop. `DEFAULT_AVATAR_EMOJI` (🥒) stays the render-time fallback for an
+  unrecognised/corrupt row.
+- **Freeform emoji + flat gradients leave the *picker*, but NOT render/save.**
+  The picker now offers the 12 set tiles + a photo upload only. Existing users
+  whose avatar is an emoji or gradient keep it — the registry still validates
+  and renders those values, and the editor shows the current one as a "keep"
+  option so editing a profile never silently changes their avatar. This is a
+  UI retirement, **not** a data migration: no theme-version bump, no stored-shape
+  change (RULES "things to RAISE #3" — the visible-change risk is avoided by
+  keeping render support). **Revisit:** if we ever want to fully drop the
+  legacy kinds, that becomes a real migration with a fallback + tests.
+
 ## 14. Schema upgrades via idempotent `init-db` column checks
 
 `init_db()` applies `schema.sql` (CREATE IF NOT EXISTS) then adds any missing
