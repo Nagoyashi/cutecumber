@@ -5,9 +5,10 @@
   <h1>welcome back 🌼</h1>
   <form method="post" action="{{ url_for('auth.login') }}" class="stack">
     <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
-    <label for="email">email</label>
-    <input id="email" name="email" type="email" required maxlength="254"
-           autocomplete="email" placeholder="you@example.com">
+    <label for="identifier">email or username</label>
+    <input id="identifier" name="identifier" type="text" required maxlength="254"
+           autocapitalize="off" spellcheck="false"
+           autocomplete="username" placeholder="you@example.com or yourname">
     <label for="password">password</label>
     <input id="password" name="password" type="password" required
            maxlength="72" autocomplete="current-password" placeholder="your password">

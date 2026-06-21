@@ -257,13 +257,13 @@ class TestLoginEnumeration(SecurityTestBase):
         self._arm_csrf(c1)
         unknown = c1.post(
             "/login",
-            data={"_csrf": "tok", "email": "nobody@test.test", "password": "whatever"},
+            data={"_csrf": "tok", "identifier": "nobody@test.test", "password": "whatever"},
         )
         c2 = self.app.test_client()
         self._arm_csrf(c2)
         wrong = c2.post(
             "/login",
-            data={"_csrf": "tok", "email": "known@test.test", "password": "wrong-password"},
+            data={"_csrf": "tok", "identifier": "known@test.test", "password": "wrong-password"},
         )
         self.assertEqual(unknown.status_code, wrong.status_code)
         self.assertIn(self.NEUTRAL, unknown.data)
@@ -274,7 +274,7 @@ class TestLoginEnumeration(SecurityTestBase):
         self._arm_csrf(client)
         resp = client.post(
             "/login",
-            data={"_csrf": "tok", "email": "known@test.test", "password": "x" * 100},
+            data={"_csrf": "tok", "identifier": "known@test.test", "password": "x" * 100},
         )
         self.assertEqual(resp.status_code, 200)  # not a 500 from bcrypt's 72-byte limit
         self.assertIn(self.NEUTRAL, resp.data)
@@ -390,6 +390,42 @@ class TestErrorWebhook(SecurityTestBase):
         finally:
             monitoring.urllib.request.urlopen = orig
             os.environ.pop("ERROR_WEBHOOK_URL", None)
+
+
+class TestUsernameOrEmailLogin(SecurityTestBase):
+    """Login accepts email OR username as the identifier (#54). They never
+    collide (usernames lack '@', emails require it)."""
+
+    def setUp(self):
+        super().setUp()
+        self._create_user("rob@test.test", password="a-good-password", username="rob")
+
+    def _attempt(self, identifier, password="a-good-password"):
+        client = self.app.test_client()
+        self._arm_csrf(client)
+        return client.post(
+            "/login",
+            data={"_csrf": "tok", "identifier": identifier, "password": password},
+        )
+
+    def test_login_by_email(self):
+        resp = self._attempt("rob@test.test")
+        self.assertEqual(resp.status_code, 302)
+        self.assertIn("/dash", resp.headers["Location"])
+
+    def test_login_by_username(self):
+        resp = self._attempt("rob")
+        self.assertEqual(resp.status_code, 302)
+        self.assertIn("/dash", resp.headers["Location"])
+
+    def test_login_by_username_is_case_insensitive(self):
+        resp = self._attempt("ROB")  # the route lowercases the identifier
+        self.assertEqual(resp.status_code, 302)
+
+    def test_wrong_password_for_known_username_is_refused(self):
+        resp = self._attempt("rob", password="nope")
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn(b"match anything we know", resp.data)
 
 
 class TestAvatarDefaultAndLegacy(SecurityTestBase):
