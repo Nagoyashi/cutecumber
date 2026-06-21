@@ -168,6 +168,29 @@ The v2 dashboard leads with the drawn set, so two changes (issue #43, owner-appr
   keeping render support). **Revisit:** if we ever want to fully drop the
   legacy kinds, that becomes a real migration with a fallback + tests.
 
+### Addendum (design refresh v2 public pages, June 2026): avatars go circle (#55)
+The earlier addendum rendered set tiles **square** to distinguish them from
+circle-cropped photos. The public-page refresh **reverses that**: all avatars —
+set tiles and uploaded photos alike — render **circle-cropped** (one shape), per
+the design spec. It's a render-only CSS change (`public_page.html`
+`.avatar-set` gains `border-radius:50%`); the stored shape and the registry are
+untouched, so no migration. The dashboard picker still shows the set tiles
+rounded-square (a picker affordance), only the public render is circular.
+**Revisit:** if a future design wants shape to signal source again.
+
+## 13b. Page settings live in the versioned theme (layout / ambient / show_credit)
+
+The public-page refresh (#55) adds three per-user **page settings**: `layout`
+(`centered`|`wide`), `ambient` (decorative motif background, **default off** to
+protect the public page's ~2 KB budget), and `show_credit` (footer credit). They
+are stored as theme **overrides** but are NOT colour-preset properties — their
+defaults live in `theme.py` `PAGE_DEFAULTS`, not in `PRESETS`. Adding them is a
+**stored-shape change**, so it carries a theme-version bump (**v2 → v3**) with a
+migration + validator + resolver + tests, exactly like the decoration multi-list
+(DECISIONS #21 addendum). The v2→v3 migration only stamps the version: existing
+themes gain the new settings via `PAGE_DEFAULTS` at resolve, no override rewrite.
+**Rule (unchanged):** no stored-shape change without a version bump + migration + test.
+
 ## 14. Schema upgrades via idempotent `init-db` column checks
 
 `init_db()` applies `schema.sql` (CREATE IF NOT EXISTS) then adds any missing

@@ -294,6 +294,9 @@ def theme_save():
         # decorations"). validate_theme enforces the registry + the cap of 5
         # and drops it if it equals the preset's default.
         overrides["decoration"] = request.form.getlist("decoration")
+        # Page settings (#55): the fine-tune form always carries the checkbox,
+        # so include it; validate_theme drops it when it equals the default.
+        overrides["show_credit"] = request.form.get("show_credit") == "on"
         candidate = {"version": THEME_VERSION, "preset": preset, "overrides": overrides}
     else:
         abort(400)
