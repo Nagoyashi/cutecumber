@@ -12,6 +12,7 @@
   --accent: #e58fb1;
   --accent-deep: #b9486f; /* 5.0:1 on white — AA for small text/links */
   --accent-hover: #d97da2; /* pill hover BG only — NOT for text (fails AA) */
+  --accent-ink: #4a1228;   /* pill LABEL ink: 6.3:1 on accent, 5.3:1 on hover — AA (issue #36) */
   --border: #f0d4de;
   --ok-bg: #e7f6ec;
   --ok-text: #1c6b3c;
@@ -624,3 +625,69 @@ input[type="file"]::file-selector-button:hover { border-color: var(--accent); }
 }
 .av-up:hover { border-color: var(--accent); color: var(--accent-deep); }
 .av-up input[type="file"] { position: absolute; width: 1px; height: 1px; opacity: 0; }
+
+/* --- logged-out auth shell (login / signup / reset): the landing-shell —
+       centered slice wordmark + glassy card on the shared ambient bg. Pages
+       extend auth_base.html; the dashboard chrome (topbar/wrap) stays in
+       dash_base.html. --- */
+.auth-main {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 420px;
+  min-height: 100svh;
+  margin: 0 auto;
+  padding: 40px 24px 56px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+.auth-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 11px;
+  margin-bottom: 22px;
+  text-decoration: none;
+  color: var(--green);
+}
+.auth-brand svg { display: block; }
+.auth-brand span {
+  font-family: Fredoka, system-ui, sans-serif;
+  font-weight: 600;
+  font-size: 1.7rem;
+  letter-spacing: -0.5px;
+}
+.auth-card { width: 100%; }
+.auth-card h1 { text-align: center; }
+.auth-main .flash { width: 100%; }
+
+/* auth pills carry dark ink, never white-on-accent (2.36:1 fails AA, issue #36) */
+.auth-card button[type="submit"] { color: var(--accent-ink); }
+.auth-card button[type="submit"]:hover { background: var(--accent-hover); }
+
+/* show/hide password toggle sits inside the field */
+.pw-field { position: relative; display: flex; }
+.pw-field input { flex: 1; min-width: 0; padding-right: 64px; }
+.pw-toggle {
+  position: absolute;
+  top: 50%;
+  right: 6px;
+  transform: translateY(-50%);
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  padding: 6px 10px;
+  border: none;
+  border-radius: 8px;
+  background: none;
+  color: var(--accent-deep);
+  cursor: pointer;
+}
+.pw-toggle:hover { background: var(--bg1); }
+.pw-toggle:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+
+/* live username availability hint (claim form) — regex only, server-authoritative */
+.uname-hint { margin-top: -2px; font-size: 0.85rem; min-height: 1.2em; }
+.uname-hint[data-state="ok"] { color: var(--ok-text); }
+.uname-hint[data-state="no"] { color: var(--err-text); }

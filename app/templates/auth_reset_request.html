@@ -1,7 +1,7 @@
-{% extends "dash_base.html" %}
+{% extends "auth_base.html" %}
 {% block title %}reset password{% endblock %}
 {% block content %}
-<section class="card">
+<section class="card auth-card">
   <h1>forgot your password? 🌱</h1>
   <p>no worries — pop your email in and we'll send you a reset link.</p>
   <form method="post" action="{{ url_for('auth.reset_request') }}" class="stack">

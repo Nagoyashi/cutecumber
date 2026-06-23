@@ -177,4 +177,24 @@
       } catch (_e) { /* clipboard blocked — leave the label as-is */ }
     });
   }
+  /* auth enhancements (progressive): show/hide password + regex-only username hint (server stays authoritative). */
+  $$(".pw-toggle").forEach((btn) => {
+    const f = document.getElementById(btn.getAttribute("aria-controls"));
+    if (!f) return;
+    btn.hidden = false;
+    btn.addEventListener("click", () => {
+      const show = f.type === "password";
+      f.type = show ? "text" : "password";
+      btn.textContent = show ? "hide" : "show";
+    });
+  });
+  const uname = $("#username"), uhint = $("#username-hint");
+  if (uname && uhint) {
+    const ok = (v) => /^[a-z0-9][a-z0-9_-]{1,28}[a-z0-9]$/.test(v);
+    uname.addEventListener("input", () => {
+      const v = uname.value.trim().toLowerCase();
+      uhint.dataset.state = v ? (ok(v) ? "ok" : "no") : "";
+      uhint.textContent = !v ? "" : ok(v) ? "looks like a great name ✓" : "3–30 chars: letters, numbers, - or _ (not at the ends)";
+    });
+  }
 })();
