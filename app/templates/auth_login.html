@@ -1,7 +1,7 @@
-{% extends "dash_base.html" %}
+{% extends "auth_base.html" %}
 {% block title %}log in{% endblock %}
 {% block content %}
-<section class="card">
+<section class="card auth-card">
   <h1>welcome back 🌼</h1>
   <form method="post" action="{{ url_for('auth.login') }}" class="stack">
     <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
@@ -10,8 +10,11 @@
            autocapitalize="off" spellcheck="false"
            autocomplete="username" placeholder="you@example.com or yourname">
     <label for="password">password</label>
-    <input id="password" name="password" type="password" required
-           maxlength="72" autocomplete="current-password" placeholder="your password">
+    <div class="pw-field">
+      <input id="password" name="password" type="password" required
+             maxlength="72" autocomplete="current-password" placeholder="your password">
+      <button type="button" class="pw-toggle" aria-controls="password" aria-pressed="false" hidden>show</button>
+    </div>
     <button type="submit">log in</button>
   </form>
   <p class="hint">new here? <a href="{{ url_for('auth.signup') }}">sign up</a> — it takes a minute 💕</p>

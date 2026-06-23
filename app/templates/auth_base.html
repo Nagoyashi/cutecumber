@@ -1,3 +1,7 @@
+{# The logged-out landing-shell: centered slice wordmark + glassy card on the
+   ambient background (design spec §B). Shared by login / signup / reset. Loads
+   dash.css + dash.js (DASH_CSP), stays noindex. The dashboard uses dash_base;
+   both share _ambient.html. #}
 <!doctype html>
 <html lang="en">
 <head>
@@ -13,23 +17,11 @@
 <body>
 {% include "_motif_sprite.html" %}
 {% include "_ambient.html" %}
-<header class="topbar">
-  <a class="brand" href="{{ url_for('public.index') }}"><img class="brandmark" src="{{ url_for('static', filename='favicon.svg') }}" alt="" width="32" height="32"><span>cutecumber</span></a>
-  <nav class="topnav">
-    {% if g.user %}
-      <a class="navlink{% if request.endpoint == 'dash.home' %} active{% endif %}" href="{{ url_for('dash.home') }}">my page</a>
-      <a class="navlink" href="{{ url_for('dash.account') }}">account</a>
-      <form method="post" action="{{ url_for('auth.logout') }}">
-        <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
-        <button class="pill logout" type="submit">log out</button>
-      </form>
-    {% else %}
-      <a class="navlink" href="{{ url_for('auth.login') }}">log in</a>
-      <a class="navlink" href="{{ url_for('auth.signup') }}">sign up</a>
-    {% endif %}
-  </nav>
-</header>
-<main class="wrap">
+<main class="auth-main">
+  <a class="auth-brand" href="{{ url_for('public.index') }}">
+    <svg width="44" height="44" aria-hidden="true"><use href="#m-slice"/></svg>
+    <span>cutecumber</span>
+  </a>
   {% with messages = get_flashed_messages(with_categories=true) %}
     {% for category, message in messages %}
       <p class="flash flash-{{ category }}">{{ message }}</p>

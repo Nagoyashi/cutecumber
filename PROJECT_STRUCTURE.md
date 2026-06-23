@@ -74,8 +74,17 @@ cutecumber/
     │   ├── _motif_sprite.html   shared inline-SVG <symbol> sprite (slice + 11
     │   │                        brand motifs); {% include %}'d, <use>'d by the
     │   │                        ambient layer (landing now; dashboard next)
-    │   ├── dash_base.html       layout for everything logged-in/auth
-    │   ├── auth_signup.html / auth_login.html / dash_home.html / error.html
+    │   ├── _ambient.html        shared drifting-motif layer markup (dm1–dm6);
+    │   │                        {% include %}'d by dash_base + auth_base. Landing
+    │   │                        keeps its own richer inline ambient (zero-JS,
+    │   │                        public CSP, can't load dash.css).
+    │   ├── dash_base.html       layout for everything logged-in (topbar + wrap)
+    │   ├── auth_base.html       logged-out landing-shell (login/signup/reset):
+    │   │                        centered slice wordmark + glassy card on the
+    │   │                        ambient bg; noindex; loads dash.css/js
+    │   ├── auth_signup.html / auth_login.html / auth_reset_*.html
+    │   │                        extend auth_base.html; dash_home.html / error.html
+    │   │                        extend dash_base.html
     │   ├── imprint.html / privacy.html   legal pages (§5 DDG / GDPR)
     └── static/
         ├── favicon.svg          brand slice mark (also the inlined landing
