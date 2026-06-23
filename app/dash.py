@@ -35,6 +35,7 @@ from .constants import (
     BIO_MAX,
     DISPLAY_NAME_MAX,
     PRONOUNS_MAX,
+    USERNAME_MAX,
     validate_avatar_emoji,
     validate_username,
 )
@@ -68,13 +69,24 @@ def _render_home(
     form: dict | None = None,
     add_form: dict | None = None,
     open_section: str | None = None,
+    claim_error: str | None = None,
+    claim_attempted: str | None = None,
+    suggestions: list[str] | None = None,
 ):
     """Render the dashboard. `form` / `add_form` override field values after a
     failed save so nothing the user typed gets lost. `open_section` decides
-    which collapsible section starts expanded (defaults to ?open=… or links)."""
+    which collapsible section starts expanded (defaults to ?open=… or links).
+    `claim_error` / `claim_attempted` / `suggestions` drive the inline
+    username-taken state on the claim form (spec §B5)."""
     if open_section is None:
         requested = request.args.get("open", "")
         open_section = requested if requested in VALID_SECTIONS else "links"
+    if claim_attempted is None:
+        # Suggestion chips link to ?claim_try=<name>; prefill the field when the
+        # value is a well-formed username (server stays authoritative on whether
+        # it's actually free — submitting re-checks).
+        prefill = (request.args.get("claim_try") or "").strip().lower()
+        claim_attempted = prefill if validate_username(prefill) is None else ""
     if form is None:
         form = {
             "display_name": g.user["display_name"] or "",
@@ -112,7 +124,35 @@ def _render_home(
         enums=ENUM_KEYS,
         decoration_catalog=DECORATION_CATALOG,
         open_section=open_section,
+        claim_error=claim_error,
+        claim_attempted=claim_attempted,
+        suggestions=suggestions or [],
     )
+
+
+def _username_suggestions(base: str, limit: int = 3) -> list[str]:
+    """A few claimable username ideas near `base` (itself already valid). Every
+    candidate is re-validated and checked against live usernames AND resting
+    tombstones, so each chip we show can actually be claimed right now."""
+    db = get_db()
+    cutoff = int(time.time()) - TOMBSTONE_DAYS * 86400
+    seeds = [f"{base}{s}" for s in ("hq", "cc", "bb", "xo", "1", "2", "7", "22", "99")]
+    seeds += [f"the{base}", f"real{base}", f"{base}_official"]
+    out: list[str] = []
+    for cand in seeds:
+        if len(cand) > USERNAME_MAX or validate_username(cand) is not None:
+            continue
+        taken = db.execute(
+            "SELECT 1 FROM users WHERE username = ?"
+            " UNION SELECT 1 FROM username_tombstones WHERE username = ? AND freed_at > ?",
+            (cand, cand, cutoff),
+        ).fetchone()
+        if taken:
+            continue
+        out.append(cand)
+        if len(out) >= limit:
+            break
+    return out
 
 
 @bp.get("/dash")
@@ -131,10 +171,13 @@ def claim():
 
     username = (request.form.get("username") or "").strip().lower()
 
+    # Claim errors re-render the form inline (not a flash+redirect) so the
+    # attempted name is preserved and, on a collision, suggestion chips appear
+    # (spec §B5). A bare validation error has no suggestions — the name itself
+    # is malformed, so there's no nearby "free" variant worth offering.
     error = validate_username(username)
     if error:
-        flash(error, "error")
-        return redirect(url_for("dash.home"))
+        return _render_home(claim_error=error, claim_attempted=username)
 
     db = get_db()
 
@@ -145,8 +188,11 @@ def claim():
     if db.execute(
         "SELECT 1 FROM username_tombstones WHERE username = ?", (username,)
     ).fetchone():
-        flash("that username was set free recently and is resting for a bit — try another? 🌱", "error")
-        return redirect(url_for("dash.home"))
+        return _render_home(
+            claim_error="that username was set free recently and is resting for a bit — try another? 🌱",
+            claim_attempted=username,
+            suggestions=_username_suggestions(username),
+        )
 
     try:
         cursor = db.execute(
@@ -155,8 +201,11 @@ def claim():
         )
         db.commit()
     except IntegrityError:
-        flash("aw, someone got to that username first — try another! 🥲", "error")
-        return redirect(url_for("dash.home"))
+        return _render_home(
+            claim_error="aw, someone got to that username first — try another! 🥲",
+            claim_attempted=username,
+            suggestions=_username_suggestions(username),
+        )
 
     if cursor.rowcount != 1:
         flash("you've already claimed your username — it's yours forever 🌼", "error")

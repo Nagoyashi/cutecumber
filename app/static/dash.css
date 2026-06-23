@@ -691,3 +691,23 @@ input[type="file"]::file-selector-button:hover { border-color: var(--accent); }
 .uname-hint { margin-top: -2px; font-size: 0.85rem; min-height: 1.2em; }
 .uname-hint[data-state="ok"] { color: var(--ok-text); }
 .uname-hint[data-state="no"] { color: var(--err-text); }
+
+/* claim collision state: taken username + suggestion chips (spec §B5). Chips are
+   plain links (?claim_try=…) — zero JS, so they work everywhere; submitting
+   re-checks server-side. */
+input.is-error { border-color: var(--err-text); }
+input.is-error:focus-visible { box-shadow: 0 0 0 3px rgba(163, 58, 82, 0.22); }
+.field-error { margin-top: -2px; font-size: 0.85rem; color: var(--err-text); }
+.suggest { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.suggest-lead { font-size: 0.85rem; color: var(--muted); }
+.suggest-chip {
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-decoration: none;
+  padding: 7px 13px;
+  border-radius: 999px;
+  background: #fff;
+  border: 2px solid var(--border);
+  color: var(--accent-deep);
+}
+.suggest-chip:hover, .suggest-chip:focus-visible { border-color: var(--accent); }

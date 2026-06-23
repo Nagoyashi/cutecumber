@@ -3,29 +3,49 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>page not found · cutecumber.cc</title>
+<title>{% if claim_name %}cutecumber.cc/{{ claim_name }} is free{% else %}page not found{% endif %} · cutecumber.cc</title>
 <meta name="robots" content="noindex">
 <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
 <meta name="theme-color" content="#fff5f7">
 <style nonce="{{ csp_nonce }}">
 *{margin:0;padding:0;box-sizing:border-box}
 body{min-height:100svh;display:flex;align-items:center;justify-content:center;padding:24px;
-font-family:system-ui,-apple-system,"Segoe UI",sans-serif;color:#3c3c43;line-height:1.5;
+font-family:system-ui,-apple-system,"Segoe UI",sans-serif;color:#3c3c43;line-height:1.55;
 background:linear-gradient(160deg,#fff5f7 0%,#f3f9f4 100%)}
-main{width:100%;max-width:420px;text-align:center}
-.face{font-size:56px;line-height:1}
-h1{margin-top:12px;font-size:1.5rem}
-p{margin-top:10px;color:#8a8a93}
-a{color:#3c3c43}
-footer{margin-top:44px;font-size:.8rem}
+main{width:100%;max-width:440px;text-align:center;
+background:rgba(255,255,255,.82);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);
+border:1px solid #f0d4de;border-radius:22px;padding:36px 28px;
+box-shadow:0 12px 30px rgba(229,143,177,.14)}
+.mark{display:block;margin:0 auto;width:64px;height:64px}
+h1{margin-top:16px;font-size:1.5rem;color:#3f5a39}
+.url{margin-top:12px;font-size:1.1rem;color:#6e6e78;overflow-wrap:anywhere}
+.url strong{color:#b9486f}
+p{margin-top:12px;color:#6e6e78}
+.cta{display:inline-block;margin-top:22px;font-weight:600;text-decoration:none;border-radius:999px;
+padding:13px 24px;background:#e58fb1;color:#4a1228;box-shadow:0 8px 22px rgba(229,143,177,.32)}
+.cta:hover,.cta:focus-visible{background:#d97da2}
+.back{margin-top:18px;font-size:.9rem}
+.back a{color:#8a8a93;text-decoration:none}
+.back a:hover{color:#3c3c43}
+footer{margin-top:26px;font-size:.8rem}
 footer a{color:#8a8a93;text-decoration:none}
 </style>
 </head>
 <body>
 <main>
-  <div class="face" aria-hidden="true">🍃</div>
-  <h1>nothing here (yet!)</h1>
-  <p>this page doesn't exist — but if it's a username you want, it might still be free. <a href="/signup">make it yours?</a></p>
+  <img class="mark" src="/static/favicon.svg" width="64" height="64" alt="" aria-hidden="true">
+  {% if claim_name %}
+  <h1>this patch is empty 🌱</h1>
+  <p class="url">cutecumber.cc/<strong>{{ claim_name }}</strong></p>
+  <p>nobody's growing here yet — want this little corner to be yours?</p>
+  <a class="cta" href="/signup">claim this username ✨</a>
+  <p class="back"><a href="/">← back to cutecumber</a></p>
+  {% else %}
+  <h1>nothing here (yet!) 🍃</h1>
+  <p>this page doesn't exist — but if it's a username you're after, it might still be free.</p>
+  <a class="cta" href="/signup">claim a username ✨</a>
+  <p class="back"><a href="/">← back to cutecumber</a></p>
+  {% endif %}
   <footer><a href="/">cutecumber 🥒</a></footer>
 </main>
 </body>
