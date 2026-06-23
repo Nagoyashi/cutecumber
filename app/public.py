@@ -107,7 +107,8 @@ def profile(username: str):
         .fetchone()
     )
     if user is None:
-        return _not_found()
+        # A well-formed, non-reserved, unclaimed name → funnel: offer to claim it.
+        return _not_found(claim_name=lowered)
 
     rows = (
         get_db()
@@ -167,5 +168,12 @@ def profile(username: str):
     )
 
 
-def _not_found():
-    return render_template("public_404.html", csp_nonce=use_public_csp()), 404
+def _not_found(claim_name: str | None = None):
+    # claim_name set => the path was a free, claimable username (funnel state);
+    # None => a generic miss (reserved/malformed name, or a non-username path).
+    return (
+        render_template(
+            "public_404.html", claim_name=claim_name, csp_nonce=use_public_csp()
+        ),
+        404,
+    )

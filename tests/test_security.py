@@ -26,6 +26,7 @@ import bcrypt
 
 from app import create_app
 from app.auth import _token_hash
+from app.constants import validate_username
 from app.db import get_db, init_db
 from app.security import session_auth_fragment
 from app.theme import THEME_VERSION, default_theme_json
@@ -472,6 +473,81 @@ class TestAvatarDefaultAndLegacy(SecurityTestBase):
         self._set_avatar(uid, "gradient", "matcha_latte")
         body = self.app.test_client().get("/graduser").get_data(as_text=True)
         self.assertIn("avatar-g", body)
+
+
+class TestClaimCollisionState(SecurityTestBase):
+    """A claim collision re-renders the form inline (200) with the attempted
+    name preserved and claimable suggestion chips — no flash+redirect, no claim
+    made (#52, spec §B5)."""
+
+    def setUp(self):
+        super().setUp()
+        self._create_user("taken@test.test", username="cuke")  # 'cuke' is taken
+        self.uid, self.pw = self._create_user("new@test.test")  # no username yet
+        self.client = self.app.test_client()
+        self._login(self.client, self.uid, self.pw)
+
+    def test_taken_username_renders_inline_with_suggestions(self):
+        resp = self.client.post("/dash/claim", data={"username": "cuke", "_csrf": "tok"})
+        self.assertEqual(resp.status_code, 200)  # rendered, not redirected
+        body = resp.get_data(as_text=True)
+        self.assertIn("is-error", body)
+        self.assertIn('value="cuke"', body)          # attempt preserved
+        self.assertIn("suggest-chip", body)          # suggestions offered
+        # The claimer still has no username — a collision claims nothing.
+        with self.app.app_context():
+            row = get_db().execute(
+                "SELECT username FROM users WHERE id = ?", (self.uid,)
+            ).fetchone()
+        self.assertIsNone(row["username"])
+
+    def test_every_suggestion_chip_is_actually_free(self):
+        resp = self.client.post("/dash/claim", data={"username": "cuke", "_csrf": "tok"})
+        body = resp.get_data(as_text=True)
+        chips = re.findall(r'class="suggest-chip" href="\?claim_try=([^"]+)"', body)
+        self.assertTrue(chips, "no suggestion chips rendered")
+        with self.app.app_context():
+            for name in chips:
+                self.assertIsNone(validate_username(name), f"suggested invalid name {name!r}")
+                taken = get_db().execute(
+                    "SELECT 1 FROM users WHERE username = ?", (name,)
+                ).fetchone()
+                self.assertIsNone(taken, f"suggested an already-taken name {name!r}")
+
+    def test_suggestion_link_prefills_the_field(self):
+        # A chip's ?claim_try=<name> prefills the claim input on GET.
+        body = self.client.get("/dash?claim_try=mochi").get_data(as_text=True)
+        self.assertIn('value="mochi"', body)
+
+    def test_malformed_prefill_is_ignored(self):
+        body = self.client.get("/dash?claim_try=__nope__").get_data(as_text=True)
+        self.assertNotIn('value="__nope__"', body)
+
+
+class TestNotFoundFunnel(SecurityTestBase):
+    """A dead /<username> becomes a claim funnel: 404 + 'claim this username'
+    CTA carrying the name; stays cookie-free and zero-JS (#52, spec §B6)."""
+
+    def setUp(self):
+        super().setUp()
+        self.client = self.app.test_client()
+
+    def test_free_username_funnels_to_claim(self):
+        resp = self.client.get("/freebie")
+        self.assertEqual(resp.status_code, 404)
+        body = resp.get_data(as_text=True)
+        self.assertIn("freebie", body)
+        self.assertIn("/signup", body)
+
+    def test_funnel_is_cookie_free_and_zero_js(self):
+        resp = self.client.get("/freebie")
+        self.assertNotIn("Set-Cookie", resp.headers, "404 funnel set a cookie")
+        self.assertNotIn(b"<script", resp.data.lower())
+
+    def test_reserved_name_stays_generic(self):
+        # Reserved names aren't claimable — no funnel CTA naming them.
+        resp = self.client.get("/login")  # 'login' is a real route, not a 404
+        self.assertNotEqual(resp.status_code, 404)
 
 
 if __name__ == "__main__":

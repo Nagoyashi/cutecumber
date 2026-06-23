@@ -11,7 +11,16 @@
     <input id="username" name="username" required minlength="3" maxlength="30"
            pattern="[a-z0-9][a-z0-9_\-]{1,28}[a-z0-9]"
            autocomplete="off" autocapitalize="off" spellcheck="false"
+           value="{{ claim_attempted }}"
+           {% if claim_error %}class="is-error" aria-invalid="true" aria-describedby="claim-error"{% endif %}
            placeholder="yourname">
+    {% if claim_error %}<p class="field-error" id="claim-error" role="alert">{{ claim_error }}</p>{% endif %}
+    {% if suggestions %}
+    <div class="suggest" role="group" aria-label="available username ideas">
+      <span class="suggest-lead">these are free:</span>
+      {% for s in suggestions %}<a class="suggest-chip" href="?claim_try={{ s }}">{{ s }}</a>{% endfor %}
+    </div>
+    {% endif %}
     <p class="uname-hint" id="username-hint" aria-live="polite"></p>
     <button type="submit">claim it ✨</button>
   </form>
