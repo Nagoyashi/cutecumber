@@ -13,15 +13,14 @@ never on feature breadth.
 
 ## Current phase
 
-**In cycle.** Public launch shipped (`v0.3.0`); the **design refresh** landed in
-two cycles: **`v0.4.0`** (landing + dashboard, shipped 2026-06-21) and **`v0.5.0`
-— public profile + auth refresh, in progress** (milestone `v0.5.0`). Done in
-v0.5.0: email-or-username login (#54) and the theme-v3 page settings +
-circle-crop avatars (#55). Remaining: public-page restyle (#50), auth-screen
-restyle + hidden magic-link UI (#51, #53), and the taken/404 states (#52).
-Deferred: magic-link **backend** → v0.6.0; a v0.6.0 cleanup release will also
-pick up the post-launch QA (#34). Growth (paid packs) needs a payment-processor
-decision in `DECISIONS.md` first. Per-task status → the *cutecumber.cc* board ↗
+**Between cycles.** Public launch shipped (`v0.3.0`); the **design refresh**
+landed in two cycles — **`v0.4.0`** (landing + dashboard, shipped 2026-06-21)
+and **`v0.5.0`** (public profile + auth refresh, shipped 2026-06-24, verified
+live). The next cycle is **`v0.6.0`** (not yet open): the magic-link **UI +
+backend** (deferred from v0.5.0) and the post-launch QA pass (#34); it can also
+pick up the dashboard-wide white-on-accent AA cleanup (#65). Growth (paid packs)
+needs a payment-processor decision in `DECISIONS.md` first. Per-task status →
+the *cutecumber.cc* board ↗
 
 ## Roadmap
 
@@ -78,6 +77,26 @@ firms up.*
 ## Phase log
 
 Durable completion notes, newest first. Rationale → `DECISIONS.md`.
+
+### Design refresh v2 — public profile + auth — shipped 2026-06-24 (`v0.5.0`)
+
+- Finished the refresh on the two surfaces v0.4.0 left plain: the **public
+  profile page** (centered + wide layouts, #50) and the **auth screens**
+  (login/signup/reset rebuilt on a shared landing-shell partial — centered
+  slice wordmark + glassy card, #51). Added per-page theme settings
+  (layout/ambient/credit toggle) as **theme v3** with a migration, plus
+  circle-crop photo avatars (#55); the design spec now lives in-repo (#56).
+- Friendlier state screens (#52): a username-taken claim error that re-renders
+  inline with the attempt kept + zero-JS suggestion chips (each re-checked
+  against live names AND resting tombstones, so every chip is claimable), and a
+  404 that turns a dead `/<username>` into a claim funnel — still HTTP 404,
+  cookie-free, zero-JS.
+- Login now accepts username **or** email (#54). Auth submit pills use the #36
+  dark-ink token (AA). Dashboard JS held at its 200-line budget by keeping the
+  new state screens script-free. Verified live: auth shell + 404 funnel serving
+  on prod with CSP/HSTS intact.
+- Deferred to v0.6.0: the magic-link UI + backend and the post-launch QA (#34).
+  Follow-up filed: dashboard-wide white-on-accent AA cleanup (#65).
 
 ### Design refresh v2 — landing + dashboard — shipped 2026-06-21 (`v0.4.0`)
 
