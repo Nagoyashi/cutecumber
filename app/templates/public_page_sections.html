@@ -1,0 +1,223 @@
+{#
+  Public page — BUILDER render path (STAGING). A vertical stack of full-width,
+  pre-composed sections, rendered server-side from users.sections_live_json via
+  sections.resolve_sections(). Same hard rules as the legacy public page: zero
+  JS, zero third-party requests, no cookies for anonymous visitors, one nonce'd
+  inline <style>. All values are validated tokens / length-capped escaped text /
+  validated http(s) URLs — no |safe anywhere.
+
+  Premium sections (embed/signup/form/code) render an inert, non-JS facade only;
+  functional embeds (click-to-load sandbox) and form storage land with their
+  own infra in later cycles.
+#}
+{% set has_divider = sections | selectattr('type', 'equalto', 'divider') | list %}
+{% macro hero(p, v) %}
+  {% if v == 'banner' %}
+  <section class="sec hero hero-banner">
+    <img class="hero-av" src="/static/avatars/{{ p.avatar }}.svg" width="92" height="92" alt="">
+    <h1 class="hero-name">{{ p.name }}</h1>
+    {% if p.pronoun %}<p class="hero-pro">{{ p.pronoun }}</p>{% endif %}
+    {% if p.bio %}<p class="hero-bio">{{ p.bio }}</p>{% endif %}
+  </section>
+  {% else %}
+  <section class="sec hero hero-{{ v }}">
+    <div class="hero-inner">
+      <img class="hero-av" src="/static/avatars/{{ p.avatar }}.svg" width="116" height="116" alt="">
+      <div class="hero-txt">
+        <h1 class="hero-name">{{ p.name }}</h1>
+        {% if p.pronoun %}<p class="hero-pro">{{ p.pronoun }}</p>{% endif %}
+        {% if p.bio %}<p class="hero-bio">{{ p.bio }}</p>{% endif %}
+      </div>
+    </div>
+  </section>
+  {% endif %}
+{% endmacro %}
+{% macro links(p, v) %}
+  <section class="sec links links-{{ v }}">
+  {% for l in p.links %}
+    {% if v == 'buttons' %}
+    <a class="linkbtn" href="{{ l.url }}" target="_blank" rel="noopener noreferrer nofollow">{% if l.emoji %}<span class="linkbtn-e" aria-hidden="true">{{ l.emoji }}</span> {% endif %}<span class="linkbtn-t">{{ l.title }}</span></a>
+    {% elif v == 'cards' %}
+    <a class="linkcard" href="{{ l.url }}" target="_blank" rel="noopener noreferrer nofollow"><span class="linkcard-e" aria-hidden="true">{{ l.emoji }}</span><span class="linkcard-t">{{ l.title }}</span><span class="linkcard-h">{{ l.url | hostname }}</span></a>
+    {% else %}
+    <a class="linktile" href="{{ l.url }}" target="_blank" rel="noopener noreferrer nofollow"><span class="linktile-e" aria-hidden="true">{{ l.emoji }}</span><span class="linktile-t">{{ l.title }}</span></a>
+    {% endif %}
+  {% endfor %}
+  </section>
+{% endmacro %}
+{% macro gallery(p, v) %}
+  {% set imgs = p.photos | selectattr('image') | list %}
+  {% if imgs %}
+  <section class="sec gallery gallery-{{ v }}">
+  {% for ph in imgs %}
+    <figure class="gphoto"><img src="/a/{{ ph.image }}" alt="" loading="lazy">{% if ph.caption %}<figcaption>{{ ph.caption }}</figcaption>{% endif %}</figure>
+  {% endfor %}
+  </section>
+  {% endif %}
+{% endmacro %}
+{% macro about(p, v) %}
+  <section class="sec about about-{{ v }}">
+    <div class="about-inner">
+      <h2 class="sec-h">{{ p.heading }}</h2>
+      <p class="about-body">{{ p.body }}</p>
+    </div>
+  </section>
+{% endmacro %}
+{% macro socials(p, v) %}
+  <section class="sec socials socials-{{ v }}">
+    <div class="soc-row">
+    {% for icon in p.icons.split() %}<span class="soc-bubble" aria-hidden="true">{{ icon }}</span>{% endfor %}
+    </div>
+  </section>
+{% endmacro %}
+{% macro divider(p, v) %}
+  <section class="sec divider divider-{{ v }}">
+    {% if v == 'row' %}
+    <span class="motif s"><svg viewBox="-16 -16 32 32" width="20" height="20" aria-hidden="true"><use href="#m-{{ p.motif }}"/></svg></span>
+    <span class="motif m"><svg viewBox="-16 -16 32 32" width="26" height="26" aria-hidden="true"><use href="#m-{{ p.motif }}"/></svg></span>
+    <span class="motif s"><svg viewBox="-16 -16 32 32" width="20" height="20" aria-hidden="true"><use href="#m-{{ p.motif }}"/></svg></span>
+    {% else %}
+    <span class="rule"></span>
+    <span class="motif"><svg viewBox="-16 -16 32 32" width="22" height="22" aria-hidden="true"><use href="#m-{{ p.motif }}"/></svg></span>
+    <span class="rule"></span>
+    {% endif %}
+  </section>
+{% endmacro %}
+{% macro premium(s) %}
+  {# Inert, non-JS facade only — no third-party request, no submission. #}
+  <section class="sec premium premium-{{ s.type }}">
+    <div class="pf-card">
+    {% if s.type == 'embed' %}
+      <span class="pf-play" aria-hidden="true">▶</span>
+      <span class="pf-cap">{{ s.props.kind }} · {{ s.props.url | hostname }}</span>
+    {% elif s.type == 'signup' %}
+      <h2 class="sec-h">{{ s.props.heading }}</h2>
+      <span class="pf-btn" aria-hidden="true">{{ s.props.button }}</span>
+    {% elif s.type == 'form' %}
+      <h2 class="sec-h">{{ s.props.heading }}</h2>
+      {% for f in s.props.fields %}<span class="pf-field" aria-hidden="true">{{ f }}</span>{% endfor %}
+    {% else %}
+      <pre class="pf-code">{{ s.props.code }}</pre>
+    {% endif %}
+    </div>
+  </section>
+{% endmacro %}
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ title }} · cutecumber.cc</title>
+<meta name="description" content="{{ description }}">
+<link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+<link rel="canonical" href="{{ canonical }}">
+<meta property="og:title" content="{{ title }}">
+<meta property="og:description" content="{{ description }}">
+<meta property="og:url" content="{{ canonical }}">
+<meta property="og:type" content="profile">
+<meta property="og:site_name" content="cutecumber.cc">
+<meta name="twitter:card" content="summary">
+<meta name="theme-color" content="{{ t.bg }}">
+{% if t.font_file %}<link rel="preload" href="{{ t.font_file }}" as="font" type="font/woff2" crossorigin>
+{% endif %}<style nonce="{{ csp_nonce }}">
+{% if t.font_file %}@font-face{font-family:{{ t.font_family }};src:url({{ t.font_file }}) format('woff2');font-weight:{{ t.heading_weight }};font-display:swap}
+{% endif %}:root{--bg:{{ t.bg }};--surface:{{ t.surface }};--text:{{ t.text }};--muted:{{ t.muted }};--accent:{{ t.accent }};--accent-text:{{ t.accent_text }};--line:{{ t.line }};--radius:{{ t.radius }};--padx:56px}
+*{margin:0;padding:0;box-sizing:border-box}
+body{min-height:100svh;font-family:system-ui,-apple-system,sans-serif;color:var(--text);line-height:1.5;background:{{ t.page_background }}}
+.page{width:100%;max-width:960px;margin:0 auto}
+.sec{padding:26px var(--padx)}
+.sec-h{font-family:{{ t.heading_stack }};font-weight:{{ t.heading_weight }};font-size:1.3rem;color:var(--text)}
+h1,h2{overflow-wrap:break-word}
+/* hero */
+.hero-inner{display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px}
+.hero-split .hero-inner{flex-direction:row;gap:30px;max-width:700px;margin:0 auto;text-align:left;align-items:center}
+.hero-av{border-radius:50%;box-shadow:0 0 0 4px var(--line),0 6px 18px rgba(40,30,40,.16);flex:none}
+.hero-name{font-family:{{ t.heading_stack }};font-weight:{{ t.heading_weight }};font-size:1.9rem}
+.hero-pro{color:var(--muted);font-size:.85rem}
+.hero-bio{font-size:.98rem;max-width:44ch;text-wrap:pretty;overflow-wrap:break-word}
+.hero-banner{background:linear-gradient(120deg,var(--accent),{{ t.accent }});text-align:center;color:var(--accent-text);display:flex;flex-direction:column;align-items:center;gap:8px}
+.hero-banner .hero-av{box-shadow:0 0 0 4px rgba(255,255,255,.85),0 6px 18px rgba(40,30,40,.16)}
+.hero-banner .hero-pro{color:var(--accent-text);opacity:.75}
+.hero-banner .hero-bio{color:var(--accent-text)}
+/* links */
+.links{display:grid;gap:12px;justify-items:center}
+.links-buttons .linkbtn,.links-cards,.links-tiles{width:100%}
+.links-buttons{max-width:520px;margin:0 auto}
+.linkbtn{position:relative;display:flex;align-items:center;justify-content:center;gap:9px;width:100%;padding:15px 44px;border-radius:999px;text-decoration:none;font-weight:600;overflow-wrap:anywhere;background:var(--accent);color:var(--accent-text);box-shadow:0 6px 18px {{ t.shadow }};transition:transform .12s ease}
+.linkbtn:hover,.linkbtn:focus-visible{transform:translateY(-2px)}
+.linkbtn-e{position:absolute;left:17px}
+.links-cards{grid-template-columns:1fr 1fr;gap:14px;max-width:760px;margin:0 auto}
+.linkcard{display:grid;grid-template-columns:40px 1fr;grid-template-rows:auto auto;column-gap:10px;align-items:center;text-decoration:none;background:var(--surface);border:1.5px solid var(--line);border-radius:16px;padding:13px 16px;box-shadow:0 4px 14px rgba(40,30,40,.07)}
+.linkcard-e{grid-row:1/3;font-size:1.5rem;text-align:center}
+.linkcard-t{font-family:{{ t.heading_stack }};font-size:.98rem;color:var(--text);overflow-wrap:anywhere}
+.linkcard-h{font-size:.76rem;color:var(--muted);overflow-wrap:anywhere}
+.links-tiles{grid-template-columns:1fr 1fr 1fr;gap:14px;max-width:820px;margin:0 auto}
+.linktile{display:flex;flex-direction:column;align-items:center;gap:6px;text-decoration:none;background:var(--surface);border:1.5px solid var(--line);border-radius:18px;padding:20px 12px 16px;box-shadow:0 4px 14px rgba(40,30,40,.07)}
+.linktile-e{font-size:1.7rem}
+.linktile-t{font-family:{{ t.heading_stack }};font-size:.92rem;color:var(--text);text-align:center}
+/* gallery */
+.gallery{display:grid;gap:16px}
+.gallery-three{grid-template-columns:1fr 1fr 1fr;max-width:860px;margin:0 auto}
+.gphoto img{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:14px;display:block}
+.gphoto figcaption{font-size:.78rem;color:var(--muted);text-align:center;margin-top:6px}
+.gallery-polaroid{display:flex;flex-wrap:wrap;justify-content:center;gap:20px}
+.gallery-polaroid .gphoto{width:218px;background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:9px 9px 12px;box-shadow:0 8px 20px rgba(40,30,40,.12)}
+.gallery-polaroid .gphoto img{border-radius:3px}
+.gallery-polaroid figcaption{font-family:{{ t.heading_stack }};color:var(--text)}
+/* about */
+.about-inner{max-width:58ch;margin:0 auto;text-align:center;display:flex;flex-direction:column;gap:6px}
+.about-body{font-size:.95rem;opacity:.9;text-wrap:pretty;overflow-wrap:break-word;white-space:pre-line}
+.about-note .about-inner{max-width:560px;text-align:left;background:var(--surface);border:1.5px dashed var(--line);border-radius:18px;padding:24px 26px 20px;transform:rotate(-.6deg);box-shadow:0 6px 18px rgba(40,30,40,.08);position:relative}
+.about-note .about-inner::before{content:"";position:absolute;top:-11px;left:calc(50% - 46px);width:92px;height:20px;border-radius:3px;background:var(--accent);opacity:.42;transform:rotate(2deg)}
+/* socials */
+.soc-row{display:flex;flex-wrap:wrap;justify-content:center;gap:10px}
+.soc-bubble{width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.3rem;background:var(--surface);border:1.5px solid var(--line);box-shadow:0 3px 10px rgba(40,30,40,.07)}
+.socials-pill .soc-row{gap:0}
+.socials-pill .soc-bubble{width:56px;border-radius:0;border-left-width:0}
+.socials-pill .soc-bubble:first-child{border-left-width:1.5px;border-radius:999px 0 0 999px}
+.socials-pill .soc-bubble:last-child{border-radius:0 999px 999px 0}
+/* divider */
+.divider{display:flex;align-items:center;justify-content:center;gap:12px;padding:14px var(--padx);max-width:560px;margin:0 auto}
+.divider .rule{flex:1;height:1.6px;background:var(--line)}
+.divider-row{gap:30px;opacity:.85}
+/* premium facade */
+.premium .pf-card{max-width:560px;margin:0 auto;background:var(--surface);border:1.5px solid var(--line);border-radius:16px;padding:16px 20px;display:flex;flex-wrap:wrap;align-items:center;gap:10px;box-shadow:0 4px 14px rgba(40,30,40,.07)}
+.pf-play{width:38px;height:38px;border-radius:50%;background:var(--accent);color:var(--accent-text);display:flex;align-items:center;justify-content:center}
+.pf-cap{font-size:.72rem;color:var(--muted);font-family:ui-monospace,monospace}
+.pf-btn,.pf-field{display:inline-block;padding:8px 16px;border-radius:999px;background:var(--accent);color:var(--accent-text);font-size:.85rem}
+.pf-field{background:transparent;border:1.6px dashed var(--line);color:var(--muted)}
+.pf-code{width:100%;background:#262636;color:#cdeab9;border-radius:12px;padding:16px;font-size:.78rem;overflow:auto;white-space:pre-wrap;word-break:break-word}
+/* footer */
+footer{padding:24px var(--padx) 40px;font-size:.74rem;text-align:center;color:var(--muted)}
+footer a{color:var(--muted);text-decoration:none}
+footer a:hover,footer a:focus-visible{color:var(--text)}
+@media (prefers-reduced-motion:reduce){.linkbtn{transition:none}.linkbtn:hover,.linkbtn:focus-visible{transform:none}}
+@media (max-width:640px){
+:root{--padx:22px}
+.sec{padding:16px var(--padx)}
+.hero-split .hero-inner{flex-direction:column;text-align:center}
+.hero-name{font-size:1.5rem}
+.links-cards{grid-template-columns:1fr}
+.links-tiles{grid-template-columns:1fr 1fr;gap:10px}
+.gallery-three{grid-template-columns:1fr 1fr;gap:10px}
+.gallery-polaroid .gphoto{width:136px}
+}
+</style>
+</head>
+<body>
+{% if has_divider %}{% include "_motif_sprite.html" %}{% endif %}
+<main class="page">
+{% for s in sections %}
+  {%- if s.type == 'hero' %}{{ hero(s.props, s.variant) }}
+  {%- elif s.type == 'links' %}{{ links(s.props, s.variant) }}
+  {%- elif s.type == 'gallery' %}{{ gallery(s.props, s.variant) }}
+  {%- elif s.type == 'about' %}{{ about(s.props, s.variant) }}
+  {%- elif s.type == 'socials' %}{{ socials(s.props, s.variant) }}
+  {%- elif s.type == 'divider' %}{{ divider(s.props, s.variant) }}
+  {%- else %}{{ premium(s) }}
+  {%- endif %}
+{% endfor %}
+<footer>{% if t.show_credit %}<a href="/">made with cutecumber</a> · {% endif %}<a href="/privacy">privacy</a> · <a href="/imprint">imprint</a></footer>
+</main>
+</body>
+</html>

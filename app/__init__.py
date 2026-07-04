@@ -93,6 +93,15 @@ def create_app() -> Flask:
 
     app.jinja_env.globals["csrf_token"] = get_csrf_token
 
+    @app.template_filter("hostname")
+    def _hostname(url: str) -> str:
+        """Bare host for link-card / embed captions (strip scheme + leading
+        www.). Input is an already-validated http(s) URL."""
+        from urllib.parse import urlsplit
+
+        host = urlsplit(url or "").netloc.lower().split(":")[0]
+        return host[4:] if host.startswith("www.") else host
+
     @app.before_request
     def load_user() -> None:
         """Attach the logged-in user's row to g.user (None for anonymous).
