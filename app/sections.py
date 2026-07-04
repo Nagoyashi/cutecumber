@@ -53,6 +53,7 @@ from .constants import (
     validate_link_url,
 )
 from .constants import AVATAR_SETS
+from .avatars import AVATAR_FILE_RE
 
 SECTIONS_VERSION = 1
 
@@ -169,15 +170,19 @@ def _v_gallery(props: dict):
     for item in raw:
         if not isinstance(item, dict):
             return None, _GENERIC_ERR
-        # Uploads aren't wired yet: only a caption is stored for now (handoff
-        # §2.3). The public page skips image-less photos; the editor shows the
-        # placeholder tile.
-        caption = props_caption = item.get("caption", "")
+        caption = item.get("caption", "")
         if caption:
-            caption = _clean_text(props_caption, SECTION_CAPTION_MAX)
+            caption = _clean_text(caption, SECTION_CAPTION_MAX)
             if caption is None:
                 return None, _GENERIC_ERR
-        out.append({"caption": caption or ""})
+        photo = {"caption": caption or ""}
+        # image is optional: a processed-upload filename (our own pattern) or
+        # nothing. The public page skips image-less photos; the editor shows the
+        # placeholder tile. A filename off our pattern is dropped, not fatal.
+        img = item.get("image")
+        if isinstance(img, str) and AVATAR_FILE_RE.match(img):
+            photo["image"] = img
+        out.append(photo)
     return {"photos": out}, None
 
 

@@ -17,6 +17,7 @@
   var TYPES = [
     { type: "hero", label: "hero", emoji: "👋", variants: ["centered", "split", "banner"] },
     { type: "links", label: "links", emoji: "🔗", variants: ["buttons", "cards", "tiles"] },
+    { type: "gallery", label: "gallery", emoji: "🖼️", variants: ["three", "polaroid"] },
     { type: "about", label: "about", emoji: "📖", variants: ["simple", "note", "split"] },
     { type: "socials", label: "socials", emoji: "✨", variants: ["bubbles", "pill"] },
     { type: "divider", label: "divider", emoji: "🎀", variants: ["line", "row"] }
@@ -73,6 +74,7 @@
     switch (type) {
       case "hero": return { avatar: "sprout", name: state.username || "me" };
       case "links": return { links: [{ emoji: "", title: "my link", url: "https://example.com" }] };
+      case "gallery": return { photos: [{ caption: "" }] };
       case "about": return { heading: "about", body: "a little story about me." };
       case "socials": return { icons: "🦋 📸" };
       case "divider": return { motif: "sparkle" };
@@ -221,6 +223,7 @@
     })));
     if (s.type === "hero") heroFields(box, s);
     else if (s.type === "links") linksFields(box, s);
+    else if (s.type === "gallery") galleryFields(box, s);
     else if (s.type === "about") aboutFields(box, s);
     else if (s.type === "socials") socialsFields(box, s);
     else if (s.type === "divider") dividerFields(box, s);
@@ -292,6 +295,47 @@
       class: "b-add-min", type: "button", text: "+ add a link",
       onclick: function () { s.props.links.push({ emoji: "", title: "my link", url: "https://example.com" }); renderInspector(); commit(); }
     }));
+  }
+
+  function galleryFields(box, s) {
+    if (!Array.isArray(s.props.photos)) s.props.photos = [];
+    var list = h("div", { class: "b-photos" });
+    s.props.photos.forEach(function (ph, i) {
+      var thumb = ph.image
+        ? h("img", { class: "b-thumb", src: "/a/" + ph.image, alt: "" })
+        : h("span", { class: "b-thumb b-thumb-empty", "aria-hidden": "true", text: "📷" });
+      var fileInput = h("input", {
+        class: "b-file", type: "file", accept: "image/*",
+        onchange: function (e) { if (e.target.files[0]) uploadPhoto(e.target.files[0], ph); }
+      });
+      list.appendChild(h("div", { class: "b-photorow" }, [
+        thumb,
+        h("label", { class: "b-upload" }, [ph.image ? "replace" : "upload", fileInput]),
+        textInput(ph.caption, function (v) { ph.caption = v; commit(); }, "caption"),
+        h("button", {
+          class: "b-tool", type: "button", "aria-label": "remove photo", text: "✕",
+          onclick: function () { s.props.photos.splice(i, 1); renderInspector(); commit(); }
+        })
+      ]));
+    });
+    box.appendChild(field("photos", list));
+    box.appendChild(h("button", {
+      class: "b-add-min", type: "button", text: "+ add a photo",
+      onclick: function () { s.props.photos.push({ caption: "" }); renderInspector(); commit(); }
+    }));
+  }
+  function uploadPhoto(file, ph) {
+    var body = new FormData();
+    body.append("_csrf", state.csrf);
+    body.append("photo", file);
+    setStatus("uploading…");
+    fetch("/dash/builder/upload", { method: "POST", body: body })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        if (!d.ok) { setStatus(d.error || "upload failed 😔"); return; }
+        ph.image = d.filename; renderInspector(); commit();
+      })
+      .catch(function () { setStatus("upload failed 😔"); });
   }
 
   // ---- drawer ------------------------------------------------------------

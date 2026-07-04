@@ -6,11 +6,21 @@ touch the live column on publish.
 Reuses the create_app()+temp-DB harness from test_security.
 """
 
+import io
 import json
+
+from PIL import Image
 
 from app.db import get_db
 from app.security import session_auth_fragment
 from tests.test_security import SecurityTestBase
+
+
+def _png():
+    buf = io.BytesIO()
+    Image.new("RGB", (24, 18), (200, 120, 150)).save(buf, "PNG")
+    buf.seek(0)
+    return buf
 
 ALLOWED = "owner@test.test"
 
@@ -119,4 +129,31 @@ class TestBuilderPresetAndPlan(BuilderTestBase):
 
     def test_bad_plan_rejected(self):
         resp = self._form("/dash/builder/plan", plan="galaxy")
+        self.assertFalse(resp.get_json()["ok"])
+
+
+class TestBuilderUpload(BuilderTestBase):
+    def test_upload_returns_processed_webp_filename(self):
+        resp = self.client.post("/dash/builder/upload",
+                                data={"_csrf": "testcsrf", "photo": (_png(), "pic.png")},
+                                content_type="multipart/form-data")
+        d = resp.get_json()
+        self.assertTrue(d["ok"])
+        self.assertRegex(d["filename"], r"^\d+-[0-9a-f]{12}\.webp$")  # re-encoded, our pattern
+
+    def test_uploaded_photo_renders_in_public_gallery(self):
+        up = self.client.post("/dash/builder/upload",
+                              data={"_csrf": "testcsrf", "photo": (_png(), "pic.png")},
+                              content_type="multipart/form-data").get_json()
+        page = {"version": 1, "sections": [
+            {"type": "gallery", "variant": "three",
+             "props": {"photos": [{"caption": "hi", "image": up["filename"]}]}}]}
+        self._post("/dash/builder/publish", page)
+        pub = self.client.get("/mochi").get_data(as_text=True)
+        self.assertIn("/a/" + up["filename"], pub)
+
+    def test_non_image_rejected(self):
+        resp = self.client.post("/dash/builder/upload",
+                                data={"_csrf": "testcsrf", "photo": (io.BytesIO(b"nope"), "x.txt")},
+                                content_type="multipart/form-data")
         self.assertFalse(resp.get_json()["ok"])

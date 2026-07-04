@@ -93,6 +93,14 @@
 .b-linkrow > .b-in:nth-child(2), .b-linkrow > .b-in:nth-child(3) { grid-column: 2; }
 .b-add-min { align-self: flex-start; border: 0; background: none; color: var(--b-accent-deep);
   cursor: pointer; font-weight: 600; font-size: .84rem; padding: 2px; }
+.b-photos { display: flex; flex-direction: column; gap: 8px; }
+.b-photorow { display: grid; grid-template-columns: 44px auto 1fr 26px; gap: 6px; align-items: center; }
+.b-thumb { width: 44px; height: 44px; border-radius: 9px; object-fit: cover; border: 1.5px solid var(--b-border); }
+.b-thumb-empty { display: flex; align-items: center; justify-content: center; background: #fff6fa; }
+.b-upload { border: 1.5px solid var(--b-border); background: #fff; border-radius: 999px;
+  padding: 5px 12px; font-size: .78rem; cursor: pointer; white-space: nowrap; }
+.b-upload:hover { border-color: var(--b-accent); }
+.b-file { position: absolute; width: 1px; height: 1px; opacity: 0; overflow: hidden; }
 
 /* drawer */
 .b-drawer { position: fixed; inset: 0; background: rgba(60, 40, 52, .4); backdrop-filter: blur(3px);

@@ -23,6 +23,7 @@ from flask import (
     request,
 )
 
+from .avatars import AvatarError, process_gallery_photo, store_avatar
 from .db import get_db
 from .sections import (
     default_sections_from_profile,
@@ -120,6 +121,23 @@ def publish():
     )
     db.commit()
     return jsonify(ok=True, url=f"/{g.user['username']}")
+
+
+@bp.post("/dash/builder/upload")
+@builder_required
+def upload():
+    """Process one gallery photo through the avatar pipeline (re-encode strips
+    EXIF/GPS) and return its stored filename for the editor to attach to a photo.
+    The file is never served as-received; served from /a/ like avatars."""
+    file = request.files.get("photo")
+    if file is None or not file.filename:
+        return jsonify(ok=False, error="pick a photo to upload 🌱"), 200
+    try:
+        blob = process_gallery_photo(file.stream)
+    except AvatarError as exc:
+        return jsonify(ok=False, error=str(exc)), 200
+    filename = store_avatar(g.user["id"], blob)
+    return jsonify(ok=True, filename=filename)
 
 
 @bp.post("/dash/builder/preset")

@@ -127,6 +127,13 @@ AVATAR_IMAGE_SIZE = 176          # 88px circle at 2x for retina
 AVATAR_MAX_BYTES = 30 * 1024     # output budget: 30 KB
 AVATAR_MAX_UPLOAD = 8 * 1024 * 1024  # input cap: 8 MB (phone photos)
 
+# Gallery photos (page builder). Same pipeline as avatars — re-encoded WebP,
+# EXIF/GPS stripped by re-encode — but larger, aspect preserved (CSS crops to
+# the display box). The public-page byte budget no longer applies to builder
+# pages (owner decision 2026-07-04), so these are generous.
+GALLERY_IMAGE_MAX_DIM = 1200     # longest side, aspect preserved
+GALLERY_MAX_BYTES = 300 * 1024   # output cap per photo
+
 # Avatar emoji is FREEFORM (DECISIONS.md #13, revisited at owner request — the
 # documented "real user demand" trigger). It renders as autoescaped text, the
 # same injection class as the link emoji (#16) and the display name, so there

@@ -14,7 +14,13 @@ import secrets
 from flask import current_app
 from PIL import Image, ImageOps, UnidentifiedImageError
 
-from .constants import AVATAR_IMAGE_SIZE, AVATAR_MAX_BYTES, AVATAR_MAX_UPLOAD
+from .constants import (
+    AVATAR_IMAGE_SIZE,
+    AVATAR_MAX_BYTES,
+    AVATAR_MAX_UPLOAD,
+    GALLERY_IMAGE_MAX_DIM,
+    GALLERY_MAX_BYTES,
+)
 
 # Anything above this pixel count is a decompression bomb, not an avatar.
 Image.MAX_IMAGE_PIXELS = 30_000_000
@@ -68,6 +74,43 @@ def process_avatar(stream) -> bytes:
         buffer = io.BytesIO()
         image.save(buffer, "WEBP", quality=quality, method=4)
         if buffer.tell() <= AVATAR_MAX_BYTES:
+            return buffer.getvalue()
+    raise AvatarError("that image wouldn't shrink enough — try a simpler one 🌀")
+
+
+def process_gallery_photo(stream) -> bytes:
+    """Turn an untrusted upload into a clean, metadata-free WebP for a gallery
+    section: same safety pipeline as avatars (identify bytes, transpose, strip
+    metadata by re-encode) but larger and aspect-preserving — the gallery CSS
+    crops to its display box. Raises AvatarError with a kind message."""
+    data = stream.read(AVATAR_MAX_UPLOAD + 1)
+    if len(data) > AVATAR_MAX_UPLOAD:
+        raise AvatarError("that photo is a bit too big — 8 MB is the max 🐘")
+    if not data:
+        raise AvatarError("that file seems to be empty 🤔")
+
+    try:
+        image = Image.open(io.BytesIO(data))
+        image.load()
+    except (UnidentifiedImageError, Image.DecompressionBombError, OSError):
+        raise AvatarError("we couldn't read that as an image — try a jpg or png 🥺")
+
+    if image.format not in _ALLOWED_FORMATS:
+        raise AvatarError("we couldn't read that as an image — try a jpg or png 🥺")
+
+    image = ImageOps.exif_transpose(image)
+    if image.mode not in ("RGB", "RGBA"):
+        has_alpha = image.mode == "P" and "transparency" in image.info
+        image = image.convert("RGBA" if has_alpha or image.mode == "LA" else "RGB")
+
+    # Shrink the longest side to the cap, preserving aspect (thumbnail is a
+    # no-op when the image is already smaller).
+    image.thumbnail((GALLERY_IMAGE_MAX_DIM, GALLERY_IMAGE_MAX_DIM), Image.LANCZOS)
+
+    for quality in (82, 72, 60, 48):
+        buffer = io.BytesIO()
+        image.save(buffer, "WEBP", quality=quality, method=4)
+        if buffer.tell() <= GALLERY_MAX_BYTES:
             return buffer.getvalue()
     raise AvatarError("that image wouldn't shrink enough — try a simpler one 🌀")
 

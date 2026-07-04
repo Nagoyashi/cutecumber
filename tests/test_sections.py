@@ -161,6 +161,19 @@ class TestDivider(unittest.TestCase):
         self.assertIsNotNone(err)
 
 
+class TestGalleryImages(unittest.TestCase):
+    def test_valid_image_kept_bad_dropped(self):
+        page = _page({"type": "gallery", "variant": "three", "props": {"photos": [
+            {"caption": "a", "image": "5-0123456789ab.webp"},   # our pattern → kept
+            {"caption": "b", "image": "../etc/passwd"},          # off-pattern → dropped
+        ]}})
+        clean, err = validate_sections(page)
+        self.assertIsNone(err)
+        photos = clean["sections"][0]["props"]["photos"]
+        self.assertEqual(photos[0].get("image"), "5-0123456789ab.webp")
+        self.assertNotIn("image", photos[1])  # caption survives, bad image gone
+
+
 class TestResolveTolerance(unittest.TestCase):
     def test_corrupt_json_yields_empty(self):
         for raw in (None, "", "{not json", "[]", '"hi"', '{"version": 99}',
