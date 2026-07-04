@@ -21,7 +21,42 @@
     { type: "socials", label: "socials", emoji: "✨", variants: ["bubbles", "pill"] },
     { type: "divider", label: "divider", emoji: "🎀", variants: ["line", "row"] }
   ];
-  function typeMeta(t) { for (var i = 0; i < TYPES.length; i++) if (TYPES[i].type === t) return TYPES[i]; return null; }
+  // Premium (sprout-only) types. Server-gated; the editor lock is cosmetic.
+  var PREMIUM = [
+    { type: "embed", label: "embed", emoji: "🎬", variants: ["full", "card"] },
+    { type: "signup", label: "mail list", emoji: "✉️", variants: ["band", "card"] },
+    { type: "form", label: "form", emoji: "📝", variants: ["card"] },
+    { type: "code", label: "custom html", emoji: "⌨️", variants: ["inert"] }
+  ];
+  var ALL = TYPES.concat(PREMIUM);
+  function typeMeta(t) { for (var i = 0; i < ALL.length; i++) if (ALL[i].type === t) return ALL[i]; return null; }
+  function isPremium(t) { for (var i = 0; i < PREMIUM.length; i++) if (PREMIUM[i].type === t) return true; return false; }
+
+  // Starter templates (handoff §3). Each is a whole page + a theme preset.
+  var TEMPLATES = [
+    { key: "artist", name: "the artist", blurb: "gallery first — for illustrators & sticker makers", preset: "strawberry_milk", sections: [
+      { type: "hero", variant: "centered", props: { avatar: "blossom", name: "mochi", pronoun: "she/her", bio: "sticker artist & frog enjoyer 🌷 tiny happy things, drawn daily." } },
+      { type: "gallery", variant: "polaroid", props: { photos: [{ caption: "new drops" }, { caption: "work in progress" }, { caption: "my desk" }] } },
+      { type: "links", variant: "buttons", props: { links: [{ emoji: "🌷", title: "my sticker shop", url: "https://example.com/shop" }, { emoji: "✉️", title: "commission info", url: "https://example.com/commissions" }, { emoji: "📖", title: "my tiny zine", url: "https://example.com/zine" }] } },
+      { type: "about", variant: "note", props: { heading: "about me", body: "i draw tiny happy things and put them on everything. based in a very small apartment with a very large cat." } },
+      { type: "socials", variant: "bubbles", props: { icons: "🦋 📸 🎬 🎵" } }
+    ] },
+    { key: "streamer", name: "the streamer", blurb: "bold banner & big buttons — for live folks", preset: "seafoam", sections: [
+      { type: "hero", variant: "banner", props: { avatar: "froggy", name: "pondcast", pronoun: "they/them", bio: "cozy games, loud laughs. live tue · thu · sun 🐸" } },
+      { type: "links", variant: "tiles", props: { links: [{ emoji: "🎥", title: "watch live", url: "https://example.com/live" }, { emoji: "📼", title: "past streams", url: "https://example.com/vods" }, { emoji: "💬", title: "the lilypad", url: "https://example.com/chat" }] } },
+      { type: "divider", variant: "line", props: { motif: "sparkle" } },
+      { type: "about", variant: "simple", props: { heading: "stream schedule", body: "tuesday — cozy farming games · thursday — spooky night (lights off) · sunday — community art jam with chat." } },
+      { type: "socials", variant: "pill", props: { icons: "🦋 📸 🎬 🎵" } }
+    ] },
+    { key: "shop", name: "the little shop", blurb: "products up front — for makers who sell", preset: "matcha_latte", sections: [
+      { type: "hero", variant: "split", props: { avatar: "matcha", name: "bean & bloom", bio: "hand-poured candles that smell like tiny gardens. small batches, big feelings." } },
+      { type: "gallery", variant: "three", props: { photos: [{ caption: "new drops" }, { caption: "bestsellers" }, { caption: "back in stock" }] } },
+      { type: "links", variant: "cards", props: { links: [{ emoji: "🛒", title: "shop everything", url: "https://example.com/shop" }, { emoji: "🧺", title: "etsy store", url: "https://example.com/etsy" }, { emoji: "📦", title: "shipping faq", url: "https://example.com/shipping" }, { emoji: "📸", title: "instagram", url: "https://example.com/ig" }] } },
+      { type: "divider", variant: "row", props: { motif: "leaf" } },
+      { type: "about", variant: "simple", props: { heading: "restock news", body: "new scents bloom on the first friday of every month. mail-garden members get first sniff." } }
+    ] },
+    { key: "blank", name: "blank patch", blurb: "a fresh little patch 🌱", preset: null, sections: [] }
+  ];
 
   var root = document.getElementById("builder");
   var state = {
@@ -41,6 +76,10 @@
       case "about": return { heading: "about", body: "a little story about me." };
       case "socials": return { icons: "🦋 📸" };
       case "divider": return { motif: "sparkle" };
+      case "embed": return { kind: "youtube", url: "https://youtu.be/" };
+      case "signup": return { heading: "join my mail garden", button: "sign up" };
+      case "form": return { heading: "say hi", fields: "name, email, message" };
+      case "code": return { code: "<!-- your html here -->" };
     }
     return {};
   }
@@ -185,6 +224,25 @@
     else if (s.type === "about") aboutFields(box, s);
     else if (s.type === "socials") socialsFields(box, s);
     else if (s.type === "divider") dividerFields(box, s);
+    else if (s.type === "embed") embedFields(box, s);
+    else if (s.type === "signup") signupFields(box, s);
+    else if (s.type === "form") formFields(box, s);
+    else if (s.type === "code") codeFields(box, s);
+  }
+  function embedFields(box, s) {
+    box.appendChild(field("service", selectInput(["youtube", "spotify"], s.props.kind, function (v) { s.props.kind = v; commit(); })));
+    box.appendChild(field("link", textInput(s.props.url, function (v) { s.props.url = v; commit(); }, "https://youtu.be/…")));
+  }
+  function signupFields(box, s) {
+    box.appendChild(field("heading", textInput(s.props.heading, function (v) { s.props.heading = v; commit(); })));
+    box.appendChild(field("button label", textInput(s.props.button, function (v) { s.props.button = v; commit(); })));
+  }
+  function formFields(box, s) {
+    box.appendChild(field("heading", textInput(s.props.heading, function (v) { s.props.heading = v; commit(); })));
+    box.appendChild(field("fields (comma-separated)", textInput(s.props.fields, function (v) { s.props.fields = v; commit(); })));
+  }
+  function codeFields(box, s) {
+    box.appendChild(field("custom html (shown as a safe preview)", textArea(s.props.code, function (v) { s.props.code = v; commit(); })));
   }
 
   function field(label, control) {
@@ -240,18 +298,76 @@
   function buildDrawer() {
     var grid = document.getElementById("b-drawer-grid");
     grid.textContent = "";
-    TYPES.forEach(function (t) {
+    ALL.forEach(function (t) {
+      var locked = isPremium(t.type) && state.plan !== "sprout";
       grid.appendChild(h("button", {
-        class: "b-card", type: "button",
-        onclick: function () { addSection(t.type); closeDrawer(); }
+        class: "b-card" + (locked ? " locked" : ""), type: "button",
+        onclick: function () {
+          if (locked) { openUpsell(); return; }
+          addSection(t.type); closeDrawer();
+        }
       }, [
         h("span", { class: "b-card-emoji", "aria-hidden": "true", text: t.emoji }),
-        h("span", { class: "b-card-name", text: t.label })
+        h("span", { class: "b-card-name", text: t.label }),
+        isPremium(t.type) ? h("span", { class: "b-lock", "aria-hidden": "true", text: locked ? "🔒" : "🌱" }) : null
       ]));
     });
   }
-  function openDrawer() { document.getElementById("b-drawer").hidden = false; }
+  function openDrawer() { buildDrawer(); document.getElementById("b-drawer").hidden = false; }
   function closeDrawer() { document.getElementById("b-drawer").hidden = true; }
+
+  // ---- template picker ---------------------------------------------------
+  function buildPicker() {
+    var grid = document.getElementById("b-picker-grid");
+    grid.textContent = "";
+    TEMPLATES.forEach(function (t) {
+      grid.appendChild(h("button", {
+        class: "b-tpl" + (t.key === "blank" ? " blank" : ""), type: "button",
+        onclick: function () { applyTemplate(t); }
+      }, [
+        h("span", { class: "b-tpl-name", text: t.name }),
+        h("span", { class: "b-tpl-blurb", text: t.blurb })
+      ]));
+    });
+  }
+  function openPicker() { buildPicker(); document.getElementById("b-picker").hidden = false; }
+  function closePicker() { document.getElementById("b-picker").hidden = true; }
+  function applyTemplate(t) {
+    if (state.sections.length && !window.confirm("replace your current page with “" + t.name + "”?")) return;
+    state.sections = (t.sections || []).map(function (s) {
+      var c = JSON.parse(JSON.stringify(s)); c._id = "s-" + (++state.counter); return c;
+    });
+    state.selected = null;
+    renderList(); renderInspector();
+    if (t.preset) setPreset(t.preset);
+    closePicker();
+    scheduleSave();
+  }
+  function setPreset(preset) {
+    var body = new FormData(); body.append("_csrf", state.csrf); body.append("preset", preset);
+    fetch("/dash/builder/preset", { method: "POST", body: body })
+      .then(function (r) { return r.json(); })
+      .then(function (d) { if (d.ok) reloadPreview(); });
+  }
+
+  // ---- premium plan / upsell --------------------------------------------
+  function renderPlan() {
+    var b = document.getElementById("b-plan");
+    if (state.plan === "sprout") { b.textContent = "🌱 sprout member"; b.classList.add("member"); }
+    else { b.textContent = "get sprout 🌱"; b.classList.remove("member"); }
+  }
+  function openUpsell() { document.getElementById("b-upsell").hidden = false; }
+  function closeUpsell() { document.getElementById("b-upsell").hidden = true; }
+  function upgrade() {
+    var body = new FormData(); body.append("_csrf", state.csrf); body.append("plan", "sprout");
+    fetch("/dash/builder/plan", { method: "POST", body: body })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        if (!d.ok) return;
+        state.plan = d.plan; renderPlan(); closeUpsell();
+        setStatus("sprout unlocked 🌱");
+      });
+  }
 
   // ---- phone toggle ------------------------------------------------------
   function togglePhone() {
@@ -275,10 +391,19 @@
     document.getElementById("b-drawer").addEventListener("click", function (e) { if (e.target.id === "b-drawer") closeDrawer(); });
     document.getElementById("b-publish").addEventListener("click", publish);
     document.getElementById("b-phone").addEventListener("click", togglePhone);
-    buildDrawer();
+    document.getElementById("b-templates").addEventListener("click", openPicker);
+    document.getElementById("b-picker-x").addEventListener("click", closePicker);
+    document.getElementById("b-picker").addEventListener("click", function (e) { if (e.target.id === "b-picker") closePicker(); });
+    document.getElementById("b-plan").addEventListener("click", openUpsell);
+    document.getElementById("b-upsell-no").addEventListener("click", closeUpsell);
+    document.getElementById("b-upsell-yes").addEventListener("click", upgrade);
+    document.getElementById("b-upsell").addEventListener("click", function (e) { if (e.target.id === "b-upsell") closeUpsell(); });
+    document.addEventListener("keydown", function (e) { if (e.key === "Escape") { closeDrawer(); closePicker(); closeUpsell(); } });
+    renderPlan();
     renderList();
     renderInspector();
     setStatus(root.dataset.published === "1" ? "" : "draft");
+    if (!state.sections.length) openPicker();  // first-run: offer a starting point
   }
   boot();
 })();

@@ -24,6 +24,7 @@
     <span class="b-url">cutecumber.cc/{{ username }}</span>
     <div class="b-top-right">
       <button type="button" class="b-toggle" id="b-phone" aria-pressed="false">📱 phone</button>
+      <button type="button" class="b-plan" id="b-plan"></button>
       <span class="b-save" id="b-save" aria-live="polite"></span>
       <button type="button" class="pill b-publish" id="b-publish">publish</button>
     </div>
@@ -40,6 +41,7 @@
         <h2 class="b-h">sections</h2>
         <ol class="b-sections" id="b-sections"></ol>
         <button type="button" class="b-add" id="b-add">+ add a section</button>
+        <button type="button" class="b-add-min" id="b-templates">✨ start from a template…</button>
       </div>
       <div class="b-panel b-inspector" id="b-inspector"></div>
     </aside>
@@ -51,6 +53,31 @@
       <div class="b-drawer-grid" id="b-drawer-grid"></div>
     </div>
   </div>
+  <div class="b-drawer" id="b-picker" hidden>
+    <div class="b-drawer-card b-picker-card" role="dialog" aria-label="pick a starting point">
+      <div class="b-drawer-head"><strong>pick a starting point</strong><button type="button" class="b-x" id="b-picker-x" aria-label="close">✕</button></div>
+      <p class="b-drawer-sub">each one is a whole page, ready to make yours.</p>
+      <div class="b-picker-grid" id="b-picker-grid"></div>
+    </div>
+  </div>
+  <div class="b-drawer" id="b-upsell" hidden>
+    <div class="b-drawer-card b-upsell-card" role="dialog" aria-label="grow into a sprout">
+      <div class="b-upsell-motif" aria-hidden="true"><svg viewBox="-16 -16 32 32" width="56" height="56"><use href="#m-sprout"/></svg></div>
+      <h2 class="b-upsell-h">grow into a sprout 🌱</h2>
+      <ul class="b-perks">
+        <li>🌐 your own domain — mochi.com instead of cutecumber.cc/mochi</li>
+        <li>🎟️ sprout stickers: embeds, mail list, forms &amp; custom html</li>
+        <li>🎨 two exclusive themes: lavender haze &amp; midnight snack</li>
+      </ul>
+      <p class="b-price"><strong>$4/mo</strong> · cancel anytime, keep your page</p>
+      <div class="b-upsell-btns">
+        <button type="button" class="b-toggle" id="b-upsell-no">stay free</button>
+        <button type="button" class="pill b-publish" id="b-upsell-yes">upgrade (staging)</button>
+      </div>
+      <p class="b-drawer-sub b-upsell-note">staging only — this just flips your test account to sprout, no payment.</p>
+    </div>
+  </div>
+  <div class="b-sprite" aria-hidden="true">{% include "_motif_sprite.html" %}</div>
   <noscript><p class="b-nojs-msg">the builder needs javascript — it's the one dash screen that does. your public page never will.</p></noscript>
 </div>
 </body>

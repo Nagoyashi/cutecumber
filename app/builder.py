@@ -31,6 +31,7 @@ from .sections import (
     validate_sections,
 )
 from .security import login_required, use_public_csp
+from .theme import THEME_VERSION, load_theme, resolve_theme, validate_theme
 
 bp = Blueprint("builder", __name__)
 
@@ -121,6 +122,42 @@ def publish():
     return jsonify(ok=True, url=f"/{g.user['username']}")
 
 
+@bp.post("/dash/builder/preset")
+@builder_required
+def set_preset():
+    """Apply a theme preset (used by the starter-template picker). Plan-gated:
+    a premium preset on a free plan is rejected, same as the dash theme save."""
+    preset = request.form.get("preset") or ""
+    clean, error = validate_theme(
+        {"version": THEME_VERSION, "preset": preset, "overrides": {}},
+        plan=g.user["plan"],
+    )
+    if error:
+        return jsonify(ok=False, error=error), 200
+    db = get_db()
+    db.execute(
+        "UPDATE users SET theme_json = ?, theme_version = ? WHERE id = ?",
+        (json.dumps(clean, separators=(",", ":")), clean["version"], g.user["id"]),
+    )
+    db.commit()
+    return jsonify(ok=True)
+
+
+@bp.post("/dash/builder/plan")
+@builder_required
+def set_plan():
+    """STAGING ONLY: let an allowlisted test user flip their own plan so premium
+    can be exercised without billing (handoff §1.3 / §7.10). It lives behind the
+    builder gate and is NOT a real upgrade path — Stripe is a later decision."""
+    plan = request.form.get("plan")
+    if plan not in ("free", "sprout"):
+        return jsonify(ok=False, error="unknown plan"), 200
+    db = get_db()
+    db.execute("UPDATE users SET plan = ? WHERE id = ?", (plan, g.user["id"]))
+    db.commit()
+    return jsonify(ok=True, plan=plan)
+
+
 @bp.get("/dash/builder/preview")
 @builder_required
 def preview():
@@ -128,8 +165,6 @@ def preview():
     from the current draft, so the editor shows exactly what visitors get. Arms
     the public CSP (nonce'd inline style) so it styles correctly, and
     frame-ancestors 'self' lets our own dash embed it."""
-    from .theme import load_theme, resolve_theme
-
     theme = resolve_theme(load_theme(g.user["theme_json"]))
     sections = resolve_sections(g.user["sections_draft_json"]) or _preview_sections()
     return render_template(

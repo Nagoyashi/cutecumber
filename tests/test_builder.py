@@ -89,3 +89,34 @@ class TestBuilderSavePublish(BuilderTestBase):
         resp = self._post("/dash/builder/save", {"version": 1, "sections": [
             {"type": "code", "variant": "inert", "props": {"code": "<b>x</b>"}}]})
         self.assertFalse(resp.get_json()["ok"])
+
+
+class TestBuilderPresetAndPlan(BuilderTestBase):
+    def _form(self, path, **fields):
+        fields["_csrf"] = "testcsrf"
+        return self.client.post(path, data=fields)
+
+    def test_preset_applies_to_theme(self):
+        resp = self._form("/dash/builder/preset", preset="seafoam")
+        self.assertTrue(resp.get_json()["ok"])
+        pub = self.client.get("/mochi")  # theme drives the page background
+        self.assertEqual(pub.status_code, 200)
+
+    def test_premium_preset_rejected_on_free(self):
+        resp = self._form("/dash/builder/preset", preset="lavender_haze")
+        self.assertFalse(resp.get_json()["ok"])
+
+    def test_plan_toggle_unlocks_premium(self):
+        # Flip to sprout via the staging toggle…
+        resp = self._form("/dash/builder/plan", plan="sprout")
+        self.assertEqual(resp.get_json(), {"ok": True, "plan": "sprout"})
+        # …now a premium section saves, and the premium preset is accepted.
+        s = self._post("/dash/builder/save", {"version": 1, "sections": [
+            {"type": "code", "variant": "inert", "props": {"code": "<b>x</b>"}}]})
+        self.assertTrue(s.get_json()["ok"])
+        p = self._form("/dash/builder/preset", preset="midnight_snack")
+        self.assertTrue(p.get_json()["ok"])
+
+    def test_bad_plan_rejected(self):
+        resp = self._form("/dash/builder/plan", plan="galaxy")
+        self.assertFalse(resp.get_json()["ok"])

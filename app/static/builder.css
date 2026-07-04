@@ -112,9 +112,41 @@
 .b-card-emoji { font-size: 1.7rem; }
 .b-card-name { font-size: .84rem; color: var(--b-ink); }
 
+/* plan button (topbar) */
+.b-plan { border: 1.5px dashed #6f9a5d; background: #f2f8ee; color: #3f5a39;
+  border-radius: 999px; padding: 6px 14px; font-size: .82rem; font-weight: 600; cursor: pointer; }
+.b-plan.member { border-style: solid; background: #e7f2df; cursor: default; }
+
+/* premium lock in the add-drawer */
+.b-card { position: relative; }
+.b-card.locked { opacity: .62; filter: saturate(.7); }
+.b-lock { position: absolute; top: 6px; right: 8px; font-size: .8rem; }
+
+/* template picker */
+.b-picker-card { width: min(760px, 94vw); }
+.b-picker-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+.b-tpl { display: flex; flex-direction: column; gap: 5px; text-align: left; cursor: pointer;
+  border: 1.5px solid var(--b-border); background: #fff; border-radius: 16px; padding: 14px;
+  transition: transform .12s ease, box-shadow .12s ease; }
+.b-tpl:hover { transform: translateY(-3px); box-shadow: 0 12px 26px rgba(229, 143, 177, .22); border-color: var(--b-accent); }
+.b-tpl.blank { border-style: dashed; background: #fbfdf9; }
+.b-tpl-name { font-family: Fredoka, system-ui, sans-serif; font-weight: 600; color: var(--b-green); font-size: .95rem; }
+.b-tpl-blurb { font-size: .72rem; color: var(--b-muted); }
+
+/* upsell modal */
+.b-upsell-card { width: min(420px, 92vw); text-align: center; }
+.b-upsell-motif { display: flex; justify-content: center; margin-bottom: 6px; }
+.b-upsell-h { font-family: Fredoka, system-ui, sans-serif; color: var(--b-green); font-size: 1.4rem; margin: 0 0 12px; }
+.b-perks { list-style: none; padding: 0; margin: 0 0 14px; display: flex; flex-direction: column; gap: 9px; text-align: left; font-size: .9rem; }
+.b-price { margin: 0 0 16px; color: var(--b-ink); }
+.b-upsell-btns { display: flex; gap: 10px; justify-content: center; }
+.b-upsell-note { margin-top: 12px; }
+.b-sprite { position: absolute; width: 0; height: 0; overflow: hidden; }
+
 .b-nojs-msg { margin: 20px; padding: 14px; text-align: center; color: var(--b-muted);
   background: #fff; border: 1.5px dashed var(--b-border); border-radius: 14px; }
-@media (prefers-reduced-motion: reduce) { .b-card, .b-frame { transition: none; } }
+@media (prefers-reduced-motion: reduce) { .b-card, .b-tpl, .b-frame { transition: none; } }
+@media (max-width: 640px) { .b-picker-grid { grid-template-columns: 1fr 1fr; } }
 @media (max-width: 860px) {
   .b-main { grid-template-columns: 1fr; }
   .b-rail { border-left: 0; border-top: 1px solid var(--b-border); }
