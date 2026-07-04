@@ -18,6 +18,13 @@ CREATE TABLE IF NOT EXISTS users (
     theme_version INTEGER NOT NULL DEFAULT 1,
     reset_token_hash TEXT,                            -- sha256 of the emailed token; NULL when none active
     reset_expires INTEGER,                            -- unix epoch; token dead after this
+    -- Page builder (STAGING, behind BUILDER_ENABLED). Both NULL for every
+    -- existing user => the legacy links page renders untouched. draft = editor
+    -- working copy; live = what the public page renders when non-NULL. plan
+    -- gates premium sections/themes (DECISIONS.md — builder cycle).
+    sections_draft_json TEXT,                         -- versioned JSON, see app/sections.py; NULL until first builder save
+    sections_live_json  TEXT,                         -- published copy; NULL => render legacy links path
+    plan          TEXT    NOT NULL DEFAULT 'free',    -- 'free' | 'sprout'
     created_at    TEXT    NOT NULL DEFAULT (datetime('now'))
 );
 

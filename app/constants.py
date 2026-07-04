@@ -55,6 +55,24 @@ LINK_URL_MAX = 2000
 LINK_EMOJI_MAX = 8  # generous enough for ZWJ sequences like 🏳️‍🌈
 MAX_LINKS_PER_PAGE = 50
 
+# Page-builder content caps (app/sections.py). One source of truth, same as the
+# link/profile caps above. Text caps reuse the profile caps where a field maps
+# 1:1 (hero name -> DISPLAY_NAME_MAX, bio -> BIO_MAX, link title ->
+# LINK_TITLE_MAX); the rest live here. Emoji/icon fields are length-capped, not
+# grapheme-segmented, on purpose (the ZWJ-validation swamp we already refuse to
+# enter for avatar/link emoji — they render escaped, so length is all that
+# matters).
+SECTIONS_MAX = 20            # sections per page
+LINKS_PER_SECTION_MAX = 12
+GALLERY_PHOTOS_MAX = 9
+FORM_FIELDS_MAX = 8
+SOCIAL_ICONS_MAX = 8
+SECTION_HEADING_MAX = 80
+SECTION_BODY_MAX = 500
+SECTION_CAPTION_MAX = 80
+SECTION_BUTTON_MAX = 30
+SECTION_CODE_MAX = 2000
+
 # Link URLs: scheme allowlist, validated at save AND at render (DECISIONS.md
 # #15). This is the XSS front line — a stored javascript: URL rendered into an
 # href is game over, so nothing gets stored OR rendered without passing here.

@@ -33,6 +33,15 @@ from urllib.parse import quote
 THEME_VERSION = 3
 DEFAULT_PRESET = "strawberry_milk"
 
+# Paid tier: these two presets require plan == 'sprout'. Gating is enforced on
+# every SAVE path that passes a plan — both the builder AND the legacy dash
+# theme-save (dash.py passes g.user["plan"]) as of the builder cycle (owner
+# decision 2026-07-04, revisit later). resolve_theme() stays UNGATED so an
+# existing free user who already picked one keeps rendering it; they just can't
+# re-select it on save. validate_theme(data) with no plan skips the gate (used
+# where plan doesn't apply).
+PREMIUM_PRESETS = frozenset({"lavender_haze", "midnight_snack"})
+
 # Page-level settings (design refresh v2 / #55), stored as theme overrides but
 # NOT part of any colour preset — their defaults live here, not in PRESETS.
 # layout: page shape; ambient: opt-in decorative motif background (default OFF —
@@ -260,12 +269,16 @@ def load_theme(raw: str | None) -> dict:
 
 # ----------------------------------------------------------------- validate
 
-def validate_theme(data: dict) -> tuple[dict | None, str | None]:
+def validate_theme(data: dict, plan: str | None = None) -> tuple[dict | None, str | None]:
     """SAVE-path validation. Returns (clean_theme, None) or (None, error).
 
     Strict: unknown keys, malformed hex, and off-allowlist enums are rejected
     outright. Values equal to the preset's own are dropped, so overrides only
     ever store actual differences (and "reset" is just an empty dict).
+
+    `plan` gates the premium presets. It defaults to None, meaning NO gating —
+    that keeps the legacy dash theme-save path unchanged. Pass 'free'/'sprout'
+    (the builder does) to enforce PREMIUM_PRESETS.
     """
     if not isinstance(data, dict):
         return None, "that theme didn't make sense to us 🤔"
@@ -273,6 +286,8 @@ def validate_theme(data: dict) -> tuple[dict | None, str | None]:
     preset = PRESETS.get(preset_name)
     if preset is None:
         return None, "pick one of our presets first 🌈"
+    if plan is not None and preset_name in PREMIUM_PRESETS and plan != "sprout":
+        return None, "that theme blooms with sprout 🌱 — upgrade to unlock it"
     raw_overrides = data.get("overrides", {})
     if not isinstance(raw_overrides, dict):
         return None, "that theme didn't make sense to us 🤔"
@@ -401,6 +416,9 @@ def resolve_theme(theme: dict) -> dict:
 
     # computed, never stored
     tokens["muted"] = mix(tokens["text"], tokens["bg"], 0.74)
+    # Decorative border/ring for builder section cards (handoff §5). Purely
+    # cosmetic — no AA requirement. strawberry_milk resolves to ~#f0d4de.
+    tokens["line"] = mix(tokens["accent"], tokens["surface"], 0.30)
     tokens["accent_text"] = max(
         ("#ffffff", _ACCENT_TEXT_DARK), key=lambda c: contrast(c, tokens["accent"])
     )

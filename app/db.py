@@ -44,6 +44,11 @@ def init_db() -> None:
     _ensure_column(db, "users", "avatar_value", "TEXT NOT NULL DEFAULT '🥒'")
     _ensure_column(db, "users", "reset_token_hash", "TEXT")
     _ensure_column(db, "users", "reset_expires", "INTEGER")
+    # Page builder (STAGING). Additive + nullable, so production code that
+    # knows nothing about the builder runs against a migrated DB unchanged.
+    _ensure_column(db, "users", "sections_draft_json", "TEXT")
+    _ensure_column(db, "users", "sections_live_json", "TEXT")
+    _ensure_column(db, "users", "plan", "TEXT NOT NULL DEFAULT 'free'")
     db.commit()
 
 

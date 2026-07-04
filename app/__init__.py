@@ -56,6 +56,15 @@ def create_app() -> Flask:
         PERMANENT_SESSION_LIFETIME=60 * 60 * 24 * 30,  # 30 days
         # Stealth by default: robots.txt serves Disallow: / until launch day.
         ROBOTS_ALLOW=os.environ.get("ROBOTS_ALLOW", "0") == "1",
+        # Page builder (STAGING). OFF by default; even ON, access is limited to
+        # the allowlist (comma-separated user emails). Both must pass — a
+        # non-allowlisted user must not learn the surface exists (404, no hint).
+        BUILDER_ENABLED=os.environ.get("BUILDER_ENABLED", "0") == "1",
+        BUILDER_ALLOWLIST=frozenset(
+            e.strip().lower()
+            for e in os.environ.get("BUILDER_ALLOWLIST", "").split(",")
+            if e.strip()
+        ),
         # HSTS comes from the app in prod (Fly terminates TLS, no Caddy layer).
         SEND_HSTS=os.environ.get("HSTS", "0") == "1",
         # Raised from 64 KB when avatar uploads shipped; the CSRF hook parses

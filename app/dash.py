@@ -353,7 +353,7 @@ def theme_save():
     else:
         abort(400)
 
-    clean, error = validate_theme(candidate)
+    clean, error = validate_theme(candidate, plan=g.user["plan"])
     if error:
         flash(error, "error")
         return redirect(url_for("dash.home", open="theme", _anchor="theme"))
