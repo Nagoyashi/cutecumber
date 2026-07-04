@@ -13,14 +13,18 @@ never on feature breadth.
 
 ## Current phase
 
-**Between cycles.** Public launch shipped (`v0.3.0`); the **design refresh**
-landed in two cycles — **`v0.4.0`** (landing + dashboard, shipped 2026-06-21)
-and **`v0.5.0`** (public profile + auth refresh, shipped 2026-06-24, verified
-live). The next cycle is **`v0.6.0`** (not yet open): the magic-link **UI +
-backend** (deferred from v0.5.0) and the post-launch QA pass (#34); it can also
-pick up the dashboard-wide white-on-accent AA cleanup (#65). Growth (paid packs)
-needs a payment-processor decision in `DECISIONS.md` first. Per-task status →
-the *cutecumber.cc* board ↗
+**Active cycle: `v0.7.0` — page builder (foundation, STAGING).** The design
+refresh shipped in `v0.4.0` + `v0.5.0`; `v0.6.0` (magic-link + post-launch QA)
+was **deferred** (2026-07-04, milestone closed) to pivot to the third design
+package — a section-based **page builder** replacing the links-list editor, plus
+a paid **sprout** tier (DECISIONS #38). Everything is behind `BUILDER_ENABLED` +
+an allowlist; nothing reaches production. In flight on `feature/builder-foundation`
+(draft PR #80): additive migration, `sections.py` model, public section render,
+the editor (list/inspector/preview, autosave, publish, template picker,
+premium/upsell). Remaining before shipping needs owner calls on the handoff §7
+items (uploads, form/mail storage, functional embeds, billing, payload budget).
+Deferred v0.6.0 issues (#53/#70/#71/#65/#34) stay open, un-milestoned. Per-task
+status → the *cutecumber.cc* board ↗
 
 ## Roadmap
 

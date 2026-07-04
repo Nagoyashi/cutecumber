@@ -546,3 +546,43 @@ CSP) to make a Lighthouse audit pass — that would weaken a real security contr
 to satisfy a measurement artifact. Tie-break order puts privacy/security above a
 lint. **Revisit:** only if a real crawler is ever shown to be blocked (it
 won't be by CSP), or if Lighthouse changes the audit to a top-level fetch.
+
+## 38. Page builder: staging-flagged, additive, draft/live, "pick don't design"
+
+The third design package (`design_handoff_page_builder`) replaces the links-list
+editor with a **section-based page builder** + a paid **sprout** tier. It is a
+multi-cycle surface; v0.7.0 is its foundation. Owner decisions (2026-07-04),
+recorded so the build stays honest:
+
+- **Pivot, don't interleave.** v0.6.0 (magic-link) was paused/deferred (milestone
+  closed) so v0.7.0 is the single active cycle. Its issues (#53/#70/#71/#65/#34)
+  stay open, un-milestoned, to be re-cycled later.
+- **Feature flag in the prod codebase**, not a separate deploy: `BUILDER_ENABLED`
+  + `BUILDER_ALLOWLIST` (emails). Both must pass; anyone else gets a plain 404
+  (no hint the surface exists). Legacy links editor stays default while off.
+- **Additive, nullable migrations only** (`sections_draft_json`,
+  `sections_live_json`, `plan`), via the `db.py::_ensure_column` pattern — prod
+  code that knows nothing about the builder runs against a migrated DB unchanged.
+- **Draft/live split**: the editor edits `sections_draft_json`; publish copies it
+  to `sections_live_json`, which is what the public page renders. Both NULL →
+  legacy links page renders untouched.
+- **`code` (custom HTML) section**: destined for a sandboxed cross-origin iframe
+  + strict CSP; until that infra exists it renders **inert/escaped**, never
+  executed — the "user input never becomes HTML" line holds (no `|safe`).
+- **Premium presets are paid** (`lavender_haze`, `midnight_snack` → sprout-only),
+  enforced on the LEGACY dash theme-save too, not just the builder. `resolve` is
+  ungated, so an existing free user who already picked one keeps rendering it;
+  they just can't re-select it on save.
+- **Staging plan toggle**: an allowlisted test user can self-flip `users.plan`
+  (`/dash/builder/plan`) so premium is exercisable without billing. NOT a real
+  upgrade path — Stripe is a later decision.
+
+**Same doctrine as `theme.py`/link URLs**: `sections.py` validates strictly on
+SAVE (reject unknown type/variant/prop, over-cap, premium-on-free) and resolves
+tolerantly on RENDER (a bad row is skipped, never breaks a public page). Public
+render stays zero-JS, zero-third-party, cookie-free.
+
+**Revisit / still open (handoff §7, owner decisions before building):** gallery
+uploads pipeline, functional embeds (click-to-load sandbox), form/mail-list
+storage (submissions table, spam, notify, GDPR), real billing, and the
+multi-section public-page payload budget (the ~2 KB links budget no longer fits).

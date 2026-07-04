@@ -65,9 +65,22 @@ cutecumber/
     ├── links.py             POST /dash/links (add), POST /dash/links/<id>
     │                        (action=save|delete), POST /dash/links/reorder
     │                        (exact-permutation check). IDOR rule everywhere.
-    ├── public.py            GET /, GET /<username> (OG tags), cute 404
+    ├── public.py            GET /, GET /<username> (OG tags), cute 404;
+    │                        renders the builder section stack when the user has
+    │                        sections_live_json, else the legacy links page
+    ├── sections.py          page-builder section model (STAGING), theme.py
+    │                        doctrine: SECTION_CATALOG (10 types/variants),
+    │                        validate_sections (save, strict, plan-gated),
+    │                        resolve_sections (render, tolerant),
+    │                        default_sections_from_profile, MIGRATIONS
+    ├── builder.py           builder editor (STAGING, behind BUILDER_ENABLED +
+    │                        BUILDER_ALLOWLIST → 404 else): GET /dash/builder,
+    │                        POST /save (draft), /publish (draft→live), /preset,
+    │                        /plan (staging toggle), GET /preview (iframe)
     ├── templates/
     │   ├── public_page.html     standalone; inline nonce'd CSS; OG tags; ZERO JS
+    │   ├── public_page_sections.html  builder public render: full-width section
+    │   │                        stack, macro per type/variant; same rules as above
     │   ├── public_404.html      standalone; same rules
     │   ├── index.html           landing (design refresh v2): split hero +
     │   │                        ambient SVG layer + feature grid; same rules
@@ -85,6 +98,8 @@ cutecumber/
     │   ├── auth_signup.html / auth_login.html / auth_reset_*.html
     │   │                        extend auth_base.html; dash_home.html / error.html
     │   │                        extend dash_base.html
+    │   ├── dash_builder.html    builder editor shell (STAGING): two-pane, data-*
+    │   │                        config (no inline script), loads builder.css/js
     │   ├── imprint.html / privacy.html   legal pages (§5 DDG / GDPR)
     └── static/
         ├── favicon.svg          brand slice mark (also the inlined landing
@@ -100,12 +115,20 @@ cutecumber/
         ├── fonts/               2 subsetted WOFF2 display fonts (fontsource via
         │                        npm). One loads per public page (h1); Fredoka
         │                        is also the chrome wordmark (DECISIONS #34).
-        └── dash.js              the ONLY JS in the product: reorder, live
-                                 preview, delete confirm. HARD 200-line budget
-                                 (currently 130) — count before adding.
+        ├── dash.js              the only JS on the PUBLIC-facing dash: reorder,
+        │                        live preview, delete confirm. HARD 200-line
+        │                        budget (currently 130) — count before adding.
+        ├── builder.css          builder editor chrome (STAGING; editor only)
+        └── builder.js           builder editor logic (STAGING): state object,
+                                 add/edit/reorder, inspector, autosave, publish,
+                                 template picker, upsell. Editor-only — the public
+                                 page stays server-rendered + JS-free.
 tests/
     ├── test_url_validation.py   run: python -m unittest -v  (from repo root)
     ├── test_theme.py            validator, migrations, WCAG AA on all presets
+    ├── test_sections.py         section validate/resolve, premium gating, tolerance
+    ├── test_public_sections.py  builder public render: stack, zero-JS, fallbacks
+    ├── test_builder.py          editor gate (404s), save/publish, preset/plan
     └── test_avatar.py           EXIF/GPS stripping, sizing, rejection, storage dir
 .github/
     ├── dependabot.yml           weekly pip + docker + github-actions updates
