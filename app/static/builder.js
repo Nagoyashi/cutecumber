@@ -79,8 +79,8 @@
       case "socials": return { icons: "🦋 📸" };
       case "divider": return { motif: "sparkle" };
       case "embed": return { kind: "youtube", url: "https://youtu.be/" };
-      case "signup": return { heading: "join my mail garden", button: "sign up" };
-      case "form": return { heading: "say hi", fields: "name, email, message" };
+      case "signup": return { heading: "join my mail garden", button: "sign up", url: "https://example.com/newsletter" };
+      case "form": return { heading: "say hi", button: "get in touch", url: "https://example.com/contact" };
       case "code": return { code: "<!-- your html here -->" };
     }
     return {};
@@ -239,10 +239,12 @@
   function signupFields(box, s) {
     box.appendChild(field("heading", textInput(s.props.heading, function (v) { s.props.heading = v; commit(); })));
     box.appendChild(field("button label", textInput(s.props.button, function (v) { s.props.button = v; commit(); })));
+    box.appendChild(field("link (your newsletter sign-up)", textInput(s.props.url, function (v) { s.props.url = v; commit(); }, "https://…")));
   }
   function formFields(box, s) {
     box.appendChild(field("heading", textInput(s.props.heading, function (v) { s.props.heading = v; commit(); })));
-    box.appendChild(field("fields (comma-separated)", textInput(s.props.fields, function (v) { s.props.fields = v; commit(); })));
+    box.appendChild(field("button label", textInput(s.props.button, function (v) { s.props.button = v; commit(); })));
+    box.appendChild(field("link (your form)", textInput(s.props.url, function (v) { s.props.url = v; commit(); }, "https://…")));
   }
   function codeFields(box, s) {
     box.appendChild(field("custom html (shown as a safe preview)", textArea(s.props.code, function (v) { s.props.code = v; commit(); })));

@@ -85,6 +85,26 @@ class TestPublicSections(SecurityTestBase):
         self.assertIn("youtu.be", body)  # hostname caption
         self.assertNotIn("Set-Cookie", resp.headers)
 
+    def test_signup_form_render_as_linkout(self):
+        self._set_sections({"version": 1, "sections": [
+            {"type": "signup", "variant": "band",
+             "props": {"heading": "join my garden", "button": "sign up",
+                       "url": "https://buttondown.email/mochi"}},
+            {"type": "form", "variant": "card",
+             "props": {"heading": "say hi", "button": "get in touch",
+                       "url": "https://forms.example.com/mochi"}},
+        ]})
+        resp = self.client.get("/mochi")
+        body = resp.get_data(as_text=True)
+        # Link-out buttons to the creator's own destinations — no on-site form,
+        # no input, no cookie, no third-party request before the click.
+        self.assertNotIn("<form", body.lower())
+        self.assertNotIn("<input", body.lower())
+        self.assertIn('href="https://buttondown.email/mochi"', body)
+        self.assertIn('href="https://forms.example.com/mochi"', body)
+        self.assertIn('rel="noopener noreferrer nofollow"', body)
+        self.assertNotIn("Set-Cookie", resp.headers)
+
     def test_falls_back_to_legacy_when_no_live_sections(self):
         resp = self.client.get("/mochi")  # sections_live_json is NULL
         self.assertEqual(resp.status_code, 200)

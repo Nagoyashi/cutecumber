@@ -37,7 +37,6 @@ import json
 from .constants import (
     BIO_MAX,
     DISPLAY_NAME_MAX,
-    FORM_FIELDS_MAX,
     GALLERY_PHOTOS_MAX,
     LINK_EMOJI_MAX,
     LINK_TITLE_MAX,
@@ -231,26 +230,30 @@ def _v_embed(props: dict):
     return {"kind": kind, "url": url}, None
 
 
+# signup + form are LINK-OUT sections (owner decision 2026-07-05): they link to
+# the creator's OWN newsletter/form rather than collecting on-site. That keeps
+# public pages cookie-free and dodges the "no CSRF exemption" rule (DECISIONS #4)
+# and any visitor-PII/GDPR storage — same posture as the embed link-out.
 def _v_signup(props: dict):
     heading = _clean_text(props.get("heading"), SECTION_HEADING_MAX)
     if heading is None:
         return None, "give your mail list a heading 🌸"
+    url, err = validate_link_url(props.get("url", ""))
+    if err:
+        return None, err
     button = _clean_text(props.get("button"), SECTION_BUTTON_MAX) or "sign up"
-    return {"heading": heading, "button": button}, None
+    return {"heading": heading, "button": button, "url": url}, None
 
 
 def _v_form(props: dict):
     heading = _clean_text(props.get("heading"), SECTION_HEADING_MAX)
     if heading is None:
         return None, "give your form a heading 🌸"
-    raw = props.get("fields", "")
-    if not isinstance(raw, str):
-        return None, _GENERIC_ERR
-    fields = [f.strip() for f in raw.split(",") if f.strip()][:FORM_FIELDS_MAX]
-    fields = [f for f in (_clean_text(f, SECTION_BUTTON_MAX) for f in fields) if f]
-    if not fields:
-        return None, "add a field or two for your form 🌱"
-    return {"heading": heading, "fields": fields}, None
+    url, err = validate_link_url(props.get("url", ""))
+    if err:
+        return None, err
+    button = _clean_text(props.get("button"), SECTION_BUTTON_MAX) or "get in touch"
+    return {"heading": heading, "button": button, "url": url}, None
 
 
 def _v_code(props: dict):

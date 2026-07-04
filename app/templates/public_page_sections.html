@@ -97,16 +97,16 @@
   </section>
 {% endmacro %}
 {% macro premium(s) %}
-  {# Inert, non-JS facade only — no third-party request, no submission. #}
   <section class="sec premium premium-{{ s.type }}">
     <div class="pf-card">
-    {% if s.type == 'signup' %}
+    {% if s.type == 'signup' or s.type == 'form' %}
+      {# LINK-OUT (no on-site collection): a real button to the creator's own
+         newsletter/form. Keeps public pages cookie-free + CSRF-clean, no visitor
+         PII stored. Same posture as the embed facade. #}
       <h2 class="sec-h">{{ s.props.heading }}</h2>
-      <span class="pf-btn" aria-hidden="true">{{ s.props.button }}</span>
-    {% elif s.type == 'form' %}
-      <h2 class="sec-h">{{ s.props.heading }}</h2>
-      {% for f in s.props.fields %}<span class="pf-field" aria-hidden="true">{{ f }}</span>{% endfor %}
+      <a class="pf-btn" href="{{ s.props.url }}" target="_blank" rel="noopener noreferrer nofollow">{{ s.props.button }}</a>
     {% else %}
+      {# code: inert, escaped — never executed until the sandbox exists. #}
       <pre class="pf-code">{{ s.props.code }}</pre>
     {% endif %}
     </div>
@@ -208,8 +208,8 @@ h1,h2{overflow-wrap:break-word}
 .premium .pf-card{max-width:560px;margin:0 auto;background:var(--surface);border:1.5px solid var(--line);border-radius:16px;padding:16px 20px;display:flex;flex-wrap:wrap;align-items:center;gap:10px;box-shadow:0 4px 14px rgba(40,30,40,.07)}
 .pf-play{width:38px;height:38px;border-radius:50%;background:var(--accent);color:var(--accent-text);display:flex;align-items:center;justify-content:center}
 .pf-cap{font-size:.72rem;color:var(--muted);font-family:ui-monospace,monospace}
-.pf-btn,.pf-field{display:inline-block;padding:8px 16px;border-radius:999px;background:var(--accent);color:var(--accent-text);font-size:.85rem}
-.pf-field{background:transparent;border:1.6px dashed var(--line);color:var(--muted)}
+.pf-btn{display:inline-block;padding:10px 22px;border-radius:999px;background:var(--accent);color:var(--accent-text);font-size:.9rem;font-weight:600;text-decoration:none;box-shadow:0 6px 18px {{ t.shadow }}}
+.premium .pf-card{flex-direction:column;text-align:center}
 .pf-code{width:100%;background:#262636;color:#cdeab9;border-radius:12px;padding:16px;font-size:.78rem;overflow:auto;white-space:pre-wrap;word-break:break-word}
 /* footer */
 footer{padding:24px var(--padx) 40px;font-size:.74rem;text-align:center;color:var(--muted)}

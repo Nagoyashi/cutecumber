@@ -582,7 +582,21 @@ SAVE (reject unknown type/variant/prop, over-cap, premium-on-free) and resolves
 tolerantly on RENDER (a bad row is skipped, never breaks a public page). Public
 render stays zero-JS, zero-third-party, cookie-free.
 
-**Revisit / still open (handoff §7, owner decisions before building):** gallery
-uploads pipeline, functional embeds (click-to-load sandbox), form/mail-list
-storage (submissions table, spam, notify, GDPR), real billing, and the
-multi-section public-page payload budget (the ~2 KB links budget no longer fits).
+**Settled since (2026-07-04/05):**
+- **Payload budget dropped** for builder pages (the ~2 KB links-page budget no
+  longer applies — owner call).
+- **Embeds + signup + form are LINK-OUT**, not on-site. A true inline embed
+  iframe would need JS + a third-party request + a loosened CSP on the public
+  page — all three NON-NEGOTIABLE in `RULES.md`; on-site form collection would
+  need a cookie/CSRF exemption (against #4) + visitor-PII/GDPR storage on a
+  privacy-brand site. So all three render a server-side facade that **links out**
+  to the allowlisted / creator-owned destination — no third-party request or PII
+  until the visitor clicks (which navigates away). Public pages stay zero-JS,
+  zero-third-party, cookie-free.
+- **Gallery uploads** reuse the avatar pipeline (re-encode strips EXIF/GPS),
+  larger + aspect-preserving, served from `/a/`.
+
+**Still open (owner decisions before building):** real billing (Stripe vs. the
+staging plan toggle), orphaned-image GC (#81), and — only if ever wanted — a
+deliberate `RULES.md` exception for true inline embed players (per-page CSP
+relaxation + JS carve-out on embed pages). The `code` sandbox remains future.
