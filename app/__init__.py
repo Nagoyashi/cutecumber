@@ -10,7 +10,7 @@ import os
 from dotenv import load_dotenv
 from flask import Flask, g, render_template, session
 
-from . import auth, dash, db, links, mail, monitoring, public
+from . import auth, builder, dash, db, links, mail, monitoring, public
 from .extensions import limiter
 from .security import (
     apply_security_headers,
@@ -87,6 +87,7 @@ def create_app() -> Flask:
     monitoring.init_app(app)
 
     app.register_blueprint(auth.bp)
+    app.register_blueprint(builder.bp)
     app.register_blueprint(dash.bp)
     app.register_blueprint(links.bp)
     app.register_blueprint(public.bp)
