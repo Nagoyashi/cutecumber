@@ -200,7 +200,31 @@
     var meta = typeMeta(type);
     var s = { _id: "s-" + (++state.counter), type: type, variant: meta.variants[0], props: defaults(type) };
     state.sections.push(s);
-    select(s._id); scheduleSave();
+    select(s._id); scheduleSave(); burstAtSelected();
+  }
+
+  // A little ✦ burst where a section just appeared (handoff §4.2). CSSOM styles
+  // (not inline-style attributes) so the strict dash CSP is untouched; skipped
+  // entirely for reduced-motion.
+  function sparkleBurst(cx, cy) {
+    if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    var box = h("div", { class: "b-burst" });
+    for (var i = 0; i < 6; i++) {
+      var ang = (Math.PI * 2 * i) / 6;
+      var sp = h("span", { class: "b-spark", text: "✦" });
+      sp.style.setProperty("--dx", (Math.cos(ang) * 42).toFixed(1) + "px");
+      sp.style.setProperty("--dy", (Math.sin(ang) * 42).toFixed(1) + "px");
+      box.appendChild(sp);
+    }
+    box.style.left = cx + "px"; box.style.top = cy + "px";
+    document.body.appendChild(box);
+    setTimeout(function () { box.remove(); }, 700);
+  }
+  function burstAtSelected() {
+    var el = document.querySelector(".b-row.sel");
+    if (!el) return;
+    var r = el.getBoundingClientRect();
+    sparkleBurst(r.left + r.width / 2, r.top + r.height / 2);
   }
 
   // ---- inspector ---------------------------------------------------------

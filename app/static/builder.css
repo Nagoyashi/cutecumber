@@ -151,6 +151,15 @@
 .b-upsell-note { margin-top: 12px; }
 .b-sprite { position: absolute; width: 0; height: 0; overflow: hidden; }
 
+/* sparkle burst on insert */
+.b-burst { position: fixed; z-index: 30; width: 0; height: 0; pointer-events: none; }
+.b-spark { position: absolute; color: #ffbf47; font-size: 1rem; animation: b-fly .65s ease-out forwards; }
+@keyframes b-fly {
+  from { transform: translate(0, 0) scale(1); opacity: 1; }
+  to { transform: translate(var(--dx), var(--dy)) scale(.4); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) { .b-spark { animation: none; opacity: 0; } }
+
 .b-nojs-msg { margin: 20px; padding: 14px; text-align: center; color: var(--b-muted);
   background: #fff; border: 1.5px dashed var(--b-border); border-radius: 14px; }
 @media (prefers-reduced-motion: reduce) { .b-card, .b-tpl, .b-frame { transition: none; } }
