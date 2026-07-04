@@ -83,14 +83,24 @@
     {% endif %}
   </section>
 {% endmacro %}
+{% macro embed(p, v) %}
+  {# Functional embed WITHOUT breaking the public-page contract (RULES.md: 0 JS,
+     0 third-party requests, strict CSP). A true inline iframe would need all
+     three; instead we server-render the facade and LINK OUT to the allowlisted
+     watch/track URL — no third-party request happens until the visitor clicks
+     (which navigates away). Same outbound hardening as every other link. #}
+  <section class="sec embed embed-{{ v }} {{ 'emb-yt' if p.kind == 'youtube' else 'emb-sp' }}">
+    <a class="emb" href="{{ p.url }}" target="_blank" rel="noopener noreferrer nofollow">
+      <span class="emb-play" aria-hidden="true">{% if p.kind == 'spotify' %}♪{% else %}▶{% endif %}</span>
+      <span class="emb-cap">{{ p.kind }} · {{ p.url | hostname }}</span>
+    </a>
+  </section>
+{% endmacro %}
 {% macro premium(s) %}
   {# Inert, non-JS facade only — no third-party request, no submission. #}
   <section class="sec premium premium-{{ s.type }}">
     <div class="pf-card">
-    {% if s.type == 'embed' %}
-      <span class="pf-play" aria-hidden="true">▶</span>
-      <span class="pf-cap">{{ s.props.kind }} · {{ s.props.url | hostname }}</span>
-    {% elif s.type == 'signup' %}
+    {% if s.type == 'signup' %}
       <h2 class="sec-h">{{ s.props.heading }}</h2>
       <span class="pf-btn" aria-hidden="true">{{ s.props.button }}</span>
     {% elif s.type == 'form' %}
@@ -180,6 +190,20 @@ h1,h2{overflow-wrap:break-word}
 .divider{display:flex;align-items:center;justify-content:center;gap:12px;padding:14px var(--padx);max-width:560px;margin:0 auto}
 .divider .rule{flex:1;height:1.6px;background:var(--line)}
 .divider-row{gap:30px;opacity:.85}
+/* embed — server-rendered facade that LINKS OUT (no iframe, no JS, no
+   third-party request until click; RULES.md public-page budget stays intact) */
+.embed .emb{display:flex;align-items:center;justify-content:center;gap:10px;text-decoration:none;transition:transform .12s ease}
+.embed .emb:hover,.embed .emb:focus-visible{transform:translateY(-2px)}
+.embed-full .emb{max-width:680px;margin:0 auto;background:#1c1c28;color:#fff}
+.embed-full.emb-yt .emb{aspect-ratio:16/9;border-radius:16px;flex-direction:column}
+.embed-full.emb-sp .emb{height:72px;border-radius:999px}
+.embed-card .emb{max-width:420px;margin:0 auto;background:var(--surface);border:1.5px solid var(--line);border-radius:999px;padding:10px 20px 10px 10px;box-shadow:0 4px 14px rgba(40,30,40,.07)}
+.emb-play{width:50px;height:50px;border-radius:50%;background:var(--accent);color:var(--accent-text);display:flex;align-items:center;justify-content:center;flex:none;font-size:1.1rem}
+.embed-card .emb-play{width:38px;height:38px}
+.emb-cap{font-size:.72rem;font-family:ui-monospace,monospace}
+.embed-full .emb-cap{color:rgba(255,255,255,.82)}
+.embed-card .emb-cap{color:var(--muted)}
+@media (prefers-reduced-motion:reduce){.embed .emb{transition:none}.embed .emb:hover{transform:none}}
 /* premium facade */
 .premium .pf-card{max-width:560px;margin:0 auto;background:var(--surface);border:1.5px solid var(--line);border-radius:16px;padding:16px 20px;display:flex;flex-wrap:wrap;align-items:center;gap:10px;box-shadow:0 4px 14px rgba(40,30,40,.07)}
 .pf-play{width:38px;height:38px;border-radius:50%;background:var(--accent);color:var(--accent-text);display:flex;align-items:center;justify-content:center}
@@ -214,6 +238,7 @@ footer a:hover,footer a:focus-visible{color:var(--text)}
   {%- elif s.type == 'about' %}{{ about(s.props, s.variant) }}
   {%- elif s.type == 'socials' %}{{ socials(s.props, s.variant) }}
   {%- elif s.type == 'divider' %}{{ divider(s.props, s.variant) }}
+  {%- elif s.type == 'embed' %}{{ embed(s.props, s.variant) }}
   {%- else %}{{ premium(s) }}
   {%- endif %}
 {% endfor %}

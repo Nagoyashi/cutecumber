@@ -69,6 +69,22 @@ class TestPublicSections(SecurityTestBase):
         self.assertIn("&lt;script&gt;", body)
         self.assertNotIn("<script>alert(1)</script>", body)
 
+    def test_embed_renders_as_linkout_not_iframe(self):
+        self._set_sections({"version": 1, "sections": [
+            {"type": "embed", "variant": "full",
+             "props": {"kind": "youtube", "url": "https://youtu.be/dQw4w9WgXcQ"}},
+        ]})
+        resp = self.client.get("/mochi")
+        body = resp.get_data(as_text=True)
+        # Facade links out to the allowlisted URL — no iframe, no JS, no
+        # third-party request happens before the visitor clicks (RULES.md).
+        self.assertNotIn("<iframe", body.lower())
+        self.assertNotIn("<script", body.lower())
+        self.assertIn('href="https://youtu.be/dQw4w9WgXcQ"', body)
+        self.assertIn('rel="noopener noreferrer nofollow"', body)
+        self.assertIn("youtu.be", body)  # hostname caption
+        self.assertNotIn("Set-Cookie", resp.headers)
+
     def test_falls_back_to_legacy_when_no_live_sections(self):
         resp = self.client.get("/mochi")  # sections_live_json is NULL
         self.assertEqual(resp.status_code, 200)
