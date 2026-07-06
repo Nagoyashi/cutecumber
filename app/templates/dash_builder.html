@@ -7,78 +7,94 @@
 <meta name="robots" content="noindex">
 <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
 <link rel="preload" href="{{ url_for('static', filename='fonts/fredoka-latin-600-normal.woff2') }}" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="{{ url_for('static', filename='dash.css') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='builder.css') }}">
 <script src="{{ url_for('static', filename='builder.js') }}" defer></script>
 </head>
 <body class="builder-body">
-<div id="builder"
+<div class="ambient" aria-hidden="true">
+  <div class="watermark"><svg viewBox="-16 -16 32 32" width="520" height="520"><use href="#m-slice"/></svg></div>
+</div>
+<div id="builder" class="bld-root"
      data-draft="{{ draft_json }}"
      data-csrf="{{ csrf_token() }}"
      data-plan="{{ plan }}"
      data-username="{{ username }}"
-     data-published="{{ '1' if is_published else '0' }}">
-  <header class="b-top">
-    <a class="b-brand" href="{{ url_for('dash.home') }}"><img src="{{ url_for('static', filename='favicon.svg') }}" alt="" width="26" height="26"><span>cutecumber</span></a>
-    <span class="b-chip">builder</span>
-    <span class="b-url">cutecumber.cc/{{ username }}</span>
-    <div class="b-top-right">
-      <button type="button" class="b-toggle" id="b-phone" aria-pressed="false">📱 phone</button>
-      <button type="button" class="b-plan" id="b-plan"></button>
+     data-published="{{ '1' if is_published else '0' }}"
+     data-pg="{{ pg_vars }}"
+     data-preset="{{ current_preset }}">
+  <header class="bldbar">
+    <div class="bldbar-left">
+      <a class="brand fred" href="{{ url_for('dash.home') }}"><img src="{{ url_for('static', filename='favicon.svg') }}" alt="" width="28" height="28"><span>cutecumber</span></a>
+      <span class="bld-chip">builder</span>
+      <span class="bld-url">cutecumber.cc/<strong>{{ username }}</strong></span>
+    </div>
+    <div class="bldbar-mid">
+      <button type="button" class="seg-solo" id="b-phone" aria-pressed="false">📱 phone preview</button>
+    </div>
+    <div class="bldbar-right">
+      <button type="button" class="sprout-btn" id="b-plan"></button>
       <span class="b-save" id="b-save" aria-live="polite"></span>
-      <button type="button" class="pill b-publish" id="b-publish">publish</button>
+      <button type="button" class="pill" id="b-publish">publish</button>
     </div>
   </header>
-  <div class="b-main">
-    <section class="b-canvas" aria-label="live preview">
-      <div class="b-frame" id="b-frame">
-        <div class="b-frame-bar" aria-hidden="true"><span></span><span></span><span></span><em>cutecumber.cc/{{ username }}</em></div>
-        <iframe id="b-preview" title="live preview of your page" src="{{ url_for('builder.preview') }}"></iframe>
+
+  <div class="bld-main v3-main">
+    <div class="preview-main">
+      <div class="canvas-scroll" id="b-canvas-scroll">
+        <div class="browser-frame" id="b-desktop">
+          <div class="browser-top" aria-hidden="true">
+            <div class="btl"><i></i><i></i><i></i></div>
+            <div class="burl">cutecumber.cc/{{ username }}</div>
+          </div>
+          <div class="site" id="b-site"></div>
+        </div>
+        <div class="phone-wrap" id="b-phonewrap" hidden>
+          <div class="phone-bezel"><div class="phone-notch"></div><div class="phone-screen"><div class="site compact" id="b-phonesite"></div></div></div>
+          <p class="phone-cap">what phone visitors see — same sections, snug layout</p>
+        </div>
       </div>
-    </section>
-    <aside class="b-rail">
-      <div class="b-panel">
-        <h2 class="b-h">sections</h2>
-        <ol class="b-sections" id="b-sections"></ol>
-        <button type="button" class="b-add" id="b-add">+ add a section</button>
-        <button type="button" class="b-add-min" id="b-templates">✨ start from a template…</button>
-      </div>
-      <div class="b-panel b-inspector" id="b-inspector"></div>
-    </aside>
+    </div>
+    <aside class="inspector card" id="b-inspector"></aside>
   </div>
-  <div class="b-drawer" id="b-drawer" hidden>
-    <div class="b-drawer-card" role="dialog" aria-label="add a section">
-      <div class="b-drawer-head"><strong>add a section</strong><button type="button" class="b-x" id="b-drawer-x" aria-label="close">✕</button></div>
-      <p class="b-drawer-sub">every style is pre-arranged to look good — just fill it with you.</p>
-      <div class="b-drawer-grid" id="b-drawer-grid"></div>
+
+  <div class="modal-veil" id="b-drawer" hidden>
+    <div class="drawer card" role="dialog" aria-label="add a section">
+      <button type="button" class="pub-pop-close" id="b-drawer-x" aria-label="close">✕</button>
+      <p class="drawer-title fred">add a section</p>
+      <p class="drawer-sub">every style is pre-arranged to look good — just fill it with you.</p>
+      <div class="drawer-grid" id="b-drawer-grid"></div>
     </div>
   </div>
-  <div class="b-drawer" id="b-picker" hidden>
-    <div class="b-drawer-card b-picker-card" role="dialog" aria-label="pick a starting point">
-      <div class="b-drawer-head"><strong>pick a starting point</strong><button type="button" class="b-x" id="b-picker-x" aria-label="close">✕</button></div>
-      <p class="b-drawer-sub">each one is a whole page, ready to make yours.</p>
-      <div class="b-picker-grid" id="b-picker-grid"></div>
+
+  <div class="modal-veil" id="b-picker" hidden>
+    <div class="drawer tpl card" role="dialog" aria-label="pick a starting point">
+      <button type="button" class="pub-pop-close" id="b-picker-x" aria-label="close">✕</button>
+      <p class="drawer-title fred">pick a starting point</p>
+      <p class="drawer-sub">each one is a whole page, ready to make yours.</p>
+      <div class="tpl-grid" id="b-picker-grid"></div>
     </div>
   </div>
-  <div class="b-drawer" id="b-upsell" hidden>
-    <div class="b-drawer-card b-upsell-card" role="dialog" aria-label="grow into a sprout">
-      <div class="b-upsell-motif" aria-hidden="true"><svg viewBox="-16 -16 32 32" width="56" height="56"><use href="#m-sprout"/></svg></div>
-      <h2 class="b-upsell-h">grow into a sprout 🌱</h2>
-      <ul class="b-perks">
+
+  <div class="modal-veil" id="b-upsell" hidden>
+    <div class="modal card" role="dialog" aria-label="grow into a sprout">
+      <span class="modal-art" aria-hidden="true"><svg viewBox="-16 -16 32 32" width="60" height="60"><use href="#m-sprout"/></svg></span>
+      <p class="modal-title fred">grow into a sprout 🌱</p>
+      <ul class="modal-perks">
         <li>🌐 your own domain — mochi.com instead of cutecumber.cc/mochi</li>
         <li>🎟️ sprout stickers: embeds, mail list, forms &amp; custom html</li>
         <li>🎨 two exclusive themes: lavender haze &amp; midnight snack</li>
       </ul>
-      <p class="b-price"><strong>$4/mo</strong> · cancel anytime, keep your page</p>
-      <div class="b-upsell-btns">
-        <button type="button" class="b-toggle" id="b-upsell-no">stay free</button>
-        <button type="button" class="pill b-publish" id="b-upsell-yes">upgrade (staging)</button>
+      <p class="modal-price"><strong>$4/mo</strong> · cancel anytime, keep your page</p>
+      <div class="modal-btns">
+        <button type="button" class="pill ghost" id="b-upsell-no">stay free</button>
+        <button type="button" class="pill" id="b-upsell-yes">upgrade (staging)</button>
       </div>
-      <p class="b-drawer-sub b-upsell-note">staging only — this just flips your test account to sprout, no payment.</p>
+      <p class="ins-note" style="margin-top:12px">staging only — flips your test account to sprout, no payment.</p>
     </div>
   </div>
+
+  <noscript><p class="site-empty">the builder needs javascript — it's the one dash screen that does. your public page never will.</p></noscript>
   <div class="b-sprite" aria-hidden="true">{% include "_motif_sprite.html" %}</div>
-  <noscript><p class="b-nojs-msg">the builder needs javascript — it's the one dash screen that does. your public page never will.</p></noscript>
 </div>
 </body>
 </html>

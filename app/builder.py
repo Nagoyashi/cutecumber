@@ -73,12 +73,24 @@ def _current_draft():
 def editor():
     draft = _current_draft()
     published = g.user["sections_live_json"]
+    stored = load_theme(g.user["theme_json"])
+    theme = resolve_theme(stored)
+    # Page-theme CSS vars the in-document canvas paints itself with (theme.py is
+    # the source of truth; the prototype's own palette is ignored).
+    pg_vars = {
+        "--pg-bg": theme["bg"], "--pg-bg2": theme["bg2"], "--pg-text": theme["text"],
+        "--pg-muted": theme["muted"], "--pg-accent": theme["accent"],
+        "--pg-accent-text": theme["accent_text"], "--pg-card": theme["surface"],
+        "--pg-line": theme["line"],
+    }
     return render_template(
         "dash_builder.html",
         draft_json=json.dumps(draft, separators=(",", ":")),
         plan=g.user["plan"],
         username=g.user["username"],
         is_published=published is not None,
+        pg_vars=json.dumps(pg_vars, separators=(",", ":")),
+        current_preset=stored.get("preset", ""),
     )
 
 
