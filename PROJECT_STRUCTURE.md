@@ -65,6 +65,10 @@ cutecumber/
     ├── links.py             POST /dash/links (add), POST /dash/links/<id>
     │                        (action=save|delete), POST /dash/links/reorder
     │                        (exact-permutation check). IDOR rule everywhere.
+    ├── maintenance.py       image GC (issue #81): referenced_images / gc_images
+    │                        (only deletes files matching our pattern that no
+    │                        user references) + `flask gc-images` CLI. Account
+    │                        delete also clears that user's gallery images.
     ├── public.py            GET /, GET /<username> (OG tags), cute 404;
     │                        renders the builder section stack when the user has
     │                        sections_live_json, else the legacy links page
