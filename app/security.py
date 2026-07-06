@@ -18,8 +18,9 @@ from flask import abort, current_app, g, redirect, request, session, url_for
 # frame-src 'self' for the live-preview iframe of the public page. Nothing
 # looser than 'self' for anything, ever.
 DASH_CSP = (
-    "default-src 'none'; style-src 'self'; script-src 'self'; img-src 'self'; "
-    "frame-src 'self'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'"
+    "default-src 'none'; style-src 'self'; script-src 'self'; connect-src 'self'; "
+    "img-src 'self'; frame-src 'self'; form-action 'self'; base-uri 'none'; "
+    "frame-ancestors 'none'"
 )
 
 # Public pages: zero JS, zero external requests, one nonce'd inline <style>.

@@ -136,12 +136,13 @@
           return '<span class="lk-tile"><em>' + esc(l.emoji) + '</em><span class="lk-t fred">' + esc(l.title) + "</span></span>";
         }).join("") + "</div>";
       case "gallery":
+        // Polaroid tilt is done with :nth-child in CSS (no inline style — the
+        // dash CSP has no 'unsafe-inline').
         return '<div class="gal gal-' + v + '">' + (p.photos || []).map(function (g, i) {
-          var tilt = v === "polaroid" ? ' style="--tilt:' + (((i % 3) - 1) * 2.4) + 'deg"' : "";
           var inner = g.image
             ? '<div class="ph"><img src="/a/' + esc(g.image) + '" alt=""></div>'
             : '<div class="ph"><span class="ph-chip">photo ' + (i + 1) + "</span></div>";
-          return '<figure class="gal-item"' + tilt + ">" + inner + (g.caption ? "<figcaption>" + esc(g.caption) + "</figcaption>" : "") + "</figure>";
+          return '<figure class="gal-item">' + inner + (g.caption ? "<figcaption>" + esc(g.caption) + "</figcaption>" : "") + "</figure>";
         }).join("") + "</div>";
       case "about":
         return '<div class="about-in"><div class="about-words">'
@@ -162,9 +163,9 @@
           : '<div class="emb-full"><div class="emb-frame ' + (yt ? "yt" : "sp") + '"><span class="emb-play">' + gl + '</span></div><p class="emb-cap">' + esc(cap) + "</p></div>";
       }
       case "signup":
-        return '<div class="su su-' + v + '"><p class="sec-h fred">' + esc(p.heading) + '</p><div class="su-row" style="justify-content:center;max-width:none"><span class="minibtn fred">' + esc(p.button) + "</span></div></div>";
+        return '<div class="su su-' + v + '"><p class="sec-h fred">' + esc(p.heading) + '</p><span class="minibtn fred">' + esc(p.button) + "</span></div>";
       case "form":
-        return '<div class="form-card" style="text-align:center"><p class="sec-h fred">' + esc(p.heading) + '</p><span class="minibtn fred" style="margin-top:12px">' + esc(p.button) + "</span></div>";
+        return '<div class="form-card form-linkout"><p class="sec-h fred">' + esc(p.heading) + '</p><span class="minibtn fred">' + esc(p.button) + "</span></div>";
       case "code":
         return '<div class="code-card"><span class="code-chip">custom html · sandboxed</span><pre>' + esc(p.code) + "</pre></div>";
     }
@@ -437,16 +438,20 @@
     var bodyEl = h("div", { class: "ins-body" });
     bodyEl.appendChild(h("div", { class: "theme-grid" }, PRESETS.map(function (pr) {
       var locked = pr.premium && state.plan !== "sprout";
+      // Swatch colors set via CSSOM (element.style.*), which CSP does NOT govern
+      // — unlike inline style="" attributes, which the dash CSP blocks.
+      var chip = h("span", { class: "theme-chip" });
+      chip.style.background = pr.bg;
+      var dot = h("span", { class: "theme-dot" });
+      dot.style.background = pr.accent;
+      chip.appendChild(dot);
+      if (pr.premium) chip.appendChild(h("span", { class: "theme-lock", text: locked ? "🔒" : "🌱" }));
       return h("button", { class: "theme-pick" + (pr.key === state.preset ? " on" : "") + (locked ? " locked" : ""), type: "button",
         onclick: function () { locked ? openUpsell() : pickTheme(pr.key); } }, [
-        h("span", { class: "theme-chip", style: "background:" + pr.bg }, [
-          h("span", { class: "theme-dot", style: "background:" + pr.accent }),
-          pr.premium ? h("span", { class: "theme-lock", text: locked ? "🔒" : "🌱" }) : null
-        ]),
-        h("span", { class: "theme-name", text: pr.name })
+        chip, h("span", { class: "theme-name", text: pr.name })
       ]);
     })));
-    bodyEl.appendChild(h("button", { class: "add-big", type: "button", text: "✨ start from a template…", style: "width:100%;font-size:.86rem;padding:9px", onclick: openPicker }));
+    bodyEl.appendChild(h("button", { class: "add-big ins-tplbtn", type: "button", text: "✨ start from a template…", onclick: openPicker }));
     bodyEl.appendChild(h("p", { class: "ins-note", text: "click any section on the page to edit it here." }));
     box.appendChild(bodyEl);
   }

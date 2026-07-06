@@ -66,6 +66,16 @@ class TestBuilderGate(BuilderTestBase):
         self.assertEqual(resp.status_code, 302)
         self.assertIn("/login", resp.headers["Location"])
 
+    def test_editor_csp_allows_fetch(self):
+        # The editor autosaves/publishes via fetch(); the dash CSP must allow
+        # same-origin connect (default-src 'none' would block it). Regression
+        # guard — the whole editor is dead without this.
+        resp = self.client.get("/dash/builder")
+        csp = resp.headers["Content-Security-Policy"]
+        self.assertIn("connect-src 'self'", csp)
+        self.assertIn("script-src 'self'", csp)
+        self.assertNotIn("unsafe-inline", csp)  # inline styles are avoided, not allowed
+
 
 class TestBuilderSavePublish(BuilderTestBase):
     HERO = {"version": 1, "sections": [
