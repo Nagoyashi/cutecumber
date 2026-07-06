@@ -84,13 +84,14 @@
   </section>
 {% endmacro %}
 {% macro embed(p, v) %}
-  {# Functional embed WITHOUT breaking the public-page contract (RULES.md: 0 JS,
-     0 third-party requests, strict CSP). A true inline iframe would need all
-     three; instead we server-render the facade and LINK OUT to the allowlisted
-     watch/track URL — no third-party request happens until the visitor clicks
-     (which navigates away). Same outbound hardening as every other link. #}
+  {# Click-to-load embed (documented RULES.md exception, embed pages only). The
+     server renders a facade with data-embed = the allowlisted nocookie/embed
+     src; embed.js swaps in the iframe ON CLICK, so NO third-party request fires
+     until the visitor asks for it. With JS off, the same element is a plain
+     link-out to the watch/track page — nothing breaks. #}
+  {% set src = embed_src(p.kind, p.url) %}
   <section class="sec embed embed-{{ v }} {{ 'emb-yt' if p.kind == 'youtube' else 'emb-sp' }}">
-    <a class="emb" href="{{ p.url }}" target="_blank" rel="noopener noreferrer nofollow">
+    <a class="emb" href="{{ p.url }}"{% if src %} data-embed="{{ src }}"{% endif %} target="_blank" rel="noopener noreferrer nofollow">
       <span class="emb-play" aria-hidden="true">{% if p.kind == 'spotify' %}♪{% else %}▶{% endif %}</span>
       <span class="emb-cap">{{ p.kind }} · {{ p.url | hostname }}</span>
     </a>
@@ -106,8 +107,15 @@
       <h2 class="sec-h">{{ s.props.heading }}</h2>
       <a class="pf-btn" href="{{ s.props.url }}" target="_blank" rel="noopener noreferrer nofollow">{{ s.props.button }}</a>
     {% else %}
-      {# code: inert, escaped — never executed until the sandbox exists. #}
-      <pre class="pf-code">{{ s.props.code }}</pre>
+      {# code: user HTML in a SANDBOXED, network-blocked iframe. `sandbox` with
+         neither allow-scripts (no JS runs) nor allow-same-origin (opaque origin,
+         can't reach our page/cookies); the srcdoc's own meta-CSP (default-src
+         'none') blocks ALL network so the HTML can't phone home or load
+         trackers. Autoescaping the code into the srcdoc attribute is exactly
+         what srcdoc is for — the browser decodes it back to markup inside the
+         isolated frame. #}
+      <iframe class="pf-codeframe" title="custom content" loading="lazy" sandbox
+        srcdoc="<meta http-equiv=&#34;Content-Security-Policy&#34; content=&#34;default-src 'none'; style-src 'unsafe-inline'; img-src data:&#34;>{{ s.props.code }}"></iframe>
     {% endif %}
     </div>
   </section>
@@ -203,6 +211,11 @@ h1,h2{overflow-wrap:break-word}
 .emb-cap{font-size:.72rem;font-family:ui-monospace,monospace}
 .embed-full .emb-cap{color:rgba(255,255,255,.82)}
 .embed-card .emb-cap{color:var(--muted)}
+/* the click-to-load iframe embed.js swaps in */
+.emb-frame{width:100%;border:0;display:block}
+.embed-full.emb-yt .emb-frame{aspect-ratio:16/9;max-width:680px;margin:0 auto;border-radius:16px}
+.embed-full.emb-sp .emb-frame{height:152px;max-width:680px;margin:0 auto;border-radius:12px}
+.embed-card .emb-frame{height:80px;max-width:420px;margin:0 auto;border-radius:12px}
 @media (prefers-reduced-motion:reduce){.embed .emb{transition:none}.embed .emb:hover{transform:none}}
 /* premium facade */
 .premium .pf-card{max-width:560px;margin:0 auto;background:var(--surface);border:1.5px solid var(--line);border-radius:16px;padding:16px 20px;display:flex;flex-wrap:wrap;align-items:center;gap:10px;box-shadow:0 4px 14px rgba(40,30,40,.07)}
@@ -210,7 +223,7 @@ h1,h2{overflow-wrap:break-word}
 .pf-cap{font-size:.72rem;color:var(--muted);font-family:ui-monospace,monospace}
 .pf-btn{display:inline-block;padding:10px 22px;border-radius:999px;background:var(--accent);color:var(--accent-text);font-size:.9rem;font-weight:600;text-decoration:none;box-shadow:0 6px 18px {{ t.shadow }}}
 .premium .pf-card{flex-direction:column;text-align:center}
-.pf-code{width:100%;background:#262636;color:#cdeab9;border-radius:12px;padding:16px;font-size:.78rem;overflow:auto;white-space:pre-wrap;word-break:break-word}
+.pf-codeframe{width:100%;min-height:140px;border:1.5px solid var(--line);border-radius:12px;background:var(--surface);display:block}
 /* footer */
 footer{padding:24px var(--padx) 40px;font-size:.74rem;text-align:center;color:var(--muted)}
 footer a{color:var(--muted);text-decoration:none}
@@ -227,6 +240,7 @@ footer a:hover,footer a:focus-visible{color:var(--text)}
 .gallery-polaroid .gphoto{width:136px}
 }
 </style>
+{% if has_embed %}<script src="/static/embed.js" defer></script>{% endif %}
 </head>
 <body>
 {% if has_divider %}{% include "_motif_sprite.html" %}{% endif %}

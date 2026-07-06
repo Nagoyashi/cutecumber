@@ -27,12 +27,14 @@ Same philosophy as app/theme.py, applied to content instead of colour:
   length-capped string rendered ESCAPED, or a validated http(s) URL. No section
   value ever becomes CSS/HTML — no |safe anywhere, exactly like theme.py.
 
-Premium types (embed/signup/form/code) validate here but their public rendering
-(sandboxed embeds, form storage, the code sandbox) lands in later builder
-cycles. `code` is inert (escaped) until its cross-origin sandbox exists.
+Premium types (embed/signup/form/code) validate here; their public rendering
+lives in public_page_sections.html — embeds click-to-load, signup/form link out,
+and `code` renders in a sandboxed, network-blocked iframe (no scripts, no
+network). All within the documented public-page exceptions (RULES.md / #38).
 """
 
 import json
+import re
 
 from .constants import (
     BIO_MAX,
@@ -411,3 +413,49 @@ def default_sections_from_profile(user, links) -> dict:
                          "props": {"links": link_items}})
 
     return {"version": SECTIONS_VERSION, "sections": sections}
+
+
+# ------------------------------------------------------- embed src derivation
+
+_YT_ID_RE = re.compile(r"^[A-Za-z0-9_-]{6,20}$")
+_SP_ID_RE = re.compile(r"^[A-Za-z0-9]{10,40}$")
+_SP_TYPES = ("track", "album", "playlist", "episode", "show", "artist")
+
+
+def embed_src(kind: str, url: str) -> str | None:
+    """Derive the click-to-load iframe src from a stored (already host-allow-
+    listed) watch/track URL. Returns a nocookie/embed URL, or None if the id
+    can't be parsed (the facade then just links out). The id is regex-bounded so
+    nothing but a clean id reaches the iframe src."""
+    from urllib.parse import parse_qs, urlsplit
+
+    parts = urlsplit(url or "")
+    host = parts.netloc.lower().split(":")[0]
+    if kind == "youtube":
+        vid = None
+        if host == "youtu.be":
+            vid = parts.path.strip("/").split("/")[0]
+        elif "youtube" in host:
+            if parts.path.startswith("/embed/"):
+                vid = parts.path.split("/embed/", 1)[1].split("/")[0]
+            else:
+                vid = parse_qs(parts.query).get("v", [None])[0]
+        if vid and _YT_ID_RE.match(vid):
+            return f"https://www.youtube-nocookie.com/embed/{vid}"
+    elif kind == "spotify":
+        segs = [s for s in parts.path.split("/") if s]
+        if len(segs) >= 2 and segs[0] in _SP_TYPES and _SP_ID_RE.match(segs[1]):
+            return f"https://open.spotify.com/embed/{segs[0]}/{segs[1]}"
+    return None
+
+
+def has_embed(sections: list) -> bool:
+    """True if any resolved section is an embed — drives the per-page CSP + the
+    embed.js include (both scoped to embed pages only)."""
+    return any(s.get("type") == "embed" for s in sections)
+
+
+def has_code(sections: list) -> bool:
+    """True if any resolved section is a code block — drives the frame-src 'self'
+    CSP exception for its sandboxed srcdoc iframe (code pages only)."""
+    return any(s.get("type") == "code" for s in sections)

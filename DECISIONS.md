@@ -596,7 +596,20 @@ render stays zero-JS, zero-third-party, cookie-free.
 - **Gallery uploads** reuse the avatar pipeline (re-encode strips EXIF/GPS),
   larger + aspect-preserving, served from `/a/`.
 
-**Still open (owner decisions before building):** real billing (Stripe vs. the
-staging plan toggle), orphaned-image GC (#81), and — only if ever wanted — a
-deliberate `RULES.md` exception for true inline embed players (per-page CSP
-relaxation + JS carve-out on embed pages). The `code` sandbox remains future.
+**Then — scoped public-page exceptions taken (2026-07-07, owner-approved):**
+- **True inline embeds**: embeds upgraded from link-out to **click-to-load** —
+  one self-hosted `embed.js` + `frame-src` for `youtube-nocookie`/`spotify`, on
+  embed pages only. No third-party request until the visitor clicks; JS-off
+  degrades to the link-out. First-ever public-page JS, scoped by per-page CSP.
+- **`code` sandbox**: user HTML renders in a same-origin **sandboxed** iframe
+  (no `allow-scripts`, no `allow-same-origin`) whose `srcdoc` meta-CSP blocks all
+  network — no scripts run, nothing phones home. `frame-src 'self'` on code
+  pages only. (signup/form stay link-out.)
+- Both are enforced by the per-page CSP in `security.py::use_public_csp`; a page
+  without those sections still ships zero script and zero `frame-src`. Documented
+  in `RULES.md`. **Needs a real-browser QA pass** (srcdoc/frame-src behavior) —
+  folds into #34.
+- **Orphaned-image GC** shipped (#81): `flask gc-images` + account-delete hook.
+
+**Still open:** real billing (Stripe vs. the staging plan toggle) — parked by
+the owner for later.

@@ -95,6 +95,9 @@ def create_app() -> Flask:
 
     app.jinja_env.globals["csrf_token"] = get_csrf_token
 
+    from .sections import embed_src as _embed_src
+    app.jinja_env.globals["embed_src"] = _embed_src
+
     @app.template_filter("hostname")
     def _hostname(url: str) -> str:
         """Bare host for link-card / embed captions (strip scheme + leading

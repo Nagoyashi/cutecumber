@@ -58,32 +58,53 @@ class TestPublicSections(SecurityTestBase):
         self.assertNotIn(b"<iframe", resp.data.lower())
         self.assertNotIn("Set-Cookie", resp.headers)
 
-    def test_premium_code_renders_escaped_not_executed(self):
+    def test_premium_code_renders_in_sandboxed_iframe(self):
         self._set_sections({"version": 1, "sections": [
             {"type": "code", "variant": "inert",
-             "props": {"code": "<script>alert(1)</script>"}},
+             "props": {"code": "<script>alert(1)</script><b>hi</b>"}},
         ]})
         resp = self.client.get("/mochi")
         body = resp.get_data(as_text=True)
-        # The stored HTML must appear ESCAPED (as text), never as a live tag.
+        # Rendered inside a sandboxed srcdoc iframe (no allow-scripts), with the
+        # user HTML escaped into the srcdoc attribute — never a live top-level tag.
+        self.assertIn("<iframe", body.lower())
+        self.assertIn("sandbox", body)
+        self.assertIn("srcdoc=", body)
         self.assertIn("&lt;script&gt;", body)
         self.assertNotIn("<script>alert(1)</script>", body)
+        # No page-level script (code needs no JS); CSP frames only same-origin.
+        self.assertNotIn("/static/embed.js", body)
+        self.assertIn("frame-src 'self'", resp.headers["Content-Security-Policy"])
 
-    def test_embed_renders_as_linkout_not_iframe(self):
+    def test_embed_click_to_load_and_scoped_csp(self):
         self._set_sections({"version": 1, "sections": [
             {"type": "embed", "variant": "full",
              "props": {"kind": "youtube", "url": "https://youtu.be/dQw4w9WgXcQ"}},
         ]})
         resp = self.client.get("/mochi")
         body = resp.get_data(as_text=True)
-        # Facade links out to the allowlisted URL — no iframe, no JS, no
-        # third-party request happens before the visitor clicks (RULES.md).
+        # NO iframe in the initial HTML — no third-party request until the click.
         self.assertNotIn("<iframe", body.lower())
-        self.assertNotIn("<script", body.lower())
+        # Facade carries the derived nocookie embed src + a link-out fallback.
+        self.assertIn('data-embed="https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ"', body)
         self.assertIn('href="https://youtu.be/dQw4w9WgXcQ"', body)
         self.assertIn('rel="noopener noreferrer nofollow"', body)
-        self.assertIn("youtu.be", body)  # hostname caption
+        # embed.js is included ONLY here, and the CSP exception is armed.
+        self.assertIn("/static/embed.js", body)
+        csp = resp.headers["Content-Security-Policy"]
+        self.assertIn("script-src 'self'", csp)
+        self.assertIn("frame-src https://www.youtube-nocookie.com https://open.spotify.com", csp)
         self.assertNotIn("Set-Cookie", resp.headers)
+
+    def test_non_embed_page_stays_strict(self):
+        # A page WITHOUT an embed keeps the strict CSP — no script, no frame-src.
+        self._set_sections({"version": 1, "sections": [
+            {"type": "hero", "variant": "centered", "props": {"avatar": "sprout", "name": "z"}}]})
+        resp = self.client.get("/mochi")
+        self.assertNotIn(b"<script", resp.data.lower())
+        csp = resp.headers["Content-Security-Policy"]
+        self.assertNotIn("script-src", csp)
+        self.assertNotIn("frame-src http", csp)
 
     def test_signup_form_render_as_linkout(self):
         self._set_sections({"version": 1, "sections": [

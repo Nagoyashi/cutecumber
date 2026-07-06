@@ -30,7 +30,7 @@ from .constants import (
 )
 from .db import get_db
 from .avatars import AVATAR_FILE_RE, avatar_dir
-from .sections import resolve_sections
+from .sections import has_code, has_embed, resolve_sections
 from .security import use_public_csp
 from .theme import load_theme, resolve_theme
 
@@ -125,6 +125,7 @@ def profile(username: str):
     # corrupt/empty column yields [], so we fall through to the legacy page.
     sections = resolve_sections(user["sections_live_json"])
     if sections:
+        embeds, code = has_embed(sections), has_code(sections)
         return render_template(
             "public_page_sections.html",
             t=theme,
@@ -133,7 +134,9 @@ def profile(username: str):
             title=title,
             description=description,
             canonical=canonical,
-            csp_nonce=use_public_csp(),
+            has_embed=embeds,
+            # CSP exceptions armed ONLY for the section types actually present.
+            csp_nonce=use_public_csp(embeds=embeds, code=code),
         )
 
     rows = (

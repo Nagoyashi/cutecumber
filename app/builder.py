@@ -27,6 +27,8 @@ from .avatars import AvatarError, process_gallery_photo, store_avatar
 from .db import get_db
 from .sections import (
     default_sections_from_profile,
+    has_code,
+    has_embed,
     load_sections,
     resolve_sections,
     validate_sections,
@@ -185,6 +187,7 @@ def preview():
     frame-ancestors 'self' lets our own dash embed it."""
     theme = resolve_theme(load_theme(g.user["theme_json"]))
     sections = resolve_sections(g.user["sections_draft_json"]) or _preview_sections()
+    embeds, code = has_embed(sections), has_code(sections)
     return render_template(
         "public_page_sections.html",
         t=theme,
@@ -193,7 +196,8 @@ def preview():
         title=g.user["display_name"] or f"@{g.user['username']}",
         description="",
         canonical=f"{current_app.config['SITE_ORIGIN']}/{g.user['username']}",
-        csp_nonce=use_public_csp(),
+        has_embed=embeds,
+        csp_nonce=use_public_csp(embeds=embeds, code=code),
         preview_empty=not sections,
     )
 

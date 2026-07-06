@@ -35,14 +35,40 @@ PUBLIC_CSP = (
     "font-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'self'"
 )
 
+# DOCUMENTED EXCEPTIONS to the zero-JS / zero-third-party public-page rule
+# (RULES.md, DECISIONS #38), each scoped to the builder pages that use them and
+# armed per-request below — every other public page stays script- and
+# frame-free. `embeds`: one self-hosted click-to-load script + frames the two
+# allowlisted embed hosts (no third-party request until the click). `code`:
+# frames a same-origin, sandboxed, network-blocked srcdoc iframe (no scripts,
+# no network — the srcdoc's own meta-CSP enforces that).
+_EMBED_FRAME_SRC = ("https://www.youtube-nocookie.com", "https://open.spotify.com")
 
-def use_public_csp() -> str:
-    """Generate a per-request style nonce and arm the strict public CSP.
 
-    Returns the nonce; templates put it on their single inline <style> tag.
+def use_public_csp(embeds: bool = False, code: bool = False) -> str:
+    """Generate a per-request style nonce and arm the public CSP. Returns the
+    nonce for the single inline <style>. Pass embeds/code ONLY for a page that
+    actually contains that section type — the exceptions never apply otherwise.
     """
     nonce = secrets.token_urlsafe(16)
-    g.csp = PUBLIC_CSP.format(nonce=nonce)
+    parts = [
+        "default-src 'none'",
+        f"style-src 'nonce-{nonce}'",
+        "img-src 'self' data:",
+        "font-src 'self'",
+        "base-uri 'none'",
+        "form-action 'none'",
+        "frame-ancestors 'self'",
+    ]
+    frame_src: list[str] = []
+    if embeds:
+        parts.append("script-src 'self'")
+        frame_src.extend(_EMBED_FRAME_SRC)
+    if code:
+        frame_src.append("'self'")  # the sandboxed srcdoc code iframe
+    if frame_src:
+        parts.append("frame-src " + " ".join(frame_src))
+    g.csp = "; ".join(parts)
     return nonce
 
 

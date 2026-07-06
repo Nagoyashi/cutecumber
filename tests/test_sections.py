@@ -223,6 +223,27 @@ class TestDefaultFromProfile(unittest.TestCase):
         self.assertEqual(page["sections"][0]["props"]["avatar"], "sprout")  # non-set → default
 
 
+class TestEmbedSrc(unittest.TestCase):
+    def test_youtube_forms(self):
+        from app.sections import embed_src
+        want = "https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ"
+        for url in ("https://youtu.be/dQw4w9WgXcQ",
+                    "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+                    "https://youtube.com/embed/dQw4w9WgXcQ"):
+            self.assertEqual(embed_src("youtube", url), want, url)
+
+    def test_spotify_track(self):
+        from app.sections import embed_src
+        self.assertEqual(
+            embed_src("spotify", "https://open.spotify.com/track/4cOdK2wGLETKBW3PvgPWqT"),
+            "https://open.spotify.com/embed/track/4cOdK2wGLETKBW3PvgPWqT")
+
+    def test_unparseable_returns_none(self):
+        from app.sections import embed_src
+        self.assertIsNone(embed_src("youtube", "https://youtu.be/"))
+        self.assertIsNone(embed_src("spotify", "https://open.spotify.com/"))
+
+
 class TestCatalogInvariants(unittest.TestCase):
     def test_every_type_has_variants_and_a_validator(self):
         for t in ALL_TYPES:

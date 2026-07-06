@@ -271,7 +271,7 @@
     box.appendChild(field("link (your form)", textInput(s.props.url, function (v) { s.props.url = v; commit(); }, "https://…")));
   }
   function codeFields(box, s) {
-    box.appendChild(field("custom html (shown as a safe preview)", textArea(s.props.code, function (v) { s.props.code = v; commit(); })));
+    box.appendChild(field("custom html + css — runs sandboxed on your page (no scripts, no network)", textArea(s.props.code, function (v) { s.props.code = v; commit(); })));
   }
 
   function field(label, control) {
