@@ -8,6 +8,7 @@ Reuses the create_app()+temp-DB harness from test_security.
 
 import io
 import json
+import os
 
 from PIL import Image
 
@@ -157,3 +158,54 @@ class TestBuilderUpload(BuilderTestBase):
                                 data={"_csrf": "testcsrf", "photo": (io.BytesIO(b"nope"), "x.txt")},
                                 content_type="multipart/form-data")
         self.assertFalse(resp.get_json()["ok"])
+
+
+class TestImageGC(BuilderTestBase):
+    def _upload(self):
+        return self.client.post("/dash/builder/upload",
+                                data={"_csrf": "testcsrf", "photo": (_png(), "p.png")},
+                                content_type="multipart/form-data").get_json()["filename"]
+
+    def _path(self, name):
+        from app.avatars import avatar_dir
+        return os.path.join(avatar_dir(), name)
+
+    def test_gc_removes_orphans_keeps_referenced(self):
+        import os as _os
+        from app.maintenance import gc_images
+        keep = self._upload()
+        orphan = self._upload()
+        self._post("/dash/builder/publish", {"version": 1, "sections": [
+            {"type": "gallery", "variant": "three",
+             "props": {"photos": [{"caption": "", "image": keep}]}}]})
+        with self.app.app_context():
+            self.assertTrue(_os.path.exists(self._path(keep)))
+            self.assertTrue(_os.path.exists(self._path(orphan)))
+            deleted, kept = gc_images(get_db())
+            self.assertEqual((deleted, kept), (1, 1))
+            self.assertTrue(_os.path.exists(self._path(keep)))     # referenced → kept
+            self.assertFalse(_os.path.exists(self._path(orphan)))  # orphan → gone
+
+    def test_gc_never_touches_foreign_files(self):
+        import os as _os
+        from app.avatars import avatar_dir
+        from app.maintenance import gc_images
+        with self.app.app_context():
+            stray = _os.path.join(avatar_dir(), "not-ours.txt")
+            with open(stray, "w") as fh:
+                fh.write("keep me")
+            gc_images(get_db())
+            self.assertTrue(_os.path.exists(stray))  # off-pattern → never deleted
+
+    def test_account_delete_removes_gallery_images(self):
+        import os as _os
+        img = self._upload()
+        self._post("/dash/builder/publish", {"version": 1, "sections": [
+            {"type": "gallery", "variant": "three",
+             "props": {"photos": [{"caption": "", "image": img}]}}]})
+        with self.app.app_context():
+            self.assertTrue(_os.path.exists(self._path(img)))
+        self.client.post("/dash/account/delete",
+                         data={"_csrf": "testcsrf", "password": "correct-horse-battery"})
+        with self.app.app_context():
+            self.assertFalse(_os.path.exists(self._path(img)))  # gone with the account
