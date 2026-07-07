@@ -13,18 +13,15 @@ never on feature breadth.
 
 ## Current phase
 
-**Active cycle: `v0.7.0` — page builder (foundation, STAGING).** The design
-refresh shipped in `v0.4.0` + `v0.5.0`; `v0.6.0` (magic-link + post-launch QA)
-was **deferred** (2026-07-04, milestone closed) to pivot to the third design
-package — a section-based **page builder** replacing the links-list editor, plus
-a paid **sprout** tier (DECISIONS #38). Everything is behind `BUILDER_ENABLED` +
-an allowlist; nothing reaches production. In flight on `feature/builder-foundation`
-(draft PR #80): additive migration, `sections.py` model, public section render,
-the editor (list/inspector/preview, autosave, publish, template picker,
-premium/upsell). Remaining before shipping needs owner calls on the handoff §7
-items (uploads, form/mail storage, functional embeds, billing, payload budget).
-Deferred v0.6.0 issues (#53/#70/#71/#65/#34) stay open, un-milestoned. Per-task
-status → the *cutecumber.cc* board ↗
+**Between cycles.** The **page builder** shipped as `v0.7.0` (2026-07-07,
+verified live) — the section model, in-canvas editor, public rendering, gallery
+uploads, and premium tier, all **behind `BUILDER_ENABLED`, off in production**
+(the code is deployed; the feature isn't exposed). Before flipping the flag on
+in prod: the real-browser QA pass (**#34** — esp. the code-sandbox
+`srcdoc`/`frame-src`) and **billing** (parked); editor refinement is tracked in
+**#82**. `v0.6.0` (magic-link) stays deferred and un-milestoned (#53/#70/#71/#65)
+— a natural next cycle, alongside enabling the builder. Next cycle: propose it +
+its issues, wait for the owner's OK. Per-task status → the *cutecumber.cc* board ↗
 
 ## Roadmap
 
@@ -81,6 +78,33 @@ firms up.*
 ## Phase log
 
 Durable completion notes, newest first. Rationale → `DECISIONS.md`.
+
+### Page builder — shipped 2026-07-07 (`v0.7.0`)
+
+- The links-list editor grows into a **page builder**: a public page becomes a
+  stack of pre-composed, full-width sections (10 types × hand-tuned variants),
+  plus the surface for a paid **sprout** tier. Section model (`sections.py`)
+  mirrors the theme engine — strict save / tolerant render, versioned shape
+  (#75); additive migration adds `sections_draft_json` / `sections_live_json`
+  (draft/live split) + `plan` (#74); theme gains a `line` token + sprout-only
+  premium presets (#76).
+- **In-canvas editor** (`/dash/builder`): sections render on the page and are
+  selectable with a hover tool cluster, drag-to-reorder, gallery placeholders,
+  autosave, publish, phone preview, theme picker, starter templates, and the
+  premium drawer/upsell — rebuilt to match the design prototype. Public section
+  rendering with the legacy links page as fallback (#78, #79). Gallery photo
+  uploads reuse the avatar pipeline; `flask gc-images` sweeps orphans (#81).
+- **Scoped public-page exceptions** (RULES.md / DECISIONS #38): embeds
+  click-to-load, custom-HTML renders in a sandboxed network-blocked iframe,
+  mail-list/form link out — each armed by the per-page CSP only where used;
+  every other public page keeps the zero-JS / zero-third-party budget.
+- The whole thing is **behind `BUILDER_ENABLED` + an allowlist, off in prod** —
+  shipped the code without exposing the feature. Verified live: additive
+  migration applied, Litestream replicating, public CSP strict, `/dash/builder`
+  gated. Caught (self-review) a dash-CSP `connect-src` gap that would have
+  blocked the editor's fetch in-browser, and inline-style CSP breakage.
+- Deferred: enabling the flag in prod (gated on the real-browser QA pass, #34),
+  editor refinement (#82), and billing. v0.6.0 (magic-link) stays deferred.
 
 ### Design refresh v2 — public profile + auth — shipped 2026-06-24 (`v0.5.0`)
 
