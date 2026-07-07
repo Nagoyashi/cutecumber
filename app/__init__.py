@@ -10,7 +10,7 @@ import os
 from dotenv import load_dotenv
 from flask import Flask, g, render_template, session
 
-from . import auth, dash, db, links, mail, monitoring, public
+from . import auth, builder, dash, db, links, mail, maintenance, monitoring, public
 from .extensions import limiter
 from .security import (
     apply_security_headers,
@@ -56,6 +56,15 @@ def create_app() -> Flask:
         PERMANENT_SESSION_LIFETIME=60 * 60 * 24 * 30,  # 30 days
         # Stealth by default: robots.txt serves Disallow: / until launch day.
         ROBOTS_ALLOW=os.environ.get("ROBOTS_ALLOW", "0") == "1",
+        # Page builder (STAGING). OFF by default; even ON, access is limited to
+        # the allowlist (comma-separated user emails). Both must pass — a
+        # non-allowlisted user must not learn the surface exists (404, no hint).
+        BUILDER_ENABLED=os.environ.get("BUILDER_ENABLED", "0") == "1",
+        BUILDER_ALLOWLIST=frozenset(
+            e.strip().lower()
+            for e in os.environ.get("BUILDER_ALLOWLIST", "").split(",")
+            if e.strip()
+        ),
         # HSTS comes from the app in prod (Fly terminates TLS, no Caddy layer).
         SEND_HSTS=os.environ.get("HSTS", "0") == "1",
         # Raised from 64 KB when avatar uploads shipped; the CSRF hook parses
@@ -75,14 +84,28 @@ def create_app() -> Flask:
     db.init_app(app)
     limiter.init_app(app)
     mail.init_app(app)
+    maintenance.init_app(app)
     monitoring.init_app(app)
 
     app.register_blueprint(auth.bp)
+    app.register_blueprint(builder.bp)
     app.register_blueprint(dash.bp)
     app.register_blueprint(links.bp)
     app.register_blueprint(public.bp)
 
     app.jinja_env.globals["csrf_token"] = get_csrf_token
+
+    from .sections import embed_src as _embed_src
+    app.jinja_env.globals["embed_src"] = _embed_src
+
+    @app.template_filter("hostname")
+    def _hostname(url: str) -> str:
+        """Bare host for link-card / embed captions (strip scheme + leading
+        www.). Input is an already-validated http(s) URL."""
+        from urllib.parse import urlsplit
+
+        host = urlsplit(url or "").netloc.lower().split(":")[0]
+        return host[4:] if host.startswith("www.") else host
 
     @app.before_request
     def load_user() -> None:

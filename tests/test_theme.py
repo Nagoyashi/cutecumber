@@ -119,6 +119,45 @@ class TestResolveTheme(unittest.TestCase):
                     self.assertNotIn(ch, value, f"{name}: {ch!r} in {value[:60]}…")
 
 
+class TestBuilderTokensAndPremium(unittest.TestCase):
+    """Builder cycle additions: the computed `line` token and premium-preset
+    gating (opt-in via the plan arg, so the legacy save path is unchanged)."""
+
+    def test_line_token_present_for_every_preset(self):
+        for name in PRESETS:
+            t = resolve_theme({"version": 3, "preset": name, "overrides": {}})
+            self.assertIn("line", t)
+            self.assertRegex(t["line"], r"^#[0-9a-f]{6}$")
+
+    def test_strawberry_milk_line_in_design_family(self):
+        # The formula is mix(accent, surface, 0.30) → #f7dde8; the handoff only
+        # asks it land "≈ #f0d4de" (same pink-border family), so check per-channel
+        # closeness rather than an exact hex.
+        t = resolve_theme({"version": 3, "preset": "strawberry_milk", "overrides": {}})
+        got = theme._hex_to_rgb(t["line"])
+        want = theme._hex_to_rgb("#f0d4de")
+        for g, w in zip(got, want):
+            self.assertLessEqual(abs(g - w), 16, f"{t['line']} not near #f0d4de")
+
+    def test_premium_preset_rejected_on_free_plan(self):
+        for name in theme.PREMIUM_PRESETS:
+            clean, err = validate_theme({"version": 3, "preset": name, "overrides": {}}, plan="free")
+            self.assertIsNone(clean, name)
+            self.assertIsNotNone(err)
+
+    def test_premium_preset_allowed_on_sprout(self):
+        clean, err = validate_theme({"version": 3, "preset": "lavender_haze", "overrides": {}}, plan="sprout")
+        self.assertIsNone(err)
+        self.assertEqual(clean["preset"], "lavender_haze")
+
+    def test_no_plan_arg_leaves_legacy_path_ungated(self):
+        # The current dash theme-save path passes no plan → premium presets stay
+        # selectable, exactly as before this cycle.
+        clean, err = validate_theme({"version": 3, "preset": "midnight_snack", "overrides": {}})
+        self.assertIsNone(err)
+        self.assertEqual(clean["preset"], "midnight_snack")
+
+
 class TestLoadThemeAndMigrations(unittest.TestCase):
     def test_corrupt_json_falls_back(self):
         for raw in (None, "", "{not json", "[]", '"hi"', '{"version": "one"}', '{"version": 99}'):

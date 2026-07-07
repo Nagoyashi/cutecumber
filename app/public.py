@@ -30,6 +30,7 @@ from .constants import (
 )
 from .db import get_db
 from .avatars import AVATAR_FILE_RE, avatar_dir
+from .sections import has_code, has_embed, resolve_sections
 from .security import use_public_csp
 from .theme import load_theme, resolve_theme
 
@@ -101,7 +102,8 @@ def profile(username: str):
         get_db()
         .execute(
             "SELECT id, username, display_name, bio, pronouns, avatar_kind,"
-            " avatar_value, theme_json FROM users WHERE username = ?",
+            " avatar_value, theme_json, sections_live_json FROM users"
+            " WHERE username = ?",
             (lowered,),
         )
         .fetchone()
@@ -109,6 +111,33 @@ def profile(username: str):
     if user is None:
         # A well-formed, non-reserved, unclaimed name → funnel: offer to claim it.
         return _not_found(claim_name=lowered)
+
+    # Theme + OG metadata are needed by both render paths.
+    theme = resolve_theme(load_theme(user["theme_json"]))
+    title = user["display_name"] or f"@{user['username']}"
+    description = (user["bio"] or DEFAULT_DESCRIPTION).strip()
+    if len(description) > DESCRIPTION_MAX:
+        description = description[: DESCRIPTION_MAX - 1].rstrip() + "…"
+    canonical = f"{current_app.config['SITE_ORIGIN']}/{user['username']}"
+
+    # Builder page (STAGING): when a live section stack exists, render it and
+    # skip the legacy links path entirely. resolve_sections is tolerant — a
+    # corrupt/empty column yields [], so we fall through to the legacy page.
+    sections = resolve_sections(user["sections_live_json"])
+    if sections:
+        embeds, code = has_embed(sections), has_code(sections)
+        return render_template(
+            "public_page_sections.html",
+            t=theme,
+            sections=sections,
+            user=user,
+            title=title,
+            description=description,
+            canonical=canonical,
+            has_embed=embeds,
+            # CSP exceptions armed ONLY for the section types actually present.
+            csp_nonce=use_public_csp(embeds=embeds, code=code),
+        )
 
     rows = (
         get_db()
@@ -140,17 +169,6 @@ def profile(username: str):
         avatar_set = value
     elif kind == "emoji" and 0 < len(value) <= AVATAR_EMOJI_MAX:
         avatar_emoji = value
-
-    title = user["display_name"] or f"@{user['username']}"
-    description = (user["bio"] or DEFAULT_DESCRIPTION).strip()
-    if len(description) > DESCRIPTION_MAX:
-        description = description[: DESCRIPTION_MAX - 1].rstrip() + "…"
-
-    canonical = f"{current_app.config['SITE_ORIGIN']}/{user['username']}"
-
-    # Theme tokens: validated at save (dash) AND resolved tolerantly here —
-    # a corrupted theme_json row falls back to the default preset.
-    theme = resolve_theme(load_theme(user["theme_json"]))
 
     return render_template(
         "public_page.html",

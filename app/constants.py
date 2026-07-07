@@ -55,6 +55,24 @@ LINK_URL_MAX = 2000
 LINK_EMOJI_MAX = 8  # generous enough for ZWJ sequences like 🏳️‍🌈
 MAX_LINKS_PER_PAGE = 50
 
+# Page-builder content caps (app/sections.py). One source of truth, same as the
+# link/profile caps above. Text caps reuse the profile caps where a field maps
+# 1:1 (hero name -> DISPLAY_NAME_MAX, bio -> BIO_MAX, link title ->
+# LINK_TITLE_MAX); the rest live here. Emoji/icon fields are length-capped, not
+# grapheme-segmented, on purpose (the ZWJ-validation swamp we already refuse to
+# enter for avatar/link emoji — they render escaped, so length is all that
+# matters).
+SECTIONS_MAX = 20            # sections per page
+LINKS_PER_SECTION_MAX = 12
+GALLERY_PHOTOS_MAX = 9
+FORM_FIELDS_MAX = 8
+SOCIAL_ICONS_MAX = 8
+SECTION_HEADING_MAX = 80
+SECTION_BODY_MAX = 500
+SECTION_CAPTION_MAX = 80
+SECTION_BUTTON_MAX = 30
+SECTION_CODE_MAX = 2000
+
 # Link URLs: scheme allowlist, validated at save AND at render (DECISIONS.md
 # #15). This is the XSS front line — a stored javascript: URL rendered into an
 # href is game over, so nothing gets stored OR rendered without passing here.
@@ -108,6 +126,13 @@ TOMBSTONE_DAYS = 30
 AVATAR_IMAGE_SIZE = 176          # 88px circle at 2x for retina
 AVATAR_MAX_BYTES = 30 * 1024     # output budget: 30 KB
 AVATAR_MAX_UPLOAD = 8 * 1024 * 1024  # input cap: 8 MB (phone photos)
+
+# Gallery photos (page builder). Same pipeline as avatars — re-encoded WebP,
+# EXIF/GPS stripped by re-encode — but larger, aspect preserved (CSS crops to
+# the display box). The public-page byte budget no longer applies to builder
+# pages (owner decision 2026-07-04), so these are generous.
+GALLERY_IMAGE_MAX_DIM = 1200     # longest side, aspect preserved
+GALLERY_MAX_BYTES = 300 * 1024   # output cap per photo
 
 # Avatar emoji is FREEFORM (DECISIONS.md #13, revisited at owner request — the
 # documented "real user demand" trigger). It renders as autoescaped text, the

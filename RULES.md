@@ -33,6 +33,16 @@ redesigned or reverted, regardless of how nice it is.
 Before declaring any front-end change done, confirm the page still has zero
 `<script>` tags, zero external URLs, and is still in budget.
 
+**Scoped exceptions (builder pages only, owner-approved — DECISIONS #38).** The
+legacy links page and the landing page keep the zero-JS/zero-third-party budget
+absolutely. Two builder section types relax it, each on the pages that use them
+and nowhere else: an **embed** page loads one self-hosted `embed.js` and may
+frame `youtube-nocookie` / `open.spotify.com` (click-to-load — no third-party
+request until the visitor clicks); a **code** page renders user HTML in a
+`sandbox`ed, network-blocked iframe. The per-page CSP (`security.py`) is the
+enforcement: a page without those sections still ships zero script and zero
+frame-src. The page-weight budget no longer caps builder pages.
+
 ## Security — non-negotiable
 
 - **XSS is threat #1.** This app renders attacker-controlled strings into HTML

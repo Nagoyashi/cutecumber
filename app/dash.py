@@ -47,6 +47,7 @@ from .avatars import (
 )
 from .db import get_db
 from .extensions import limiter
+from .maintenance import user_gallery_images
 from .security import login_required
 from .theme import (
     COLOR_KEYS,
@@ -353,7 +354,7 @@ def theme_save():
     else:
         abort(400)
 
-    clean, error = validate_theme(candidate)
+    clean, error = validate_theme(candidate, plan=g.user["plan"])
     if error:
         flash(error, "error")
         return redirect(url_for("dash.home", open="theme", _anchor="theme"))
@@ -392,6 +393,10 @@ def account_delete():
 
     if g.user["avatar_kind"] == "image":
         delete_avatar_file(g.user["avatar_value"])
+    # Hard delete means the images go too, not just the row (issue #81). Gallery
+    # uploads live in the same dir under the same pattern as avatars.
+    for image in user_gallery_images(g.user):
+        delete_avatar_file(image)
     db = get_db()
     if g.user["username"]:
         db.execute(

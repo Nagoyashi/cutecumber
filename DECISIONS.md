@@ -546,3 +546,70 @@ CSP) to make a Lighthouse audit pass — that would weaken a real security contr
 to satisfy a measurement artifact. Tie-break order puts privacy/security above a
 lint. **Revisit:** only if a real crawler is ever shown to be blocked (it
 won't be by CSP), or if Lighthouse changes the audit to a top-level fetch.
+
+## 38. Page builder: staging-flagged, additive, draft/live, "pick don't design"
+
+The third design package (`design_handoff_page_builder`) replaces the links-list
+editor with a **section-based page builder** + a paid **sprout** tier. It is a
+multi-cycle surface; v0.7.0 is its foundation. Owner decisions (2026-07-04),
+recorded so the build stays honest:
+
+- **Pivot, don't interleave.** v0.6.0 (magic-link) was paused/deferred (milestone
+  closed) so v0.7.0 is the single active cycle. Its issues (#53/#70/#71/#65/#34)
+  stay open, un-milestoned, to be re-cycled later.
+- **Feature flag in the prod codebase**, not a separate deploy: `BUILDER_ENABLED`
+  + `BUILDER_ALLOWLIST` (emails). Both must pass; anyone else gets a plain 404
+  (no hint the surface exists). Legacy links editor stays default while off.
+- **Additive, nullable migrations only** (`sections_draft_json`,
+  `sections_live_json`, `plan`), via the `db.py::_ensure_column` pattern — prod
+  code that knows nothing about the builder runs against a migrated DB unchanged.
+- **Draft/live split**: the editor edits `sections_draft_json`; publish copies it
+  to `sections_live_json`, which is what the public page renders. Both NULL →
+  legacy links page renders untouched.
+- **`code` (custom HTML) section**: destined for a sandboxed cross-origin iframe
+  + strict CSP; until that infra exists it renders **inert/escaped**, never
+  executed — the "user input never becomes HTML" line holds (no `|safe`).
+- **Premium presets are paid** (`lavender_haze`, `midnight_snack` → sprout-only),
+  enforced on the LEGACY dash theme-save too, not just the builder. `resolve` is
+  ungated, so an existing free user who already picked one keeps rendering it;
+  they just can't re-select it on save.
+- **Staging plan toggle**: an allowlisted test user can self-flip `users.plan`
+  (`/dash/builder/plan`) so premium is exercisable without billing. NOT a real
+  upgrade path — Stripe is a later decision.
+
+**Same doctrine as `theme.py`/link URLs**: `sections.py` validates strictly on
+SAVE (reject unknown type/variant/prop, over-cap, premium-on-free) and resolves
+tolerantly on RENDER (a bad row is skipped, never breaks a public page). Public
+render stays zero-JS, zero-third-party, cookie-free.
+
+**Settled since (2026-07-04/05):**
+- **Payload budget dropped** for builder pages (the ~2 KB links-page budget no
+  longer applies — owner call).
+- **Embeds + signup + form are LINK-OUT**, not on-site. A true inline embed
+  iframe would need JS + a third-party request + a loosened CSP on the public
+  page — all three NON-NEGOTIABLE in `RULES.md`; on-site form collection would
+  need a cookie/CSRF exemption (against #4) + visitor-PII/GDPR storage on a
+  privacy-brand site. So all three render a server-side facade that **links out**
+  to the allowlisted / creator-owned destination — no third-party request or PII
+  until the visitor clicks (which navigates away). Public pages stay zero-JS,
+  zero-third-party, cookie-free.
+- **Gallery uploads** reuse the avatar pipeline (re-encode strips EXIF/GPS),
+  larger + aspect-preserving, served from `/a/`.
+
+**Then — scoped public-page exceptions taken (2026-07-07, owner-approved):**
+- **True inline embeds**: embeds upgraded from link-out to **click-to-load** —
+  one self-hosted `embed.js` + `frame-src` for `youtube-nocookie`/`spotify`, on
+  embed pages only. No third-party request until the visitor clicks; JS-off
+  degrades to the link-out. First-ever public-page JS, scoped by per-page CSP.
+- **`code` sandbox**: user HTML renders in a same-origin **sandboxed** iframe
+  (no `allow-scripts`, no `allow-same-origin`) whose `srcdoc` meta-CSP blocks all
+  network — no scripts run, nothing phones home. `frame-src 'self'` on code
+  pages only. (signup/form stay link-out.)
+- Both are enforced by the per-page CSP in `security.py::use_public_csp`; a page
+  without those sections still ships zero script and zero `frame-src`. Documented
+  in `RULES.md`. **Needs a real-browser QA pass** (srcdoc/frame-src behavior) —
+  folds into #34.
+- **Orphaned-image GC** shipped (#81): `flask gc-images` + account-delete hook.
+
+**Still open:** real billing (Stripe vs. the staging plan toggle) — parked by
+the owner for later.

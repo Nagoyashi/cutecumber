@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>page builder · cutecumber.cc</title>
+<meta name="robots" content="noindex">
+<link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+<link rel="preload" href="{{ url_for('static', filename='fonts/fredoka-latin-600-normal.woff2') }}" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="{{ url_for('static', filename='builder.css') }}">
+<script src="{{ url_for('static', filename='builder.js') }}" defer></script>
+</head>
+<body class="builder-body">
+<div class="ambient" aria-hidden="true">
+  <div class="watermark"><svg viewBox="-16 -16 32 32" width="520" height="520"><use href="#m-slice"/></svg></div>
+</div>
+<div id="builder" class="bld-root"
+     data-draft="{{ draft_json }}"
+     data-csrf="{{ csrf_token() }}"
+     data-plan="{{ plan }}"
+     data-username="{{ username }}"
+     data-published="{{ '1' if is_published else '0' }}"
+     data-pg="{{ pg_vars }}"
+     data-preset="{{ current_preset }}">
+  <header class="bldbar">
+    <div class="bldbar-left">
+      <a class="brand fred" href="{{ url_for('dash.home') }}"><img src="{{ url_for('static', filename='favicon.svg') }}" alt="" width="28" height="28"><span>cutecumber</span></a>
+      <span class="bld-chip">builder</span>
+      <span class="bld-url">cutecumber.cc/<strong>{{ username }}</strong></span>
+    </div>
+    <div class="bldbar-mid">
+      <button type="button" class="seg-solo" id="b-phone" aria-pressed="false">📱 phone preview</button>
+    </div>
+    <div class="bldbar-right">
+      <button type="button" class="sprout-btn" id="b-plan"></button>
+      <span class="b-save" id="b-save" aria-live="polite"></span>
+      <button type="button" class="pill" id="b-publish">publish</button>
+    </div>
+  </header>
+
+  <div class="bld-main v3-main">
+    <div class="preview-main">
+      <div class="canvas-scroll" id="b-canvas-scroll">
+        <div class="browser-frame" id="b-desktop">
+          <div class="browser-top" aria-hidden="true">
+            <div class="btl"><i></i><i></i><i></i></div>
+            <div class="burl">cutecumber.cc/{{ username }}</div>
+          </div>
+          <div class="site" id="b-site"></div>
+        </div>
+        <div class="phone-wrap" id="b-phonewrap" hidden>
+          <div class="phone-bezel"><div class="phone-notch"></div><div class="phone-screen"><div class="site compact" id="b-phonesite"></div></div></div>
+          <p class="phone-cap">what phone visitors see — same sections, snug layout</p>
+        </div>
+      </div>
+    </div>
+    <aside class="inspector card" id="b-inspector"></aside>
+  </div>
+
+  <div class="modal-veil" id="b-drawer" hidden>
+    <div class="drawer card" role="dialog" aria-label="add a section">
+      <button type="button" class="pub-pop-close" id="b-drawer-x" aria-label="close">✕</button>
+      <p class="drawer-title fred">add a section</p>
+      <p class="drawer-sub">every style is pre-arranged to look good — just fill it with you.</p>
+      <div class="drawer-grid" id="b-drawer-grid"></div>
+    </div>
+  </div>
+
+  <div class="modal-veil" id="b-picker" hidden>
+    <div class="drawer tpl card" role="dialog" aria-label="pick a starting point">
+      <button type="button" class="pub-pop-close" id="b-picker-x" aria-label="close">✕</button>
+      <p class="drawer-title fred">pick a starting point</p>
+      <p class="drawer-sub">each one is a whole page, ready to make yours.</p>
+      <div class="tpl-grid" id="b-picker-grid"></div>
+    </div>
+  </div>
+
+  <div class="modal-veil" id="b-upsell" hidden>
+    <div class="modal card" role="dialog" aria-label="grow into a sprout">
+      <span class="modal-art" aria-hidden="true"><svg viewBox="-16 -16 32 32" width="60" height="60"><use href="#m-sprout"/></svg></span>
+      <p class="modal-title fred">grow into a sprout 🌱</p>
+      <ul class="modal-perks">
+        <li>🌐 your own domain — mochi.com instead of cutecumber.cc/mochi</li>
+        <li>🎟️ sprout stickers: embeds, mail list, forms &amp; custom html</li>
+        <li>🎨 two exclusive themes: lavender haze &amp; midnight snack</li>
+      </ul>
+      <p class="modal-price"><strong>$4/mo</strong> · cancel anytime, keep your page</p>
+      <div class="modal-btns">
+        <button type="button" class="pill ghost" id="b-upsell-no">stay free</button>
+        <button type="button" class="pill" id="b-upsell-yes">upgrade (staging)</button>
+      </div>
+      <p class="ins-note modal-note">staging only — flips your test account to sprout, no payment.</p>
+    </div>
+  </div>
+
+  <noscript><p class="site-empty">the builder needs javascript — it's the one dash screen that does. your public page never will.</p></noscript>
+  <div class="b-sprite" aria-hidden="true">{% include "_motif_sprite.html" %}</div>
+</div>
+</body>
+</html>
