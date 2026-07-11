@@ -13,15 +13,18 @@ never on feature breadth.
 
 ## Current phase
 
-**Between cycles.** The **page builder** shipped as `v0.7.0` (2026-07-07,
-verified live) — the section model, in-canvas editor, public rendering, gallery
-uploads, and premium tier, all **behind `BUILDER_ENABLED`, off in production**
-(the code is deployed; the feature isn't exposed). Before flipping the flag on
-in prod: the real-browser QA pass (**#34** — esp. the code-sandbox
-`srcdoc`/`frame-src`) and **billing** (parked); editor refinement is tracked in
-**#82**. `v0.6.0` (magic-link) stays deferred and un-milestoned (#53/#70/#71/#65)
-— a natural next cycle, alongside enabling the builder. Next cycle: propose it +
-its issues, wait for the owner's OK. Per-task status → the *cutecumber.cc* board ↗
+**Between cycles.** The **page builder is live in production** — shipped as
+`v0.8.0` (2026-07-11, verified live), which flipped `BUILDER_ENABLED` on for an
+**email allowlist** (everyone else keeps the legacy links editor and gets a 404
+on `/dash/builder`). The flip was gated on a real-browser security QA of the
+public-page exceptions + owner device QA (**#34**) and shipped alongside the
+editor polish (**#85**); **billing stays deliberately deferred** (#84) — the
+allowlist + staging plan toggle cover the sprout tier without Stripe. Still
+ahead: opening the builder beyond the allowlist, real billing, and two
+low-priority editor-polish items (#86). `v0.6.0` (magic-link) stays deferred and
+un-milestoned (#53/#70/#71/#69/#65) — the natural next cycle. Next cycle: propose
+it + its issues, wait for the owner's OK. Per-task status → the *cutecumber.cc*
+board ↗
 
 ## Roadmap
 
@@ -78,6 +81,27 @@ firms up.*
 ## Phase log
 
 Durable completion notes, newest first. Rationale → `DECISIONS.md`.
+
+### Page builder live (allowlist-gated) — shipped 2026-07-11 (`v0.8.0`)
+
+- **The flip** (#83): `BUILDER_ENABLED` + `BUILDER_ALLOWLIST` set as Fly secrets
+  and deployed; allowlisted creators reach `/dash/builder`, everyone else gets a
+  plain 404 (no hint the surface exists), and the legacy links editor stays the
+  default. No new migration — the additive `sections_*_json` / `plan` columns
+  already shipped in v0.7.0. Verified live: strict public CSP intact, gate
+  redirects unauth to login, Litestream replicating.
+- **Security-gated before the flip** (#34, DECISIONS #38): the public-page
+  exceptions were QA'd in a real browser — the custom-HTML sandbox blocks scripts
+  and network (no exfil reached the origin; off-origin img blocked by the frame's
+  own CSP), embeds stay click-to-load (no third-party request until the click),
+  and the CSP exceptions arm only on pages that use those sections. Plus owner
+  device QA: DevTools Lighthouse (mobile + desktop) + the on-phone walkthrough.
+- **Editor polish** (#85): template picker live miniatures, a publish popover
+  (copy-URL + free-user sprout teaser), and a button-grid a11y fix (`role=group`
+  so the field label doesn't activate the first control).
+- **Billing deliberately deferred** (#84): not a flip blocker — allowlist +
+  staging plan toggle exercise `sprout` without Stripe; revisited when the
+  builder opens beyond the allowlist. Two low-prio editor-polish items → #86.
 
 ### Page builder — shipped 2026-07-07 (`v0.7.0`)
 
