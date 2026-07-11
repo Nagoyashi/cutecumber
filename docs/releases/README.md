@@ -22,6 +22,9 @@ Pre-releases use a hyphenated tag (`vX.Y.Z-rc.N`) and the Action marks them
 
 _(newest first — add a line when a release ships)_
 
+- [`v0.8.0`](v0.8.0.md) — Page builder live (allowlist-gated): the prod flag flip, real-browser security QA, editor polish, billing deferred.
+- [`v0.7.0`](v0.7.0.md) — Page builder (staging): section model, in-canvas editor, public rendering, gallery uploads, premium tier — all behind a flag.
+- [`v0.5.0`](v0.5.0.md) — Design refresh v2 continued: public profile + auth screens rebuilt, per-page theme settings, friendlier state screens.
 - [`v0.4.0`](v0.4.0.md) — Design refresh v2: modernized landing + dashboard, ambient SVG background, drawn-avatar picker.
 - [`v0.3.0`](v0.3.0.md) — Launch: public (robots flip), landing CTA WCAG-AA fix + brand-chrome contrast guard.
 - [`v0.2.1`](v0.2.1.md) — Maintenance & polish: held dependency bumps, log scrubbing, art caching, optional error webhook, doc reconcile.
