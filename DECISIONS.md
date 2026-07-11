@@ -620,3 +620,23 @@ later decision: it's a new dependency + attack surface (RULES.md keeps the dep
 list closed), so it's revisited only when the builder opens **beyond the
 allowlist** or a real self-serve upgrade path is needed — not before. Until
 then the toggle is the only way `plan` changes, and it's staging-gated. (#84)
+
+**Builder opened to all creators; premium is "coming soon" (v0.9.0).** The
+builder becomes the **primary editor** for every authenticated creator — the
+dashboard leads with it, the legacy links editor stays as the secondary "classic"
+path, and a public page still switches to the section stack only once its owner
+publishes. The gate change: `BUILDER_ENABLED` alone now grants access (flag-off =
+404 as before); `BUILDER_ALLOWLIST` is **repurposed** from the access gate to the
+**internal-test set** — the only accounts that may flip their own `plan` via
+`POST /dash/builder/plan` (everyone else gets a 404 there). Security rationale for
+why widening access is safe *now*: the four risky section types (embed, custom
+HTML, form, mail-list) and the two premium themes are **premium**, and premium is
+gated as **"coming soon"** for everyone (billing still deferred, #84) — so no
+non-internal creator can add them. Opening the builder therefore exposes only the
+**six free, server-rendered section types** (hero, links, gallery, about, socials,
+divider) — validated tokens, zero-JS, no third-party. The public-page CSP
+exceptions (sandboxed custom-HTML iframe, click-to-load embeds; #38 above) stay
+**dormant** until sprout + real billing ship, so there is no new public attack
+surface. Real users see premium as "coming soon" with a work-in-progress payment
+placeholder; no price, no checkout. Now-public write endpoints
+(`save`/`publish`/`upload`/`preset`) are rate-limited (flask-limiter). (#90–#94)

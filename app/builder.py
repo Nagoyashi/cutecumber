@@ -1,9 +1,11 @@
-"""Page-builder editor (dash surface) — STAGING, behind BUILDER_ENABLED.
+"""Page-builder editor (dash surface) — behind BUILDER_ENABLED.
 
-Access requires BOTH the flag AND membership in BUILDER_ALLOWLIST; anyone else
-gets a plain 404 (no hint the surface exists). The editor edits a DRAFT
-(users.sections_draft_json); publish copies the draft to the LIVE column
-(users.sections_live_json), which is what the public page renders.
+Open to every authenticated creator when the flag is on; a flag-off request gets
+a plain 404 (no hint the surface exists). BUILDER_ALLOWLIST is no longer the
+access gate — it's the INTERNAL-TEST set, the only accounts that may flip their
+own plan to exercise the premium tier before billing exists (see set_plan). The
+editor edits a DRAFT (users.sections_draft_json); publish copies the draft to the
+LIVE column (users.sections_live_json), which is what the public page renders.
 
 The editor UI is vanilla JS (static/builder.js) under the dash CSP (script-src
 'self'); the live preview is an <iframe> of /dash/builder/preview, which renders
@@ -25,6 +27,7 @@ from flask import (
 
 from .avatars import AvatarError, process_gallery_photo, store_avatar
 from .db import get_db
+from .extensions import limiter
 from .sections import (
     default_sections_from_profile,
     has_code,
@@ -40,19 +43,24 @@ bp = Blueprint("builder", __name__)
 
 
 def builder_required(view):
-    """login + staging flag + allowlist. A non-allowlisted user must not be able
-    to tell the surface exists, so every failure is the same 404."""
+    """login + the BUILDER_ENABLED flag. Open to every authenticated creator; a
+    flag-off request gets the same plain 404 (no hint the surface exists)."""
     @wraps(view)
     @login_required
     def wrapped(*args, **kwargs):
         if not current_app.config.get("BUILDER_ENABLED"):
             abort(404)
-        email = (g.user["email"] or "").lower()
-        if email not in current_app.config.get("BUILDER_ALLOWLIST", frozenset()):
-            abort(404)
         return view(*args, **kwargs)
 
     return wrapped
+
+
+def _is_internal_tester() -> bool:
+    """BUILDER_ALLOWLIST is no longer the access gate — it's the internal-test
+    set: the only accounts allowed to flip their own plan to exercise the premium
+    tier while it's 'coming soon' (real billing is a later cycle)."""
+    email = (g.user["email"] or "").lower()
+    return email in current_app.config.get("BUILDER_ALLOWLIST", frozenset())
 
 
 def _current_draft():
@@ -91,10 +99,12 @@ def editor():
         is_published=published is not None,
         pg_vars=json.dumps(pg_vars, separators=(",", ":")),
         current_preset=stored.get("preset", ""),
+        is_internal_tester=_is_internal_tester(),
     )
 
 
 @bp.post("/dash/builder/save")
+@limiter.limit("300 per hour")
 @builder_required
 def save():
     """Autosave the draft. Returns {ok, error?} as JSON — the editor surfaces
@@ -116,6 +126,7 @@ def save():
 
 
 @bp.post("/dash/builder/publish")
+@limiter.limit("60 per hour")
 @builder_required
 def publish():
     """Validate the draft and copy it to the live column (and normalise the
@@ -138,6 +149,7 @@ def publish():
 
 
 @bp.post("/dash/builder/upload")
+@limiter.limit("40 per hour")
 @builder_required
 def upload():
     """Process one gallery photo through the avatar pipeline (re-encode strips
@@ -155,6 +167,7 @@ def upload():
 
 
 @bp.post("/dash/builder/preset")
+@limiter.limit("120 per hour")
 @builder_required
 def set_preset():
     """Apply a theme preset (used by the starter-template picker). Plan-gated:
@@ -176,11 +189,15 @@ def set_preset():
 
 
 @bp.post("/dash/builder/plan")
+@limiter.limit("30 per hour")
 @builder_required
 def set_plan():
-    """STAGING ONLY: let an allowlisted test user flip their own plan so premium
-    can be exercised without billing (handoff §1.3 / §7.10). It lives behind the
-    builder gate and is NOT a real upgrade path — Stripe is a later decision."""
+    """INTERNAL-TEST ONLY: let an allowlisted tester flip their own plan so the
+    premium tier can be exercised while it's 'coming soon'. Restricted to the
+    BUILDER_ALLOWLIST — everyone else gets a 404 (they never see the toggle) — and
+    it is NOT a real upgrade path; Stripe is a later decision."""
+    if not _is_internal_tester():
+        abort(404)
     plan = request.form.get("plan")
     if plan not in ("free", "sprout"):
         return jsonify(ok=False, error="unknown plan"), 200

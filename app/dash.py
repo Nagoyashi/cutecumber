@@ -113,6 +113,7 @@ def _render_home(
     return render_template(
         "dash_home.html",
         site_origin=current_app.config["SITE_ORIGIN"],
+        builder_enabled=current_app.config.get("BUILDER_ENABLED", False),
         form=form,
         add_form=add_form,
         links=user_links,
