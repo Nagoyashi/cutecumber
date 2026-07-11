@@ -73,8 +73,12 @@
   var state = {
     sections: [], selected: null, plan: root.dataset.plan, preset: root.dataset.preset,
     csrf: root.dataset.csrf, username: root.dataset.username, counter: 0,
-    addIndex: null, dragId: null, dropIndex: null
+    addIndex: null, dragId: null, dropIndex: null,
+    internal: root.dataset.internal === "1"  // may exercise the 'coming soon' premium tier
   };
+  // Premium is gated as "coming soon" for everyone (billing is a later cycle);
+  // internal testers get a real lock they can unlock via the staging toggle.
+  function lockGlyph() { return state.internal ? "🔒" : "🔜"; }
   var saveTimer = null, ghost = null;
 
   // ---- helpers -----------------------------------------------------------
@@ -489,7 +493,7 @@
       var dot = h("span", { class: "theme-dot" });
       dot.style.background = pr.accent;
       chip.appendChild(dot);
-      if (pr.premium) chip.appendChild(h("span", { class: "theme-lock", text: locked ? "🔒" : "🌱" }));
+      if (pr.premium) chip.appendChild(h("span", { class: "theme-lock", text: locked ? lockGlyph() : "🌱" }));
       return h("button", { class: "theme-pick" + (pr.key === state.preset ? " on" : "") + (locked ? " locked" : ""), type: "button",
         onclick: function () { locked ? openUpsell() : pickTheme(pr.key); } }, [
         chip, h("span", { class: "theme-name", text: pr.name })
@@ -514,7 +518,7 @@
       var meta = TYPES[t], locked = meta.premium && state.plan !== "sprout";
       grid.appendChild(h("button", { class: "drawer-item" + (locked ? " locked" : ""), type: "button",
         onclick: function () { if (locked) { openUpsell(); return; } addSection(t, state.addIndex); hide("b-drawer"); } }, [
-        meta.premium ? h("span", { class: "lock", text: locked ? "🔒" : "🌱" }) : null,
+        meta.premium ? h("span", { class: "lock", text: locked ? lockGlyph() : "🌱" }) : null,
         h("span", { class: "drawer-emoji", html: '<svg viewBox="-16 -16 32 32" width="28" height="28" aria-hidden="true"><use href="#m-' + meta.motif + '"/></svg>' }),
         h("span", { class: "drawer-name", text: meta.label }),
         h("span", { class: "drawer-hint", text: meta.hint })
@@ -561,7 +565,8 @@
   function renderPlan() {
     var b = document.getElementById("b-plan");
     if (state.plan === "sprout") { b.textContent = "🌱 sprout member"; b.classList.add("member"); }
-    else { b.textContent = "get sprout 🌱"; b.classList.remove("member"); }
+    else if (state.internal) { b.textContent = "get sprout 🌱"; b.classList.remove("member"); }
+    else { b.textContent = "sprout 🔜 soon"; b.classList.remove("member"); }
   }
   function upgrade() {
     var b = new FormData(); b.append("_csrf", state.csrf); b.append("plan", "sprout");
@@ -610,7 +615,10 @@
     document.getElementById("b-drawer-x").addEventListener("click", function () { hide("b-drawer"); });
     document.getElementById("b-picker-x").addEventListener("click", function () { hide("b-picker"); });
     document.getElementById("b-upsell-no").addEventListener("click", function () { hide("b-upsell"); });
-    document.getElementById("b-upsell-yes").addEventListener("click", upgrade);
+    // The staging upgrade button only renders for internal testers (everyone
+    // else gets a "coming soon" placeholder with no upgrade action).
+    var upBtn = document.getElementById("b-upsell-yes");
+    if (upBtn) upBtn.addEventListener("click", upgrade);
     ["b-drawer", "b-picker", "b-upsell"].forEach(function (id) {
       document.getElementById(id).addEventListener("click", function (e) { if (e.target.id === id) hide(id); });
     });

@@ -1,7 +1,8 @@
-"""Builder editor tests (STAGING). The access gate is security-relevant — a
-non-allowlisted user must get a plain 404, never a hint the surface exists —
-and the save/publish loop must round-trip through validate_sections and only
-touch the live column on publish.
+"""Builder editor tests. The access gate is security-relevant: with the flag on
+the builder is open to every authenticated creator, but a flag-off request must
+get a plain 404 (no hint the surface exists), and the staging plan toggle is
+restricted to the internal allowlist. The save/publish loop must round-trip
+through validate_sections and only touch the live column on publish.
 
 Reuses the create_app()+temp-DB harness from test_security.
 """
@@ -55,10 +56,13 @@ class TestBuilderGate(BuilderTestBase):
         self.app.config["BUILDER_ENABLED"] = False
         self.assertEqual(self.client.get("/dash/builder").status_code, 404)
 
-    def test_non_allowlisted_is_404_not_a_hint(self):
+    def test_non_allowlisted_user_still_gets_editor(self):
+        # The allowlist is no longer the access gate — any logged-in creator gets
+        # the editor when the flag is on.
         self.app.config["BUILDER_ALLOWLIST"] = frozenset({"someone@else.test"})
         resp = self.client.get("/dash/builder")
-        self.assertEqual(resp.status_code, 404)
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn(b'id="builder"', resp.data)
 
     def test_anonymous_redirected_to_login(self):
         anon = self.app.test_client()
@@ -141,6 +145,19 @@ class TestBuilderPresetAndPlan(BuilderTestBase):
     def test_bad_plan_rejected(self):
         resp = self._form("/dash/builder/plan", plan="galaxy")
         self.assertFalse(resp.get_json()["ok"])
+
+    def test_plan_toggle_restricted_to_internal_allowlist(self):
+        # A logged-in creator who ISN'T in the internal allowlist still reaches
+        # the editor, but the staging plan toggle is a 404 for them — premium is
+        # "coming soon", not self-upgradable.
+        self.app.config["BUILDER_ALLOWLIST"] = frozenset({"someone@else.test"})
+        self.assertEqual(self.client.get("/dash/builder").status_code, 200)
+        resp = self._form("/dash/builder/plan", plan="sprout")
+        self.assertEqual(resp.status_code, 404)
+        with self.app.app_context():
+            plan = get_db().execute(
+                "SELECT plan FROM users WHERE id = ?", (self.uid,)).fetchone()["plan"]
+        self.assertEqual(plan, "free")  # unchanged
 
 
 class TestBuilderUpload(BuilderTestBase):

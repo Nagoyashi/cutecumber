@@ -41,6 +41,17 @@
   </div>
 </section>
 
+{% if builder_enabled %}
+<section class="card builder-cta">
+  <div class="builder-cta-main">
+    <p class="builder-cta-title fred">✨ design your whole page</p>
+    <p class="builder-cta-sub">the new page builder — drag-and-drop sections, themes &amp; a live preview. it becomes your public page once you publish.</p>
+  </div>
+  <a class="pill builder-cta-btn" href="{{ url_for('builder.editor') }}">open the builder →</a>
+</section>
+<p class="classic-lead">prefer the simple version? the classic editor is still right here 👇</p>
+{% endif %}
+
 <details class="card section" id="links" {% if open_section == 'links' %}open{% endif %}>
   <summary><span class="section-title">your links 🔗</span></summary>
   {% if links %}

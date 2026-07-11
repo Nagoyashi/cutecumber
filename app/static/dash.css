@@ -504,6 +504,18 @@ select:focus-visible {
 .pagebar-url strong { color: var(--accent-deep); }
 .pagebar-btns { display: flex; gap: 8px; flex-wrap: wrap; }
 
+/* primary CTA into the page builder (the headline way to edit your page) */
+.builder-cta {
+  display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px;
+  padding: 20px 22px; border: 1.5px solid var(--accent);
+  background: linear-gradient(135deg, #fff5f8, #f3f9f4);
+}
+.builder-cta-main { min-width: 0; }
+.builder-cta-title { font-size: 1.15rem; color: var(--green); }
+.builder-cta-sub { font-size: 0.86rem; color: var(--muted); margin-top: 2px; max-width: 52ch; }
+.builder-cta-btn { flex: none; white-space: nowrap; }
+.classic-lead { margin: 2px 2px 6px; font-size: 0.82rem; color: var(--muted); }
+
 .section > summary {
   cursor: pointer;
   list-style: none;

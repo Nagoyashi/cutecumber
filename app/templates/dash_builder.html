@@ -21,7 +21,8 @@
      data-username="{{ username }}"
      data-published="{{ '1' if is_published else '0' }}"
      data-pg="{{ pg_vars }}"
-     data-preset="{{ current_preset }}">
+     data-preset="{{ current_preset }}"
+     data-internal="{{ '1' if is_internal_tester else '0' }}">
   <header class="bldbar">
     <div class="bldbar-left">
       <a class="brand fred" href="{{ url_for('dash.home') }}"><img src="{{ url_for('static', filename='favicon.svg') }}" alt="" width="28" height="28"><span>cutecumber</span></a>
@@ -85,20 +86,34 @@
   </div>
 
   <div class="modal-veil" id="b-upsell" hidden>
-    <div class="modal card" role="dialog" aria-label="grow into a sprout">
+    <div class="modal card" role="dialog" aria-label="sprout — coming soon">
       <span class="modal-art" aria-hidden="true"><svg viewBox="-16 -16 32 32" width="60" height="60"><use href="#m-sprout"/></svg></span>
+      {% if is_internal_tester %}
       <p class="modal-title fred">grow into a sprout 🌱</p>
       <ul class="modal-perks">
         <li>🌐 your own domain — mochi.com instead of cutecumber.cc/mochi</li>
         <li>🎟️ sprout stickers: embeds, mail list, forms &amp; custom html</li>
         <li>🎨 two exclusive themes: lavender haze &amp; midnight snack</li>
       </ul>
-      <p class="modal-price"><strong>$4/mo</strong> · cancel anytime, keep your page</p>
+      <p class="modal-price">internal testing — no payment</p>
       <div class="modal-btns">
         <button type="button" class="pill ghost" id="b-upsell-no">stay free</button>
         <button type="button" class="pill" id="b-upsell-yes">upgrade (staging)</button>
       </div>
       <p class="ins-note modal-note">staging only — flips your test account to sprout, no payment.</p>
+      {% else %}
+      <p class="modal-title fred">sprout is coming soon 🌱</p>
+      <ul class="modal-perks">
+        <li>🌐 your own domain — mochi.com instead of cutecumber.cc/mochi</li>
+        <li>🎟️ sprout stickers: embeds, mail list, forms &amp; custom html</li>
+        <li>🎨 two exclusive themes: lavender haze &amp; midnight snack</li>
+      </ul>
+      <p class="modal-price">🚧 payments are a work in progress — these bloom soon</p>
+      <div class="modal-btns">
+        <button type="button" class="pill" id="b-upsell-no">got it 🌱</button>
+      </div>
+      <p class="ins-note modal-note">nothing to pay yet — we'll let you know when sprout opens.</p>
+      {% endif %}
     </div>
   </div>
 
