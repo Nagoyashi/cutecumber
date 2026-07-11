@@ -611,5 +611,12 @@ render stays zero-JS, zero-third-party, cookie-free.
   folds into #34.
 - **Orphaned-image GC** shipped (#81): `flask gc-images` + account-delete hook.
 
-**Still open:** real billing (Stripe vs. the staging plan toggle) — parked by
-the owner for later.
+**Billing — deliberately deferred out of v0.8.0 (owner call), NOT a flip
+blocker.** Enabling the builder in prod (v0.8.0, #83) exposes it to an *email
+allowlist* only, and premium (`sprout`) is exercised via the staging plan toggle
+(`/dash/builder/plan`, `app/builder.py`) — so no payment processor is needed to
+turn `BUILDER_ENABLED` on for testers. Real billing (Stripe) stays a separate,
+later decision: it's a new dependency + attack surface (RULES.md keeps the dep
+list closed), so it's revisited only when the builder opens **beyond the
+allowlist** or a real self-serve upgrade path is needed — not before. Until
+then the toggle is the only way `plan` changes, and it's staging-gated. (#84)
