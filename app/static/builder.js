@@ -84,6 +84,29 @@
     });
   }
   function host(u) { try { return new URL(u).hostname.replace(/^www\./, ""); } catch (e) { return u || ""; } }
+  // Approximate --pg-* vars for a preset from its bg + accent, for the picker
+  // miniatures only (the real page vars are resolved server-side by theme.py).
+  // Good enough to convey each starter's palette; the live canvas stays exact.
+  function lum(hex) {
+    var m = /^#?([0-9a-f]{6})$/i.exec(hex || ""); if (!m) return 1;
+    var n = parseInt(m[1], 16);
+    return (0.299 * (n >> 16 & 255) + 0.587 * (n >> 8 & 255) + 0.114 * (n & 255)) / 255;
+  }
+  function themeVarsFor(pr) {
+    var dark = lum(pr.bg) < 0.5;
+    return {
+      "--pg-bg": pr.bg, "--pg-bg2": pr.bg, "--pg-accent": pr.accent,
+      "--pg-accent-text": lum(pr.accent) < 0.6 ? "#ffffff" : "#2b2b38",
+      "--pg-text": dark ? "#f3eef7" : "#3c3c43",
+      "--pg-muted": dark ? "rgba(243,238,247,0.6)" : "#6e6e78",
+      "--pg-card": dark ? "rgba(255,255,255,0.08)" : "#ffffff",
+      "--pg-line": dark ? "rgba(255,255,255,0.18)" : "rgba(60,40,52,0.12)"
+    };
+  }
+  function paintSections(container, sections) {
+    container.textContent = "";
+    (sections || []).forEach(function (s) { container.appendChild(sectionEl(s)); });
+  }
   function motifSvg(name, size) {
     var m = MOTIFS.indexOf(name) >= 0 ? name : "sparkle";
     return '<svg viewBox="-16 -16 32 32" width="' + size + '" height="' + size + '" aria-hidden="true"><use href="#m-' + m + '"/></svg>';
@@ -318,11 +341,32 @@
   }
   function publish() {
     fetch("/dash/builder/publish", { method: "POST", body: body() }).then(function (r) { return r.json(); })
-      .then(function (d) { setStatus(d.ok ? "published ✓" : (d.error || "couldn't publish 😔")); if (d.ok) root.dataset.published = "1"; });
+      .then(function (d) {
+        if (!d.ok) { setStatus(d.error || "couldn't publish 😔"); return; }
+        setStatus("published ✓"); root.dataset.published = "1"; showPubPop();
+      });
+  }
+  function showPubPop() {
+    document.getElementById("b-pubpop-link").textContent = location.host + "/" + state.username;
+    document.getElementById("b-pubpop-copy").textContent = "copy";
+    document.getElementById("b-pubpop-teaser").hidden = state.plan === "sprout";
+    show("b-pubpop");
+  }
+  function copyUrl() {
+    var btn = document.getElementById("b-pubpop-copy");
+    var url = location.origin + "/" + state.username;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(url).then(function () { btn.textContent = "copied ✓"; },
+        function () { btn.textContent = "press ⌘/ctrl+c"; });
+    } else { btn.textContent = "press ⌘/ctrl+c"; }
   }
 
   // ---- inspector ---------------------------------------------------------
   function field(label, control) { return h("label", { class: "ins-field" }, [h("span", { text: label }), control]); }
+  // Like field() but a <div role="group"> — for controls that are a grid of
+  // buttons (avatar/motif) or several inputs (link/photo rows). A <label> around
+  // those associates its click with the FIRST control, so use a group instead.
+  function fieldGroup(label, control) { return h("div", { class: "ins-field", role: "group", "aria-label": label }, [h("span", { text: label }), control]); }
   function textIn(val, oninput, ph, cls) { return h("input", { class: cls || "", type: "text", value: val || "", placeholder: ph || "", oninput: function (e) { oninput(e.target.value); } }); }
   function textArea(val, oninput, cls) { return h("textarea", { class: cls || "", rows: "3", oninput: function (e) { oninput(e.target.value); } }, [val || ""]); }
   function selectIn(opts, val, onchange) { return h("select", { onchange: function (e) { onchange(e.target.value); } }, opts.map(function (o) { return h("option", { value: o[0], selected: o[0] === val, text: o[1] }); })); }
@@ -354,7 +398,7 @@
   function fieldsFor(box, s) {
     var p = s.props;
     if (s.type === "hero") {
-      box.appendChild(field("avatar", avatarGrid(p.avatar, function (a) { p.avatar = a; commit(); })));
+      box.appendChild(fieldGroup("avatar", avatarGrid(p.avatar, function (a) { p.avatar = a; commit(); })));
       box.appendChild(field("name", textIn(p.name, function (v) { p.name = v; commit(); })));
       box.appendChild(field("pronouns", textIn(p.pronoun, function (v) { p.pronoun = v; commit(); }, "optional")));
       box.appendChild(field("bio", textArea(p.bio, function (v) { p.bio = v; commit(); })));
@@ -368,7 +412,7 @@
     } else if (s.type === "socials") {
       box.appendChild(field("icons (space-separated emoji)", textIn(p.icons, function (v) { p.icons = v; commit(); })));
     } else if (s.type === "divider") {
-      box.appendChild(field("motif", motifPicker(p.motif, function (m) { p.motif = m; commit(); })));
+      box.appendChild(fieldGroup("motif", motifPicker(p.motif, function (m) { p.motif = m; commit(); })));
     } else if (s.type === "embed") {
       box.appendChild(field("service", selectIn([["youtube", "youtube"], ["spotify", "spotify"]], p.kind, function (v) { p.kind = v; commit(); })));
       box.appendChild(field("link", textIn(p.url, function (v) { p.url = v; commit(); }, "https://youtu.be/…")));
@@ -404,7 +448,7 @@
         tool("✕", "del", "remove link", function () { s.props.links.splice(i, 1); renderInspector(); commit(); })
       ]));
     });
-    box.appendChild(field("links", list));
+    box.appendChild(fieldGroup("links", list));
     box.appendChild(h("button", { class: "linkrow-add", type: "button", text: "+ add a link",
       onclick: function () { s.props.links.push({ emoji: "", title: "my link", url: "https://example.com" }); renderInspector(); commit(); } }));
   }
@@ -421,7 +465,7 @@
         tool("✕", "del", "remove photo", function () { s.props.photos.splice(i, 1); renderInspector(); commit(); })
       ]));
     });
-    box.appendChild(field("photos", list));
+    box.appendChild(fieldGroup("photos", list));
     box.appendChild(h("button", { class: "photo-add", type: "button", text: "+ add a photo",
       onclick: function () { s.props.photos.push({ caption: "" }); renderInspector(); commit(); } }));
   }
@@ -477,13 +521,36 @@
       ]));
     });
   }
+  var MINI_BASE = 700; // px width the mini page renders at before scaling down
   function buildPicker() {
     var grid = document.getElementById("b-picker-grid"); grid.textContent = "";
     TEMPLATES.forEach(function (t) {
+      var page = h("div", { class: "site compact tpl-mini-page" });
+      if (t.sections && t.sections.length) {
+        var vars = themeVarsFor(presetByKey(t.preset));
+        Object.keys(vars).forEach(function (k) { page.style.setProperty(k, vars[k]); });
+        paintSections(page, t.sections);
+      } else {
+        page.appendChild(h("div", { class: "tpl-mini-blank fred" }, [h("span", { text: "🌱" }), h("span", { text: "blank patch" })]));
+      }
       grid.appendChild(h("button", { class: "tpl-card" + (t.key === "blank" ? " blank" : ""), type: "button", onclick: function () { applyTemplate(t); } }, [
+        h("div", { class: "tpl-mini", "aria-hidden": "true" }, [page]),
         h("span", { class: "tpl-name", text: t.name }), h("span", { class: "tpl-blurb", text: t.blurb })
       ]));
     });
+  }
+  function presetByKey(key) {
+    for (var i = 0; i < PRESETS.length; i++) if (PRESETS[i].key === key) return PRESETS[i];
+    return PRESETS[0];
+  }
+  // The mini pages render at a fixed width, then scale to whatever the grid gives
+  // each card. Measured after the modal is shown so widths are real (reflow).
+  function fitMinis() {
+    var minis = document.querySelectorAll("#b-picker-grid .tpl-mini");
+    for (var i = 0; i < minis.length; i++) {
+      var page = minis[i].firstChild; if (!page) continue;
+      page.style.transform = "scale(" + (minis[i].clientWidth / MINI_BASE) + ")";
+    }
   }
   function applyTemplate(t) {
     if (state.sections.length && !window.confirm("replace your current page with “" + t.name + "”?")) return;
@@ -511,7 +578,7 @@
 
   function show(id) { document.getElementById(id).hidden = false; }
   function hide(id) { document.getElementById(id).hidden = true; }
-  function openPicker() { buildPicker(); show("b-picker"); }
+  function openPicker() { buildPicker(); show("b-picker"); fitMinis(); }
   function openUpsell() { show("b-upsell"); }
 
   // ---- sparkle burst -----------------------------------------------------
@@ -535,6 +602,9 @@
     (draft.sections || []).forEach(function (s) { s._id = "s-" + (++state.counter); if (!s.props) s.props = {}; state.sections.push(s); });
 
     document.getElementById("b-publish").addEventListener("click", publish);
+    document.getElementById("b-pubpop-copy").addEventListener("click", copyUrl);
+    document.getElementById("b-pubpop-x").addEventListener("click", function () { hide("b-pubpop"); });
+    document.getElementById("b-pubpop-teaser").addEventListener("click", function () { hide("b-pubpop"); openUpsell(); });
     document.getElementById("b-phone").addEventListener("click", togglePhone);
     document.getElementById("b-plan").addEventListener("click", openUpsell);
     document.getElementById("b-drawer-x").addEventListener("click", function () { hide("b-drawer"); });
@@ -544,7 +614,13 @@
     ["b-drawer", "b-picker", "b-upsell"].forEach(function (id) {
       document.getElementById(id).addEventListener("click", function (e) { if (e.target.id === id) hide(id); });
     });
-    document.addEventListener("keydown", function (e) { if (e.key === "Escape") { hide("b-drawer"); hide("b-picker"); hide("b-upsell"); } });
+    document.addEventListener("keydown", function (e) { if (e.key === "Escape") { hide("b-drawer"); hide("b-picker"); hide("b-upsell"); hide("b-pubpop"); } });
+    // The publish popover isn't a modal veil, so dismiss it on any outside click.
+    document.addEventListener("click", function (e) {
+      var pop = document.getElementById("b-pubpop");
+      if (pop.hidden || pop.contains(e.target) || e.target.id === "b-publish") return;
+      hide("b-pubpop");
+    });
 
     renderPlan(); renderCanvas(); renderInspector();
     setStatus(root.dataset.published === "1" ? "" : "draft");
