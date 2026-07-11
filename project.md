@@ -13,18 +13,19 @@ never on feature breadth.
 
 ## Current phase
 
-**Between cycles.** The **page builder is live in production** — shipped as
-`v0.8.0` (2026-07-11, verified live), which flipped `BUILDER_ENABLED` on for an
-**email allowlist** (everyone else keeps the legacy links editor and gets a 404
-on `/dash/builder`). The flip was gated on a real-browser security QA of the
-public-page exceptions + owner device QA (**#34**) and shipped alongside the
-editor polish (**#85**); **billing stays deliberately deferred** (#84) — the
-allowlist + staging plan toggle cover the sprout tier without Stripe. Still
-ahead: opening the builder beyond the allowlist, real billing, and two
+**Between cycles.** The **page builder is open to every creator** — shipped as
+`v0.9.0` (2026-07-12, verified live), which made it the **primary editor** for
+all authenticated users (the classic links editor is the secondary path) and
+gated the paid **sprout** tier as **"coming soon"** with a work-in-progress
+payment placeholder. (`v0.8.0`, 2026-07-11, first put it live for an email
+allowlist.) Widening access is safe because the risky section types stay
+premium/coming-soon, so only the six free, server-rendered sections go public —
+the sandbox/embed CSP exceptions stay dormant until sprout ships. Still ahead:
+**real billing** (Stripe — the gate before sprout actually opens) and two
 low-priority editor-polish items (#86). `v0.6.0` (magic-link) stays deferred and
-un-milestoned (#53/#70/#71/#69/#65) — the natural next cycle. Next cycle: propose
-it + its issues, wait for the owner's OK. Per-task status → the *cutecumber.cc*
-board ↗
+un-milestoned (#53/#70/#71/#69/#65) — a natural next cycle, alongside billing.
+Next cycle: propose it + its issues, wait for the owner's OK. Per-task status →
+the *cutecumber.cc* board ↗
 
 ## Roadmap
 
@@ -81,6 +82,27 @@ firms up.*
 ## Phase log
 
 Durable completion notes, newest first. Rationale → `DECISIONS.md`.
+
+### Page builder for everyone; sprout "coming soon" — shipped 2026-07-12 (`v0.9.0`)
+
+- **Opened to all creators** (#90, #91): `BUILDER_ENABLED` alone now grants
+  access (flag-off still a plain 404); the former access allowlist is repurposed
+  to an internal-test set. The builder becomes the **primary editor** — the
+  dashboard leads with an "open the builder" CTA and the classic links editor is
+  the secondary path. A public page still switches to the section stack only once
+  its owner publishes.
+- **Sprout gated as "coming soon"** (#92, #93): premium sections + the two
+  premium themes show a coming-soon badge (not buy/upgrade); the upsell is a
+  "payments are a work in progress" placeholder with no price/checkout. The
+  staging plan toggle is restricted to the internal-test set (normal users get a
+  404 there), so premium can still be QA'd internally before billing.
+- **Safe by construction** (DECISIONS #38 addendum, #94): the risky section
+  types (embed/custom-HTML/form/mail-list) stay premium/coming-soon, so opening
+  access exposes only the six free, server-rendered section types — the
+  sandbox/embed public-page CSP exceptions stay dormant, no new attack surface.
+- **Abuse posture** (#93): the now-public builder write endpoints
+  (save/publish/upload/preset) are rate-limited. Verified in a real browser
+  (non-allowlisted vs internal paths); 182 tests green.
 
 ### Page builder live (allowlist-gated) — shipped 2026-07-11 (`v0.8.0`)
 
