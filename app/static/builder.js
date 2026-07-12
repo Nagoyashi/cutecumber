@@ -335,20 +335,36 @@
 
   // ---- persistence -------------------------------------------------------
   function serialize() { return state.sections.map(function (s) { return { id: s._id, type: s.type, variant: s.variant, props: s.props }; }); }
-  function setStatus(m) { document.getElementById("b-save").textContent = m || ""; }
-  function scheduleSave() { setStatus("saving…"); if (saveTimer) clearTimeout(saveTimer); saveTimer = setTimeout(save, 800); }
+  // Save state is load-bearing: a silent save failure loses the user's work
+  // (one invalid section rejects the whole draft). setStatus shows a neutral
+  // word; flagError shows a LOUD, persistent red pill that stays until the next
+  // successful save, with the full reason on hover — so nothing fails quietly.
+  function setStatus(m, kind) {
+    var el = document.getElementById("b-save");
+    el.className = "b-save" + (kind ? " b-save--" + kind : "");
+    el.textContent = m || "";
+    el.removeAttribute("title");
+  }
+  function flagError(label, reason) {
+    var el = document.getElementById("b-save");
+    el.className = "b-save b-save--error";
+    el.textContent = "⚠️ " + label;
+    if (reason) el.title = reason;
+  }
+  function scheduleSave() { setStatus("saving…", "saving"); if (saveTimer) clearTimeout(saveTimer); saveTimer = setTimeout(save, 800); }
   function body() { var b = new FormData(); b.append("_csrf", state.csrf); b.append("sections", JSON.stringify({ version: 1, sections: serialize() })); return b; }
   function save() {
     return fetch("/dash/builder/save", { method: "POST", body: body() }).then(function (r) { return r.json(); })
-      .then(function (d) { setStatus(d.ok ? "saved 🌱" : (d.error || "couldn't save 😔")); })
-      .catch(function () { setStatus("offline — will retry"); });
+      .then(function (d) { d.ok ? setStatus("saved 🌱", "saved") : flagError("not saved", d.error || "something didn't validate"); })
+      .catch(function () { flagError("offline", "we'll retry when you make your next edit"); });
   }
   function publish() {
     fetch("/dash/builder/publish", { method: "POST", body: body() }).then(function (r) { return r.json(); })
       .then(function (d) {
-        if (!d.ok) { setStatus(d.error || "couldn't publish 😔"); return; }
-        setStatus("published ✓"); root.dataset.published = "1"; showPubPop();
-      });
+        if (!d.ok) { flagError("not published", d.error || "something didn't validate"); return; }
+        setStatus("published ✓", "saved"); root.dataset.published = "1"; showPubPop();
+      })
+      .catch(function () { flagError("not published", "network error — try again"); });
   }
   function showPubPop() {
     document.getElementById("b-pubpop-link").textContent = location.host + "/" + state.username;
@@ -460,11 +476,14 @@
     if (!Array.isArray(s.props.photos)) s.props.photos = [];
     var list = h("div", { class: "rowlist" });
     s.props.photos.forEach(function (pho, i) {
-      var thumb = pho.image ? h("img", { class: "photo-thumb", src: "/a/" + pho.image, alt: "" }) : h("span", { class: "photo-thumb empty", "aria-hidden": "true", text: "📷" });
-      var fileIn = h("input", { class: "photo-file", type: "file", accept: "image/*", onchange: function (e) { if (e.target.files[0]) uploadPhoto(e.target.files[0], pho); } });
+      var thumb = pho._uploading
+        ? h("span", { class: "photo-thumb uploading", "aria-hidden": "true", text: "⏳" })
+        : (pho.image ? h("img", { class: "photo-thumb", src: "/a/" + pho.image, alt: "" })
+                     : h("span", { class: "photo-thumb empty", "aria-hidden": "true", text: "📷" }));
+      var fileIn = h("input", { class: "photo-file", type: "file", accept: "image/*", disabled: pho._uploading, onchange: function (e) { if (e.target.files[0]) uploadPhoto(e.target.files[0], pho); } });
       list.appendChild(h("div", { class: "photo-row" }, [
         thumb,
-        h("label", { class: "photo-up" }, [pho.image ? "replace" : "upload", fileIn]),
+        h("label", { class: "photo-up" + (pho._uploading ? " busy" : "") }, [pho._uploading ? "uploading…" : (pho.image ? "replace" : "upload"), fileIn]),
         textIn(pho.caption, function (v) { pho.caption = v; commit(); }, "caption"),
         tool("✕", "del", "remove photo", function () { s.props.photos.splice(i, 1); renderInspector(); commit(); })
       ]));
@@ -474,11 +493,15 @@
       onclick: function () { s.props.photos.push({ caption: "" }); renderInspector(); commit(); } }));
   }
   function uploadPhoto(file, pho) {
+    pho._uploading = true; renderInspector();   // per-row spinner; the whole page still edits
     var b = new FormData(); b.append("_csrf", state.csrf); b.append("photo", file);
-    setStatus("uploading…");
     fetch("/dash/builder/upload", { method: "POST", body: b }).then(function (r) { return r.json(); })
-      .then(function (d) { if (!d.ok) { setStatus(d.error || "upload failed 😔"); return; } pho.image = d.filename; renderInspector(); commit(); })
-      .catch(function () { setStatus("upload failed 😔"); });
+      .then(function (d) {
+        delete pho._uploading;
+        if (!d.ok) { renderInspector(); flagError("upload failed", d.error || "try a jpg or png"); return; }
+        pho.image = d.filename; renderInspector(); commit();
+      })
+      .catch(function () { delete pho._uploading; renderInspector(); flagError("upload failed", "network error — try again"); });
   }
 
   function renderPageInspector(box) {
@@ -507,7 +530,7 @@
     state.preset = key; renderInspector();
     var b = new FormData(); b.append("_csrf", state.csrf); b.append("preset", key);
     fetch("/dash/builder/preset", { method: "POST", body: b }).then(function (r) { return r.json(); })
-      .then(function (d) { if (d.ok) { save().then(function () { location.reload(); }); } else { setStatus(d.error || "theme locked"); } });
+      .then(function (d) { if (d.ok) { save().then(function () { location.reload(); }); } else { flagError("theme locked", d.error || "that theme blooms with sprout 🌱"); } });
   }
 
   // ---- drawer / picker / upsell / plan / phone ---------------------------
@@ -571,7 +594,7 @@
   function upgrade() {
     var b = new FormData(); b.append("_csrf", state.csrf); b.append("plan", "sprout");
     fetch("/dash/builder/plan", { method: "POST", body: b }).then(function (r) { return r.json(); })
-      .then(function (d) { if (!d.ok) return; state.plan = d.plan; renderPlan(); hide("b-upsell"); renderInspector(); setStatus("sprout unlocked 🌱"); });
+      .then(function (d) { if (!d.ok) return; state.plan = d.plan; renderPlan(); hide("b-upsell"); renderInspector(); setStatus("sprout unlocked 🌱", "saved"); });
   }
   function togglePhone() {
     var pw = document.getElementById("b-phonewrap"), on = pw.hidden;

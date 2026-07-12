@@ -38,6 +38,11 @@ body.is-dragging, body.is-dragging * { cursor: grabbing !important; user-select:
 .seg-solo.on { background: var(--green); border-color: var(--green); color: #fff; }
 .bldbar-right { position: relative; display: flex; align-items: center; gap: 10px; }
 .b-save { font-size: 0.8rem; color: var(--muted); min-width: 58px; text-align: right; }
+.b-save--saving { color: var(--muted); }
+.b-save--saved { color: var(--green); }
+/* a failed save loses work — make it a loud, unmissable pill (reason on hover) */
+.b-save--error { min-width: 0; color: #fff; background: var(--err); border-radius: 999px;
+  padding: 3px 11px; font-weight: 600; cursor: help; }
 .sprout-btn { font-size: 0.85rem; border: 2px dashed #b5d3a4; background: #f2f9ec; color: var(--green);
   cursor: pointer; border-radius: 999px; padding: 7px 14px; }
 .sprout-btn:hover { border-style: solid; background: #e7f4dd; }
@@ -282,7 +287,9 @@ textarea { resize: vertical; }
   background: none; border: none; cursor: pointer; padding: 2px; justify-self: start; }
 .photo-row { display: flex; gap: 6px; align-items: center; }
 .photo-thumb { width: 42px; height: 42px; border-radius: 9px; object-fit: cover; border: 1.5px solid var(--border); flex: none; }
-.photo-thumb.empty { display: flex; align-items: center; justify-content: center; background: #fff6fa; }
+.photo-thumb.empty, .photo-thumb.uploading { display: flex; align-items: center; justify-content: center; background: #fff6fa; }
+.photo-thumb.uploading { animation: pulse 0.9s ease-in-out infinite; }
+.photo-up.busy { opacity: 0.6; cursor: default; }
 .photo-up { border: 1.5px solid var(--border); background: #fff; border-radius: 999px; padding: 5px 11px; font-size: 0.76rem; cursor: pointer; white-space: nowrap; }
 .photo-up:hover { border-color: var(--chrome); }
 .photo-file { position: absolute; width: 1px; height: 1px; opacity: 0; overflow: hidden; }
