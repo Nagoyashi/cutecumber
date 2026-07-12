@@ -236,3 +236,57 @@ class TestImageGC(BuilderTestBase):
                          data={"_csrf": "testcsrf", "password": "correct-horse-battery"})
         with self.app.app_context():
             self.assertFalse(_os.path.exists(self._path(img)))  # gone with the account
+
+
+class TestBuilderPages(BuilderTestBase):
+    """Multi-page builder: create/rename/delete/reorder subpages, and save/publish
+    routing to the active page (not the home page)."""
+
+    def _form(self, path, **fields):
+        fields["_csrf"] = "testcsrf"
+        return self.client.post(path, data=fields)
+
+    def test_create_then_editor_loads_subpage(self):
+        self.assertEqual(
+            self._form("/dash/builder/pages", slug="about", title="About").get_json(),
+            {"ok": True, "slug": "about"})
+        self.assertEqual(self.client.get("/dash/builder?page=about").status_code, 200)
+        self.assertEqual(self.client.get("/dash/builder?page=ghost").status_code, 404)
+
+    def test_bad_slug_rejected(self):
+        self.assertFalse(self._form("/dash/builder/pages", slug="Bad Slug!", title="X").get_json()["ok"])
+
+    def test_save_and_publish_route_to_subpage_not_home(self):
+        from app import pages
+        self._form("/dash/builder/pages", slug="about", title="About")
+        page = {"version": 1, "sections": [
+            {"type": "about", "variant": "simple", "props": {"heading": "hi", "body": "on the subpage"}}]}
+        self.client.post("/dash/builder/save",
+                         data={"_csrf": "testcsrf", "page": "about", "sections": json.dumps(page)})
+        with self.app.app_context():
+            db = get_db()
+            row = pages.get_page(db, self.uid, "about")
+            self.assertIsNotNone(row["sections_draft_json"])
+            self.assertIsNone(row["sections_live_json"])       # save != publish
+            home = db.execute("SELECT sections_draft_json FROM users WHERE id=?", (self.uid,)).fetchone()
+            self.assertIsNone(home["sections_draft_json"])     # home untouched
+        self.client.post("/dash/builder/publish",
+                         data={"_csrf": "testcsrf", "page": "about", "sections": json.dumps(page)})
+        pub = self.client.get("/mochi/about")
+        self.assertEqual(pub.status_code, 200)
+        self.assertIn("on the subpage", pub.get_data(as_text=True))
+
+    def test_rename_and_delete(self):
+        from app import pages
+        self._form("/dash/builder/pages", slug="about", title="About")
+        self.assertTrue(self._form("/dash/builder/pages/rename", page="about", title="My Story").get_json()["ok"])
+        with self.app.app_context():
+            self.assertEqual(pages.get_page(get_db(), self.uid, "about")["title"], "My Story")
+        self.assertTrue(self._form("/dash/builder/pages/delete", page="about").get_json()["ok"])
+        self.assertEqual(self.client.get("/dash/builder?page=about").status_code, 404)
+
+    def test_reorder(self):
+        for s in ("one", "two"):
+            self._form("/dash/builder/pages", slug=s, title=s.title())
+        self.assertTrue(self._form("/dash/builder/pages/reorder", order=json.dumps(["two", "one"])).get_json()["ok"])
+        self.assertFalse(self._form("/dash/builder/pages/reorder", order=json.dumps(["two"])).get_json()["ok"])
