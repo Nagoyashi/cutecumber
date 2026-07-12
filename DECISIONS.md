@@ -704,3 +704,34 @@ still bind every one of them.
 **Revisit:** if the privacy/speed wedge ever stops differentiating us, or a phase
 can't be built within the public-page contract at all — surface it, don't quietly
 relax the contract.
+
+## 41. Multi-page sites: additive `pages` table, home stays in `users` (Phase B)
+
+Phase B turns a creator's single page into a small site: `/<username>` (home) +
+`/<username>/<slug>` subpages, each a titled, slugged container of the SAME
+section model (`sections.py`). Chosen model (2026-07-13):
+
+- **Home stays where it is.** The home page keeps rendering from
+  `users.sections_draft_json`/`sections_live_json` — untouched. Subpages live in a
+  new **`pages`** table (`app/pages.py`). This is deliberately **additive** (no
+  migration of live data, DECISIONS #38 doctrine): a DB with no `pages` rows
+  renders exactly as before, and `public.py`'s home path is unchanged. The slight
+  asymmetry (home in columns, subpages in a table) is worth the zero-risk cutover;
+  a later "everything is a page row" refactor is possible but not needed now.
+- **Slug is immutable after create** (like usernames, #3) — the URL is the
+  product; renaming a subpage's address would break every link to it. The nav
+  *title* is editable; the slug isn't.
+- **User-scoped, capped, exact-permutation reorder.** Every `pages` query carries
+  `AND user_id = ?` (IDOR, RULES.md); `PAGES_MAX = 8` subpages; reorder takes an
+  exact permutation of the user's slugs (same guard as link reorder). Slug/title
+  validated in `constants.py` at save.
+- **`ON DELETE CASCADE`** (foreign_keys is ON) removes a user's pages with the
+  account; the orphan-image GC (`referenced_images`) now scans pages too, so a
+  live subpage's gallery photos aren't swept.
+- **Every subpage is still a public page** → the RULES public-page contract binds
+  it (server-rendered, zero-JS/-third-party/-cookie by default, WCAG-AA), plus a
+  small server-rendered site nav links the pages with zero JS.
+
+**Revisit:** if creators need many pages (raise `PAGES_MAX`), per-page slugs need
+to change (add a tombstone/redirect like usernames), or the column/table asymmetry
+starts costing more than the migration it avoided.

@@ -39,6 +39,23 @@ CREATE TABLE IF NOT EXISTS links (
 
 CREATE INDEX IF NOT EXISTS idx_links_user_position ON links (user_id, position);
 
+-- Multi-page sites (Phase B). The HOME page stays in users.sections_*_json (no
+-- live-data migration); this table holds a creator's SUBPAGES only, each a
+-- titled, slugged container of the same section model (app/sections.py). URL is
+-- /<username>/<slug>. Additive: a DB with no pages renders exactly as before.
+CREATE TABLE IF NOT EXISTS pages (
+    id       INTEGER PRIMARY KEY,
+    user_id  INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    slug     TEXT    NOT NULL,                       -- URL segment, validated in constants.py
+    title    TEXT    NOT NULL,                       -- nav label
+    sections_draft_json TEXT,                        -- editor working copy; NULL until first save
+    sections_live_json  TEXT,                        -- published copy; NULL => not shown to visitors
+    position INTEGER NOT NULL DEFAULT 0,
+    UNIQUE (user_id, slug)
+);
+
+CREATE INDEX IF NOT EXISTS idx_pages_user_position ON pages (user_id, position);
+
 -- Freed usernames rest for TOMBSTONE_DAYS before anyone can re-claim them
 -- (DECISIONS.md #29). Rows are purged opportunistically during claims.
 CREATE TABLE IF NOT EXISTS username_tombstones (

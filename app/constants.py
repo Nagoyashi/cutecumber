@@ -73,6 +73,15 @@ SECTION_CAPTION_MAX = 80
 SECTION_BUTTON_MAX = 30
 SECTION_CODE_MAX = 2000
 
+# Multi-page sites (Phase B, app/pages.py). A creator's SUBPAGES live at
+# /<username>/<slug>; the home page has no slug. Slug shape mirrors the username
+# alphabet (lowercase, digits, dashes; no leading/trailing dash) so URLs stay
+# clean. PAGES_MAX counts subpages, not the home page.
+PAGES_MAX = 8
+PAGE_TITLE_MAX = 40
+PAGE_SLUG_RE = re.compile(r"^[a-z0-9][a-z0-9-]{0,38}[a-z0-9]$")  # 2–40 chars
+RESERVED_PAGE_SLUGS = frozenset({"home", "index"})  # 'home' IS the base /<username>
+
 # Link URLs: scheme allowlist, validated at save AND at render (DECISIONS.md
 # #15). This is the XSS front line — a stored javascript: URL rendered into an
 # href is game over, so nothing gets stored OR rendered without passing here.
@@ -199,4 +208,27 @@ def validate_username(username: str) -> str | None:
         )
     if username in RESERVED_USERNAMES:
         return "that one's reserved for us — pick another and it's all yours 💚"
+    return None
+
+
+def validate_page_slug(slug: str) -> str | None:
+    """User-facing error for a subpage slug, or None if valid. Caller lowercases
+    + strips first. Shape checked before reserved so messages stay specific."""
+    if not PAGE_SLUG_RE.match(slug or ""):
+        return (
+            "page addresses are 2–40 characters of lowercase letters, numbers "
+            "or dashes — and can't start or end with a dash 🌱"
+        )
+    if slug in RESERVED_PAGE_SLUGS:
+        return "that address is taken by your home page — pick another 🏡"
+    return None
+
+
+def validate_page_title(title: str) -> str | None:
+    """User-facing error for a page's nav title, or None if valid."""
+    title = (title or "").strip()
+    if not title:
+        return "give your page a name 🌸"
+    if len(title) > PAGE_TITLE_MAX:
+        return f"page names top out at {PAGE_TITLE_MAX} characters 🙈"
     return None

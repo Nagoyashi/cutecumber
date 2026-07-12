@@ -36,7 +36,7 @@ cutecumber/
     ├── db.py                get_db() (per-request conn, WAL, busy_timeout),
     │                        init-db CLI command (also runs idempotent column
     │                        upgrades — always safe to re-run)
-    ├── schema.sql           users + links + username_tombstones (idempotent)
+    ├── schema.sql           users + links + pages + username_tombstones (idempotent)
     ├── theme.py             THE theming engine (shape v2): PRESETS (6, AA-
     │                        enforced), validate_theme (save, strict),
     │                        resolve_theme (render, tolerant), computed
@@ -77,6 +77,11 @@ cutecumber/
     │                        validate_sections (save, strict, plan-gated),
     │                        resolve_sections (render, tolerant),
     │                        default_sections_from_profile, MIGRATIONS
+    ├── pages.py             multi-page sites (Phase B): subpage CRUD in the
+    │                        `pages` table (home stays in users columns), all
+    │                        user-scoped; slug/title validation in constants.py
+    │                        (DECISIONS #41). A subpage is a slugged container of
+    │                        the sections.py model, served at /<username>/<slug>
     ├── builder.py           builder editor (STAGING, behind BUILDER_ENABLED +
     │                        BUILDER_ALLOWLIST → 404 else): GET /dash/builder,
     │                        POST /save (draft), /publish (draft→live), /preset,
@@ -131,6 +136,7 @@ tests/
     ├── test_url_validation.py   run: python -m unittest -v  (from repo root)
     ├── test_theme.py            validator, migrations, WCAG AA on all presets
     ├── test_sections.py         section validate/resolve, premium gating, tolerance
+    ├── test_pages.py            multi-page model: slug/title validation, user-scoped CRUD, caps, image-GC
     ├── test_public_sections.py  builder public render: stack, zero-JS, fallbacks
     ├── test_builder.py          editor gate (404s), save/publish, preset/plan
     └── test_avatar.py           EXIF/GPS stripping, sizing, rejection, storage dir

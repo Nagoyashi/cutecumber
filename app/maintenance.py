@@ -57,6 +57,13 @@ def referenced_images(db) -> set:
         ):
             refs.add(row["avatar_value"])
         refs |= user_gallery_images(row)
+    # Subpages (Phase B) hold their own sections — scan them too, or a live
+    # subpage's gallery photos would look orphaned and get swept.
+    for prow in db.execute(
+        "SELECT sections_draft_json, sections_live_json FROM pages"
+    ):
+        refs |= _images_in_sections(prow["sections_draft_json"])
+        refs |= _images_in_sections(prow["sections_live_json"])
     return refs
 
 
