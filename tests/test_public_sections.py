@@ -141,5 +141,63 @@ class TestPublicSections(SecurityTestBase):
         self.assertEqual(resp.status_code, 200)  # tolerant resolve → legacy page
 
 
+class TestMultiPage(SecurityTestBase):
+    def setUp(self):
+        super().setUp()
+        self.uid, _ = self._create_user("site@test.test", username="mochi")
+        self.client = self.app.test_client()
+
+    def _add_page(self, slug, title, sections, publish=True):
+        from app import pages
+        clean, err = validate_sections(sections, plan="sprout")
+        self.assertIsNone(err, err)
+        with self.app.app_context():
+            db = get_db()
+            pages.create_page(db, self.uid, slug, title)
+            pages.save_page_sections(db, self.uid, slug, json.dumps(clean), publish=publish)
+
+    _ABOUT = {"version": 1, "sections": [
+        {"type": "about", "variant": "simple",
+         "props": {"heading": "my story", "body": "once upon a cucumber"}}]}
+
+    def test_published_subpage_renders(self):
+        self._add_page("about", "About", self._ABOUT)
+        resp = self.client.get("/mochi/about")
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn("once upon a cucumber", resp.get_data(as_text=True))
+
+    def test_unknown_subpage_404s(self):
+        self.assertEqual(self.client.get("/mochi/ghost").status_code, 404)
+
+    def test_unpublished_subpage_404s(self):
+        self._add_page("draft", "Draft", self._ABOUT, publish=False)
+        self.assertEqual(self.client.get("/mochi/draft").status_code, 404)
+
+    def test_slug_case_redirects_to_lowercase(self):
+        self._add_page("about", "About", self._ABOUT)
+        resp = self.client.get("/mochi/About")
+        self.assertEqual(resp.status_code, 301)
+        self.assertTrue(resp.headers["Location"].endswith("/mochi/about"))
+
+    def test_site_nav_appears_with_published_subpage(self):
+        self._add_page("about", "About", self._ABOUT)
+        # home (legacy links page) now carries the nav to home + about
+        home = self.client.get("/mochi").get_data(as_text=True)
+        self.assertIn('class="site-nav"', home)
+        self.assertIn("/mochi/about", home)
+        self.assertIn(">home<", home)
+        # the subpage marks itself current
+        sub = self.client.get("/mochi/about").get_data(as_text=True)
+        self.assertIn('aria-current="page"', sub)
+
+    def test_no_nav_without_subpages(self):
+        self.assertNotIn('class="site-nav"', self.client.get("/mochi").get_data(as_text=True))
+
+    def test_subpage_is_zero_javascript(self):
+        self._add_page("about", "About", self._ABOUT)
+        body = self.client.get("/mochi/about").get_data(as_text=True)
+        self.assertNotIn("<script", body)
+
+
 if __name__ == "__main__":
     unittest.main()
