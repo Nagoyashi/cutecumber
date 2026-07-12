@@ -7,11 +7,29 @@
 
 ## What cutecumber is (so tradeoffs resolve correctly)
 
-A cute, fast, privacy-first link-in-bio. The product wins on **cuteness,
-curated customization, page speed, and privacy** — never on feature breadth.
-Any change that wins by adding surface area loses by definition. When two
-goals conflict, the tie-break order is: **privacy → accessibility → speed →
-cuteness → features.**
+A cute, fast, privacy-first **creator platform** — a lightweight website +
+monetization toolkit that starts as a link-in-bio and is growing toward a
+privacy-first rival of **beacons.ai** (see `project.md`). It wins on **privacy,
+page speed, and cuteness** — the *opposite* of how beacons wins (tracker-heavy
+breadth).
+
+**The invariant that scopes every feature is THE PUBLIC-PAGE CONTRACT (the
+performance + security budgets below) — non-negotiable.** However rich the
+creator's toolkit grows (site builder, store, email, media kit, analytics…), the
+artifact a visitor loads stays server-rendered, zero-JS / zero-third-party /
+zero-cookie by default (only the owner-approved scoped exceptions), tiny, and
+WCAG-AA. Privacy + speed are the wedge, not a ceiling on ambition.
+
+When two goals conflict, the tie-break order is: **privacy → accessibility →
+speed → cuteness → features.** Features stays last — but is **no longer capped.**
+*Changed 2026-07-12 (the overhaul):* the old rule — "wins never on feature
+breadth; any change that wins by adding surface area loses by definition" — is
+**retired.** Breadth is now the goal, but only breadth added **the cutecumber
+way**: rich in the dashboard, lean and private on the public output. A feature
+that can't be built within the public-page contract gets **redesigned**
+(dashboard-rich / public-lean / link-out to any paid or third-party step) until
+it can — never rejected for being ambitious. The `DECISIONS.md` pivot entry holds
+the why.
 
 ## The performance budget — per public page, NON-NEGOTIABLE
 
