@@ -79,7 +79,7 @@
   // Premium is gated as "coming soon" for everyone (billing is a later cycle);
   // internal testers get a real lock they can unlock via the staging toggle.
   function lockGlyph() { return state.internal ? "🔒" : "🔜"; }
-  var saveTimer = null, ghost = null;
+  var saveTimer = null, ghost = null, errorAt = null;
 
   // ---- helpers -----------------------------------------------------------
   function esc(s) {
@@ -344,24 +344,36 @@
     el.className = "b-save" + (kind ? " b-save--" + kind : "");
     el.textContent = m || "";
     el.removeAttribute("title");
+    errorAt = null;
   }
-  function flagError(label, reason) {
+  function flagError(label, reason, at) {
     var el = document.getElementById("b-save");
     el.className = "b-save b-save--error";
     el.textContent = "⚠️ " + label;
-    if (reason) el.title = reason;
+    errorAt = (typeof at === "number") ? at : null;
+    el.title = (reason || label) + (errorAt != null ? " · click to jump there" : "");
+  }
+  // Clicking the error pill selects + scrolls to the section the server flagged,
+  // so a whole-page save failure points the user straight at the culprit.
+  function jumpToError() {
+    if (errorAt == null) return;
+    var sec = state.sections[errorAt];
+    if (!sec) return;
+    select(sec._id);
+    var el = document.querySelector("#b-site .sec-wrap.on");
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
   }
   function scheduleSave() { setStatus("saving…", "saving"); if (saveTimer) clearTimeout(saveTimer); saveTimer = setTimeout(save, 800); }
   function body() { var b = new FormData(); b.append("_csrf", state.csrf); b.append("sections", JSON.stringify({ version: 1, sections: serialize() })); return b; }
   function save() {
     return fetch("/dash/builder/save", { method: "POST", body: body() }).then(function (r) { return r.json(); })
-      .then(function (d) { d.ok ? setStatus("saved 🌱", "saved") : flagError("not saved", d.error || "something didn't validate"); })
+      .then(function (d) { d.ok ? setStatus("saved 🌱", "saved") : flagError("not saved", d.error || "something didn't validate", d.at); })
       .catch(function () { flagError("offline", "we'll retry when you make your next edit"); });
   }
   function publish() {
     fetch("/dash/builder/publish", { method: "POST", body: body() }).then(function (r) { return r.json(); })
       .then(function (d) {
-        if (!d.ok) { flagError("not published", d.error || "something didn't validate"); return; }
+        if (!d.ok) { flagError("not published", d.error || "something didn't validate", d.at); jumpToError(); return; }
         setStatus("published ✓", "saved"); root.dataset.published = "1"; showPubPop();
       })
       .catch(function () { flagError("not published", "network error — try again"); });
@@ -630,6 +642,7 @@
     (draft.sections || []).forEach(function (s) { s._id = "s-" + (++state.counter); if (!s.props) s.props = {}; state.sections.push(s); });
 
     document.getElementById("b-publish").addEventListener("click", publish);
+    document.getElementById("b-save").addEventListener("click", jumpToError);
     document.getElementById("b-pubpop-copy").addEventListener("click", copyUrl);
     document.getElementById("b-pubpop-x").addEventListener("click", function () { hide("b-pubpop"); });
     document.getElementById("b-pubpop-teaser").addEventListener("click", function () { hide("b-pubpop"); openUpsell(); });
