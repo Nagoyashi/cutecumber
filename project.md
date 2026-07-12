@@ -41,13 +41,17 @@ dashboard WCAG-AA button fix #65, and the 404→signup username carry #69).
 **Direction (2026-07-12):** the project pivoted from "link-in-bio" to a
 **privacy-first creator platform** aimed at rivalling beacons.ai — see the Vision
 and the roadmap's *road to a privacy-first creator platform* (Phases A–E).
-**Phase A shipped** as `v0.10.0` (2026-07-12, verified live): the builder
-reliability pass — loud save-failure state, errors that jump to the offending
-section, gallery upload feedback, and DOM-light drag — so the core tool actually
-behaves. The next cycle is **Phase B — sites, not just pages** (a small
-multi-page site per creator + templates). Pure-visual editor polish (#86) waits
-for the incoming design batch (`design/Cutecumber.cc-5.zip`). Propose the cycle +
-its issues, wait for the owner's OK. Per-task status → the *cutecumber.cc* board ↗
+**Phase B shipped** as `v0.11.0` (2026-07-13, verified live): **sites, not just
+pages** — a creator's page grows into a small multi-page site (`/<username>` home
++ `/<username>/<slug>` subpages), with a zero-JS server-rendered site nav and a
+page switcher in the builder. Additive model (home stays in the user row;
+subpages in a `pages` table, DECISIONS #41). (Phase A, `v0.10.0`, made the builder
+*behave*.) The next cycle is **Phase C — monetization**: real billing (Stripe —
+the deferred #38 item, the gate before `sprout` actually opens), then tips + a
+digital-product store (server-rendered, checkout link-out). Pure-visual editor
+polish (#86) still waits for the incoming design batch
+(`design/Cutecumber.cc-5.zip`). Propose the cycle + its issues, wait for the
+owner's OK. Per-task status → the *cutecumber.cc* board ↗
 
 ## Roadmap
 
@@ -130,6 +134,25 @@ entry before their phase is cycle-ready.
 ## Phase log
 
 Durable completion notes, newest first. Rationale → `DECISIONS.md`.
+
+### Phase B — sites, not just pages — shipped 2026-07-13 (`v0.11.0`)
+
+A creator's single page grows into a small multi-page site. Additive & safe: the
+home page stays in the user row; subpages live in a new table.
+
+- **Data model** (#109, DECISIONS #41): a `pages` table for subpages (home stays
+  in `users.sections_*_json` — no live-data migration), all queries user-scoped
+  (IDOR), capped at 8, slug immutable after create (the URL is the product, #3).
+  Orphan-image GC + account delete cover subpage photos. 11 tests.
+- **Public** (#110): `GET /<username>/<slug>` renders a subpage's live section
+  stack (same contract as home: zero-JS/-third-party/-cookie, WCAG-AA); a
+  theme-agnostic server-rendered **site nav** links home + published subpages,
+  hidden when there's only one.
+- **Builder** (#111): a **page switcher** — active page is a `?page=<slug>` param,
+  switching is a navigation; add/rename/delete/reorder pages, edit + publish each
+  with the full section editor. save/publish/preview route to the active page.
+- Verified live: `pages` table created on deploy, subpage routing + nav work,
+  208 tests green.
 
 ### Phase A — a builder that behaves — shipped 2026-07-12 (`v0.10.0`)
 
