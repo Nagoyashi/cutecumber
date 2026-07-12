@@ -640,3 +640,23 @@ exceptions (sandboxed custom-HTML iframe, click-to-load embeds; #38 above) stay
 surface. Real users see premium as "coming soon" with a work-in-progress payment
 placeholder; no price, no checkout. Now-public write endpoints
 (`save`/`publish`/`upload`/`preset`) are rate-limited (flask-limiter). (#90–#94)
+
+## 39. Contrast with the workspace AGENTS.md (T3) standard — divergences stand
+
+The workspace-level `~/code/AGENTS.md` defines a T3 default for new web apps:
+Next.js + TypeScript + tRPC + Tailwind + PostgreSQL/Prisma + Better Auth + pnpm.
+Audited this repo against it 2026-07-12. cutecumber diverges on every technology
+axis — **deliberately, and none of it changes**: Flask + Jinja server rendering,
+SQLite + Litestream (#2, with its measured Postgres trigger), raw SQL, hand-rolled
+auth (bcrypt + signed cookies + password-hash-bound sessions), hand-written CSS
+under a strict perf budget (RULES.md), pip. For a privacy-focused link-in-bio on
+one always-on Fly machine, this stack is smaller, cheaper, and fully understood;
+a T3 migration would be all cost, no benefit. The standard's *principles* are
+already met here: server-side validation + authz (`login_required`, CSRF, CSP),
+no committed secrets, documented `.env.example`, blocking CI with pip-audit, and
+tests on the risky logic. Hand-rolled validators instead of a schema library are
+fine at this schema size — centralized in `constants.py` and tested. The one
+genuine gap the audit surfaced is tracked as **#99** (ruff + mypy as CI gates —
+the Python equivalent of the standard's lint/typecheck requirement).
+**Revisit:** only if this repo grows a JS build step or a second service — the
+AGENTS.md defaults then apply to that *new* surface, never retroactively here.
