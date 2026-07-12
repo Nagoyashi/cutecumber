@@ -6,10 +6,21 @@
 
 ## Vision
 
-A cute, fast, privacy-first link-in-bio: one tiny server-rendered page for all
-your links, with zero JavaScript, zero trackers, and zero cookies on public
-pages. It wins on cuteness, curated customization, page speed, and privacy —
-never on feature breadth.
+A cute, fast, privacy-first **creator platform** — a lightweight website +
+monetization toolkit that starts as a link-in-bio and grows into a small site.
+The rival it's aimed at is **beacons.ai**; the way it wins is the *opposite* of
+beacons.ai: **the page a visitor loads stays server-rendered, tiny (~2 KB where
+it can be), zero-JavaScript, zero-tracker, zero-cookie, and WCAG-AA** — privacy
+and speed as the wedge, not a constraint. Creators get the tools (site builder,
+store, email, media kit, analytics); visitors get a page that respects them.
+Cuteness is the skin over all of it.
+
+**The DNA that never moves** (see `RULES.md`, the contract): the public artifact
+is the invariant. Breadth is welcome, but only *the cutecumber way* — rich in the
+dashboard, lean and private on the public output. A feature that can't fit the
+public-page budget gets redesigned until it can, never rejected for being
+ambitious. (Overhaul from "link-in-bio, never feature breadth" → "privacy-first
+creator platform" recorded 2026-07-12; see the roadmap and `DECISIONS.md`.)
 
 ## Current phase
 
@@ -25,9 +36,16 @@ the sandbox/embed CSP exceptions stay dormant until sprout ships. Still ahead:
 low-priority editor-polish items (#86). **Magic-link sign-in was dropped**
 (owner, 2026-07-12 — #53/#70/#71 closed not-planned); password auth stays the
 model. A couple of standalone backlog items remain un-milestoned (the
-dashboard WCAG-AA button fix #65, and the 404→signup username carry #69). Next
-cycle (most likely billing): propose it + its issues, wait for the owner's OK.
-Per-task status → the *cutecumber.cc* board ↗
+dashboard WCAG-AA button fix #65, and the 404→signup username carry #69).
+
+**Direction (2026-07-12):** the project pivoted from "link-in-bio" to a
+**privacy-first creator platform** aimed at rivalling beacons.ai — see the Vision
+and the roadmap's *road to a privacy-first creator platform* (Phases A–E). The
+next cycle is **Phase A — make the builder feel like a product** (fix gallery
+upload + editor jank, polish, tests): the current builder is functional but
+rough, and nothing rivals anything until the core tool is pleasant. Propose the
+cycle + its issues, wait for the owner's OK. Per-task status → the
+*cutecumber.cc* board ↗
 
 ## Roadmap
 
@@ -70,12 +88,38 @@ Lighthouse pass caught the landing CTA failing WCAG AA — fixed). Authoritative
 Chrome DevTools Lighthouse + on-phone QA (#34) run as owner-driven post-launch
 verification.
 
-### ⬜ Phase 6 — Growth (planned — speculative)
+### ⬜ The road to a privacy-first creator platform (overhaul — 2026-07-12)
 
-Paid decoration packs (see `DESIGN_PACKS.md`) and more themes / avatars. Paid
-packs need a payment-processor decision (a new dependency + attack surface) in
-`DECISIONS.md` before they're cycle-ready. *Best guess; correct as direction
-firms up.*
+> **North star:** a worthy rival to **beacons.ai** that wins on privacy + speed +
+> cuteness instead of tracker-heavy breadth. Beacons' pillars — link-in-bio,
+> website builder, store / digital products, email marketing, media kit,
+> analytics, AI — each map onto cutecumber **privacy-first**, scoped by the
+> public-page contract (`RULES.md`). Phases are directional; per the release
+> cycle, materialize only the current one as a milestone.
+
+- **Phase A — The builder feels like a product.** The v0.7–0.9 builder works but
+  is rough (gallery photo upload unreliable, general editor jank). Fix the bugs,
+  make uploads solid, polish the editor to prototype quality, add tests. Nothing
+  rivals anything until the core tool is genuinely pleasant. *(the next cycle)*
+- **Phase B — Sites, not just pages.** A creator gets a small **multi-page site**
+  (e.g. `/name`, `/name/about`, `/name/shop`) with templates — the "small website
+  builder" half of the vision. Every public page stays in-contract.
+- **Phase C — Monetization.** Real billing (**Stripe** — the deferred decision,
+  `DECISIONS.md` #38) opens `sprout`; then creator money primitives: **tips** and
+  a **digital-product / download store**, each a server-rendered page whose
+  checkout **links out** — no third-party script or tracker on the public page.
+- **Phase D — Audience, privacy-first.** Native **email capture** (first-party,
+  consented, GDPR-clean — the creator's list, no third parties) and **cookieless
+  aggregate analytics** (Plausible-style, no per-visitor tracking). Beacons'
+  email + analytics pillars, done the privacy way — a direct differentiator.
+- **Phase E — Media kit + light AI assist.** An **auto-updating media kit** built
+  from the creator's own page/analytics data (for brand deals), and optional
+  dashboard AI copy-assist. AI is a new dependency → a written `DECISIONS.md`
+  entry gates it.
+
+Speculative beyond Phase A; correct as direction firms up. Payment, email-PII
+storage, an analytics store, and any AI dependency each need a `DECISIONS.md`
+entry before their phase is cycle-ready.
 
 > Versioning: shipped phases above are dated from git history — no semver tags
 > exist for them. Going forward, each phase release gets a semver tag

@@ -660,3 +660,47 @@ genuine gap the audit surfaced is tracked as **#99** (ruff + mypy as CI gates �
 the Python equivalent of the standard's lint/typecheck requirement).
 **Revisit:** only if this repo grows a JS build step or a second service — the
 AGENTS.md defaults then apply to that *new* surface, never retroactively here.
+
+## 40. The overhaul: link-in-bio → privacy-first creator platform (beacons rival)
+
+Owner call, 2026-07-12. cutecumber's ambition changes: from "a cute link-in-bio
+that wins **never on feature breadth**" to "a **privacy-first creator platform** —
+a lightweight website + monetization toolkit — aimed at rivalling **beacons.ai**."
+beacons is an all-in-one creator suite (link-in-bio, website builder, digital
+store, email marketing, media kit, analytics, AI) that wins *on* breadth and
+carries heavy JS + trackers. We aim at the same jobs-to-be-done and win the
+opposite way.
+
+**What changed (the retired rule).** RULES.md's "wins never on feature breadth;
+any change that wins by adding surface area loses by definition" is retired.
+Breadth is now the goal. This is a real reversal, recorded so nobody re-applies
+the old rule from muscle memory.
+
+**What did NOT change (why this is safe).** The reversal is scoped by an
+invariant that got *stronger*, not weaker: **the public-page contract** (RULES.md
+perf + security budgets). Every new capability ships **the cutecumber way** —
+rich in the authenticated dashboard, lean and private on the public output the
+visitor loads (server-rendered, zero-JS / zero-third-party / zero-cookie by
+default, tiny, WCAG-AA). Privacy + speed become the *wedge* against beacons, not
+a cap on us. A feature that can't fit the contract is redesigned (dashboard-rich /
+public-lean / link-out to the paid or third-party step) until it can.
+
+**How beacons' pillars map, privacy-first** (the design constraint each phase
+inherits): **store / digital products** → server-rendered product pages, checkout
+**links out** to a processor (no third-party script on the public page); **email
+marketing** → first-party, consented, GDPR-clean capture (the creator's list,
+stored by us, no third parties) — this supersedes the current form/signup
+link-out-only stance (#38) *only* once built to that bar; **analytics** →
+cookieless, aggregate, first-party (Plausible-style), never per-visitor tracking;
+**media kit** → auto-built from the creator's own page + analytics data; **AI** →
+dashboard-only assist, and a new dependency, so it needs its own DECISIONS entry
+first. Roadmap (Phases A–E) in `project.md`.
+
+**Each phase still gates on its own decision.** Payment processor (Stripe — the
+still-open #38 item), visitor-PII/GDPR storage for email, an analytics datastore,
+and any AI dependency each need a written DECISIONS entry before that phase is
+cycle-ready. The stack rules (#2, #39) and the security budget are unchanged and
+still bind every one of them.
+**Revisit:** if the privacy/speed wedge ever stops differentiating us, or a phase
+can't be built within the public-page contract at all — surface it, don't quietly
+relax the contract.
