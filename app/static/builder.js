@@ -79,7 +79,7 @@
   // Premium is gated as "coming soon" for everyone (billing is a later cycle);
   // internal testers get a real lock they can unlock via the staging toggle.
   function lockGlyph() { return state.internal ? "🔒" : "🔜"; }
-  var saveTimer = null, ghost = null, errorAt = null;
+  var saveTimer = null, ghost = null, errorAt = null, dragLine = null;
 
   // ---- helpers -----------------------------------------------------------
   function esc(s) {
@@ -300,30 +300,49 @@
     var s = state.sections.splice(from, 1)[0]; state.sections.splice(to, 0, s);
     renderCanvas(); scheduleSave();
   }
+  // Drag is DOM-light: the sections stay put and we only move a single drop-line
+  // indicator between them (no full re-render per pointer move — that janked on
+  // long pages). The canvas rebuilds once, at drop.
   function startDrag(id, e) {
     state.dragId = id; state.dropIndex = find(id);
     document.body.classList.add("is-dragging");
+    var wraps = document.querySelectorAll("#b-site .sec-wrap");
+    if (wraps[state.dropIndex]) wraps[state.dropIndex].classList.add("lifting");
     ghost = h("div", { class: "drag-ghost" }, [h("div", { class: "ghost-sticker" }, [h("span", { text: "⠿ moving…" })])]);
     document.body.appendChild(ghost);
+    dragLine = dropLine();
+    positionDragLine(state.dropIndex);
     moveGhost(e);
     document.addEventListener("pointermove", onDragMove);
     document.addEventListener("pointerup", endDrag, { once: true });
   }
+  function positionDragLine(idx) {
+    var site = document.getElementById("b-site");
+    var wraps = site.querySelectorAll(".sec-wrap");
+    if (idx >= wraps.length) { if (wraps.length) wraps[wraps.length - 1].after(dragLine); }
+    else { wraps[idx].before(dragLine); }
+  }
   function moveGhost(e) { if (ghost) { ghost.style.left = e.clientX + "px"; ghost.style.top = e.clientY + "px"; } }
+  function edgeScroll(e) {
+    var m = 90;
+    if (e.clientY < m) window.scrollBy(0, -14);
+    else if (e.clientY > window.innerHeight - m) window.scrollBy(0, 14);
+  }
   function onDragMove(e) {
-    moveGhost(e);
+    moveGhost(e); edgeScroll(e);
     var wraps = document.querySelectorAll("#b-site .sec-wrap");
     var idx = state.sections.length;
     for (var i = 0; i < wraps.length; i++) {
       var r = wraps[i].getBoundingClientRect();
       if (e.clientY < r.top + r.height / 2) { idx = i; break; }
     }
-    if (idx !== state.dropIndex) { state.dropIndex = idx; renderCanvas(); }
+    if (idx !== state.dropIndex) { state.dropIndex = idx; positionDragLine(idx); }  // move the indicator only
   }
   function endDrag() {
     document.removeEventListener("pointermove", onDragMove);
     var from = find(state.dragId), to = state.dropIndex;
     if (ghost) { ghost.remove(); ghost = null; }
+    if (dragLine) { dragLine.remove(); dragLine = null; }
     document.body.classList.remove("is-dragging");
     if (from >= 0 && to != null) {
       if (to > from) to--;
