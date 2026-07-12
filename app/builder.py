@@ -28,7 +28,17 @@ from flask import (
 from .avatars import AvatarError, process_gallery_photo, store_avatar
 from .db import get_db
 from .extensions import limiter
+from .pages import (
+    create_page,
+    delete_page,
+    get_page,
+    list_pages,
+    rename_page,
+    reorder_pages,
+    save_page_sections,
+)
 from .sections import (
+    SECTIONS_VERSION,
     default_sections_from_profile,
     has_code,
     has_embed,
@@ -76,11 +86,33 @@ def _current_draft():
     return default_sections_from_profile(g.user, links)
 
 
+def _active_page():
+    """Resolve the ?page / form 'page' target for a multi-page site. Returns
+    (slug, row): slug='' => the HOME page (users columns, row=None); a non-empty
+    slug => that SUBPAGE's row (404 if it isn't this user's)."""
+    slug = (request.values.get("page") or "").strip().lower()
+    if not slug:
+        return "", None
+    row = get_page(get_db(), g.user["id"], slug)
+    if row is None:
+        abort(404)
+    return slug, row
+
+
+_EMPTY_DRAFT = {"version": SECTIONS_VERSION, "sections": []}
+
+
 @bp.get("/dash/builder")
 @builder_required
 def editor():
-    draft = _current_draft()
-    published = g.user["sections_live_json"]
+    db = get_db()
+    slug, page = _active_page()
+    if page is not None:
+        draft = load_sections(page["sections_draft_json"]) or dict(_EMPTY_DRAFT)
+        published = page["sections_live_json"]
+    else:
+        draft = _current_draft()
+        published = g.user["sections_live_json"]
     stored = load_theme(g.user["theme_json"])
     theme = resolve_theme(stored)
     # Page-theme CSS vars the in-document canvas paints itself with (theme.py is
@@ -100,6 +132,10 @@ def editor():
         pg_vars=json.dumps(pg_vars, separators=(",", ":")),
         current_preset=stored.get("preset", ""),
         is_internal_tester=_is_internal_tester(),
+        # Multi-page site: the switcher tabs + which page is active.
+        pages=[{"slug": p["slug"], "title": p["title"]} for p in list_pages(db, g.user["id"])],
+        active_slug=slug,
+        active_title=(page["title"] if page is not None else "home"),
     )
 
 
@@ -117,11 +153,16 @@ def save():
     if error:
         return jsonify(ok=False, error=error, at=at), 200
     db = get_db()
-    db.execute(
-        "UPDATE users SET sections_draft_json = ? WHERE id = ?",
-        (json.dumps(clean, separators=(",", ":")), g.user["id"]),
-    )
-    db.commit()
+    slug, page = _active_page()
+    payload = json.dumps(clean, separators=(",", ":"))
+    if page is not None:
+        save_page_sections(db, g.user["id"], slug, payload)
+    else:
+        db.execute(
+            "UPDATE users SET sections_draft_json = ? WHERE id = ?",
+            (payload, g.user["id"]),
+        )
+        db.commit()
     return jsonify(ok=True)
 
 
@@ -140,12 +181,18 @@ def publish():
         return jsonify(ok=False, error=error, at=at), 200
     payload = json.dumps(clean, separators=(",", ":"))
     db = get_db()
-    db.execute(
-        "UPDATE users SET sections_draft_json = ?, sections_live_json = ? WHERE id = ?",
-        (payload, payload, g.user["id"]),
-    )
-    db.commit()
-    return jsonify(ok=True, url=f"/{g.user['username']}")
+    slug, page = _active_page()
+    if page is not None:
+        save_page_sections(db, g.user["id"], slug, payload, publish=True)
+        url = f"/{g.user['username']}/{slug}"
+    else:
+        db.execute(
+            "UPDATE users SET sections_draft_json = ?, sections_live_json = ? WHERE id = ?",
+            (payload, payload, g.user["id"]),
+        )
+        db.commit()
+        url = f"/{g.user['username']}"
+    return jsonify(ok=True, url=url)
 
 
 @bp.post("/dash/builder/upload")
@@ -215,7 +262,13 @@ def preview():
     the public CSP (nonce'd inline style) so it styles correctly, and
     frame-ancestors 'self' lets our own dash embed it."""
     theme = resolve_theme(load_theme(g.user["theme_json"]))
-    sections = resolve_sections(g.user["sections_draft_json"]) or _preview_sections()
+    slug, page = _active_page()
+    if page is not None:
+        sections = resolve_sections(page["sections_draft_json"])
+        canonical = f"{current_app.config['SITE_ORIGIN']}/{g.user['username']}/{slug}"
+    else:
+        sections = resolve_sections(g.user["sections_draft_json"]) or _preview_sections()
+        canonical = f"{current_app.config['SITE_ORIGIN']}/{g.user['username']}"
     embeds, code = has_embed(sections), has_code(sections)
     return render_template(
         "public_page_sections.html",
@@ -224,7 +277,7 @@ def preview():
         user=g.user,
         title=g.user["display_name"] or f"@{g.user['username']}",
         description="",
-        canonical=f"{current_app.config['SITE_ORIGIN']}/{g.user['username']}",
+        canonical=canonical,
         has_embed=embeds,
         csp_nonce=use_public_csp(embeds=embeds, code=code),
         preview_empty=not sections,
@@ -235,3 +288,52 @@ def _preview_sections():
     # When the draft isn't saved yet, preview the in-memory synthesised default
     # so a first-time editor sees something rather than an empty frame.
     return resolve_sections(json.dumps(_current_draft()))
+
+
+# ---- page management (multi-page sites) --------------------------------------
+
+@bp.post("/dash/builder/pages")
+@limiter.limit("60 per hour")
+@builder_required
+def create_page_route():
+    """Add a subpage. Returns its slug so the editor can navigate to ?page=<slug>."""
+    row, error = create_page(
+        get_db(), g.user["id"],
+        request.form.get("slug"), request.form.get("title"),
+    )
+    if error:
+        return jsonify(ok=False, error=error), 200
+    return jsonify(ok=True, slug=row["slug"])
+
+
+@bp.post("/dash/builder/pages/rename")
+@limiter.limit("60 per hour")
+@builder_required
+def rename_page_route():
+    ok, error = rename_page(
+        get_db(), g.user["id"],
+        (request.form.get("page") or "").strip().lower(), request.form.get("title"),
+    )
+    return jsonify(ok=ok, error=error) if error else jsonify(ok=ok)
+
+
+@bp.post("/dash/builder/pages/delete")
+@limiter.limit("60 per hour")
+@builder_required
+def delete_page_route():
+    ok = delete_page(get_db(), g.user["id"], (request.form.get("page") or "").strip().lower())
+    return jsonify(ok=ok)
+
+
+@bp.post("/dash/builder/pages/reorder")
+@limiter.limit("60 per hour")
+@builder_required
+def reorder_pages_route():
+    try:
+        order = json.loads(request.form.get("order") or "[]")
+    except ValueError:
+        order = None
+    if not isinstance(order, list):
+        return jsonify(ok=False), 200
+    ok = reorder_pages(get_db(), g.user["id"], [str(s).strip().lower() for s in order])
+    return jsonify(ok=ok)

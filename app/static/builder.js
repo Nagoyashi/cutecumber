@@ -74,8 +74,10 @@
     sections: [], selected: null, plan: root.dataset.plan, preset: root.dataset.preset,
     csrf: root.dataset.csrf, username: root.dataset.username, counter: 0,
     addIndex: null, dragId: null, dropIndex: null,
-    internal: root.dataset.internal === "1"  // may exercise the 'coming soon' premium tier
+    internal: root.dataset.internal === "1",  // may exercise the 'coming soon' premium tier
+    page: root.dataset.page || ""  // active page slug; "" = the home page
   };
+  function pagePath() { return "/" + state.username + (state.page ? "/" + state.page : ""); }
   // Premium is gated as "coming soon" for everyone (billing is a later cycle);
   // internal testers get a real lock they can unlock via the staging toggle.
   function lockGlyph() { return state.internal ? "🔒" : "🔜"; }
@@ -383,7 +385,7 @@
     if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
   }
   function scheduleSave() { setStatus("saving…", "saving"); if (saveTimer) clearTimeout(saveTimer); saveTimer = setTimeout(save, 800); }
-  function body() { var b = new FormData(); b.append("_csrf", state.csrf); b.append("sections", JSON.stringify({ version: 1, sections: serialize() })); return b; }
+  function body() { var b = new FormData(); b.append("_csrf", state.csrf); b.append("page", state.page); b.append("sections", JSON.stringify({ version: 1, sections: serialize() })); return b; }
   function save() {
     return fetch("/dash/builder/save", { method: "POST", body: body() }).then(function (r) { return r.json(); })
       .then(function (d) { d.ok ? setStatus("saved 🌱", "saved") : flagError("not saved", d.error || "something didn't validate", d.at); })
@@ -398,14 +400,14 @@
       .catch(function () { flagError("not published", "network error — try again"); });
   }
   function showPubPop() {
-    document.getElementById("b-pubpop-link").textContent = location.host + "/" + state.username;
+    document.getElementById("b-pubpop-link").textContent = location.host + pagePath();
     document.getElementById("b-pubpop-copy").textContent = "copy";
     document.getElementById("b-pubpop-teaser").hidden = state.plan === "sprout";
     show("b-pubpop");
   }
   function copyUrl() {
     var btn = document.getElementById("b-pubpop-copy");
-    var url = location.origin + "/" + state.username;
+    var url = location.origin + pagePath();
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(url).then(function () { btn.textContent = "copied ✓"; },
         function () { btn.textContent = "press ⌘/ctrl+c"; });
@@ -635,6 +637,35 @@
     if (on) renderInto(document.getElementById("b-phonesite"), false);
   }
 
+  // ---- page management (multi-page site) ---------------------------------
+  // Switching pages is a navigation (?page=<slug>); add/rename/delete hit the
+  // page endpoints then navigate. Prompt/confirm match the existing template UX.
+  function slugify(s) { return String(s).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 40); }
+  function pageForm(fields) { var b = new FormData(); b.append("_csrf", state.csrf); Object.keys(fields).forEach(function (k) { b.append(k, fields[k]); }); return b; }
+  function addPage() {
+    var title = window.prompt("name your new page (e.g. About, Shop):");
+    if (!title) return;
+    var slug = window.prompt("its web address — cutecumber.cc/" + state.username + "/…", slugify(title));
+    if (!slug) return;
+    fetch("/dash/builder/pages", { method: "POST", body: pageForm({ title: title, slug: slug }) })
+      .then(function (r) { return r.json(); })
+      .then(function (d) { if (!d.ok) { flagError("couldn't add page", d.error); return; } location.href = "/dash/builder?page=" + encodeURIComponent(d.slug); });
+  }
+  function renamePage() {
+    var cur = document.querySelector(".ptab.on");
+    var title = window.prompt("rename this page:", cur ? cur.textContent.trim() : "");
+    if (!title) return;
+    fetch("/dash/builder/pages/rename", { method: "POST", body: pageForm({ page: state.page, title: title }) })
+      .then(function (r) { return r.json(); })
+      .then(function (d) { d.ok ? location.reload() : flagError("couldn't rename", d.error); });
+  }
+  function delPage() {
+    if (!window.confirm("delete this page and everything on it? this can't be undone 🥺")) return;
+    fetch("/dash/builder/pages/delete", { method: "POST", body: pageForm({ page: state.page }) })
+      .then(function (r) { return r.json(); })
+      .then(function (d) { if (d.ok) location.href = "/dash/builder"; else flagError("couldn't delete", ""); });
+  }
+
   function show(id) { document.getElementById(id).hidden = false; }
   function hide(id) { document.getElementById(id).hidden = true; }
   function openPicker() { buildPicker(); show("b-picker"); fitMinis(); }
@@ -662,6 +693,9 @@
 
     document.getElementById("b-publish").addEventListener("click", publish);
     document.getElementById("b-save").addEventListener("click", jumpToError);
+    document.getElementById("b-addpage").addEventListener("click", addPage);
+    var rp = document.getElementById("b-renamepage"); if (rp) rp.addEventListener("click", renamePage);
+    var dp = document.getElementById("b-delpage"); if (dp) dp.addEventListener("click", delPage);
     document.getElementById("b-pubpop-copy").addEventListener("click", copyUrl);
     document.getElementById("b-pubpop-x").addEventListener("click", function () { hide("b-pubpop"); });
     document.getElementById("b-pubpop-teaser").addEventListener("click", function () { hide("b-pubpop"); openUpsell(); });

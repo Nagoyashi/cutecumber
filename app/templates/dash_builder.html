@@ -22,12 +22,13 @@
      data-published="{{ '1' if is_published else '0' }}"
      data-pg="{{ pg_vars }}"
      data-preset="{{ current_preset }}"
-     data-internal="{{ '1' if is_internal_tester else '0' }}">
+     data-internal="{{ '1' if is_internal_tester else '0' }}"
+     data-page="{{ active_slug }}">
   <header class="bldbar">
     <div class="bldbar-left">
       <a class="brand fred" href="{{ url_for('dash.home') }}"><img src="{{ url_for('static', filename='favicon.svg') }}" alt="" width="28" height="28"><span>cutecumber</span></a>
       <span class="bld-chip">builder</span>
-      <span class="bld-url">cutecumber.cc/<strong>{{ username }}</strong></span>
+      <span class="bld-url">cutecumber.cc/<strong>{{ username }}</strong>{% if active_slug %}/{{ active_slug }}{% endif %}</span>
     </div>
     <div class="bldbar-mid">
       <button type="button" class="seg-solo" id="b-phone" aria-pressed="false">📱 phone preview</button>
@@ -48,13 +49,27 @@
     </div>
   </header>
 
+  <nav class="pagetabs" aria-label="your pages">
+    <a class="ptab{% if not active_slug %} on{% endif %}" href="{{ url_for('builder.editor') }}">🏠 home</a>
+    {% for p in pages %}
+    <a class="ptab{% if p.slug == active_slug %} on{% endif %}" href="{{ url_for('builder.editor') }}?page={{ p.slug }}">{{ p.title }}</a>
+    {% endfor %}
+    <button type="button" class="ptab ptab-add" id="b-addpage">＋ page</button>
+    {% if active_slug %}
+    <span class="ptab-tools">
+      <button type="button" class="ptab-tool" id="b-renamepage" aria-label="rename this page">✎</button>
+      <button type="button" class="ptab-tool" id="b-delpage" aria-label="delete this page">🗑</button>
+    </span>
+    {% endif %}
+  </nav>
+
   <div class="bld-main v3-main">
     <div class="preview-main">
       <div class="canvas-scroll" id="b-canvas-scroll">
         <div class="browser-frame" id="b-desktop">
           <div class="browser-top" aria-hidden="true">
             <div class="btl"><i></i><i></i><i></i></div>
-            <div class="burl">cutecumber.cc/{{ username }}</div>
+            <div class="burl">cutecumber.cc/{{ username }}{% if active_slug %}/{{ active_slug }}{% endif %}</div>
           </div>
           <div class="site" id="b-site"></div>
         </div>

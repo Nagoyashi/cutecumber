@@ -56,6 +56,20 @@ body.is-dragging, body.is-dragging * { cursor: grabbing !important; user-select:
 .pill.danger { background: #fff; color: var(--err); border: 2px solid var(--err-bg); }
 .pill.danger:hover { background: var(--err-bg); }
 
+/* page tabs (multi-page site switcher) */
+.pagetabs { display: flex; flex-wrap: wrap; align-items: center; gap: 6px;
+  max-width: 1420px; margin: 0 auto; padding: 12px 22px 0; }
+.ptab { font: inherit; font-size: 0.85rem; text-decoration: none; cursor: pointer;
+  color: var(--muted); background: #fff; border: 1.5px solid var(--border);
+  border-radius: 999px; padding: 6px 14px; }
+.ptab:hover { border-color: var(--chrome); color: var(--ink); }
+.ptab.on { background: var(--green); border-color: var(--green); color: #fff; }
+.ptab-add { border-style: dashed; color: var(--accent-deep); }
+.ptab-tools { display: inline-flex; gap: 4px; margin-left: 4px; }
+.ptab-tool { width: 30px; height: 30px; border-radius: 999px; border: 1.5px solid var(--border);
+  background: #fff; color: var(--muted); cursor: pointer; font-size: 0.82rem; }
+.ptab-tool:hover { border-color: var(--chrome); color: var(--ink); }
+
 /* main layout */
 .bld-main { display: grid; gap: 18px; align-items: start; max-width: 1420px; margin: 0 auto; padding: 18px 22px 80px; }
 .v3-main { grid-template-columns: minmax(0, 1fr) 292px; }

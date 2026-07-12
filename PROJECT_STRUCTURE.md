@@ -82,10 +82,12 @@ cutecumber/
     │                        user-scoped; slug/title validation in constants.py
     │                        (DECISIONS #41). A subpage is a slugged container of
     │                        the sections.py model, served at /<username>/<slug>
-    ├── builder.py           builder editor (STAGING, behind BUILDER_ENABLED +
-    │                        BUILDER_ALLOWLIST → 404 else): GET /dash/builder,
-    │                        POST /save (draft), /publish (draft→live), /preset,
-    │                        /plan (staging toggle), GET /preview (iframe)
+    ├── builder.py           builder editor (behind BUILDER_ENABLED; open to all
+    │                        creators): GET /dash/builder[?page=<slug>], POST
+    │                        /save /publish (routed to home or the active subpage),
+    │                        /preset, /plan (internal-test toggle), /upload, GET
+    │                        /preview, and /pages[/rename|/delete|/reorder] (the
+    │                        multi-page switcher CRUD; uses app/pages.py)
     ├── templates/
     │   ├── public_page.html     standalone; inline nonce'd CSS; OG tags; ZERO JS
     │   ├── public_page_sections.html  builder public render: full-width section
