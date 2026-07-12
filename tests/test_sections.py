@@ -18,6 +18,7 @@ from app.sections import (
     load_sections,
     resolve_sections,
     validate_sections,
+    validate_sections_detailed,
 )
 
 
@@ -52,6 +53,26 @@ class TestValidateStructure(unittest.TestCase):
             clean, err = validate_sections(bad)
             self.assertIsNone(clean, repr(bad))
             self.assertIsNotNone(err)
+
+    def test_detailed_reports_offending_section_index(self):
+        # A valid hero at 0, an unknown-type section at 1 → the editor needs `at`
+        # to point the user straight at the culprit (#103).
+        clean, err, at = validate_sections_detailed(
+            _page(_hero(), {"type": "banner_ad", "variant": "x", "props": {}}, _links()))
+        self.assertIsNone(clean)
+        self.assertIsNotNone(err)
+        self.assertEqual(at, 1)
+
+    def test_detailed_whole_page_error_has_no_index(self):
+        clean, err, at = validate_sections_detailed({"sections": "nope"})
+        self.assertIsNone(clean)
+        self.assertIsNone(at)  # not a per-section failure
+
+    def test_detailed_clean_page_has_no_error_index(self):
+        clean, err, at = validate_sections_detailed(_page(_hero(), _links()))
+        self.assertIsNotNone(clean)
+        self.assertIsNone(err)
+        self.assertIsNone(at)
 
     def test_unknown_type_rejected(self):
         clean, err = validate_sections(_page({"type": "banner_ad", "variant": "x", "props": {}}))

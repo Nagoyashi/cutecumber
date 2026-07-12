@@ -34,7 +34,7 @@ from .sections import (
     has_embed,
     load_sections,
     resolve_sections,
-    validate_sections,
+    validate_sections_detailed,
 )
 from .security import login_required, use_public_csp
 from .theme import THEME_VERSION, load_theme, resolve_theme, validate_theme
@@ -113,9 +113,9 @@ def save():
         data = json.loads(request.form.get("sections") or "null")
     except ValueError:
         return jsonify(ok=False, error="that didn't parse 🤔"), 200
-    clean, error = validate_sections(data, plan=g.user["plan"])
+    clean, error, at = validate_sections_detailed(data, plan=g.user["plan"])
     if error:
-        return jsonify(ok=False, error=error), 200
+        return jsonify(ok=False, error=error, at=at), 200
     db = get_db()
     db.execute(
         "UPDATE users SET sections_draft_json = ? WHERE id = ?",
@@ -135,9 +135,9 @@ def publish():
         data = json.loads(request.form.get("sections") or "null")
     except ValueError:
         return jsonify(ok=False, error="that didn't parse 🤔"), 200
-    clean, error = validate_sections(data, plan=g.user["plan"])
+    clean, error, at = validate_sections_detailed(data, plan=g.user["plan"])
     if error:
-        return jsonify(ok=False, error=error), 200
+        return jsonify(ok=False, error=error, at=at), 200
     payload = json.dumps(clean, separators=(",", ":"))
     db = get_db()
     db.execute(

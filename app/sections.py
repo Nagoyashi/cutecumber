@@ -275,44 +275,54 @@ _VALIDATORS = {
 # ------------------------------------------------------------------ validate
 
 def validate_sections(data: dict, plan: str = "free") -> tuple[dict | None, str | None]:
-    """SAVE-path validation. Returns (clean, None) or (None, error).
+    """SAVE-path validation. Returns (clean, None) or (None, error). Thin wrapper
+    over validate_sections_detailed for callers that don't need the index."""
+    clean, error, _ = validate_sections_detailed(data, plan)
+    return clean, error
+
+
+def validate_sections_detailed(
+    data: dict, plan: str = "free"
+) -> tuple[dict | None, str | None, int | None]:
+    """As validate_sections, plus the 0-based index of the offending section (or
+    None for a whole-page error) so the editor can point the user straight at it.
 
     Strict: unknown type/variant, over-cap counts/lengths, off-allowlist
     tokens, and premium types on a non-'sprout' plan are all rejected.
     """
     if not isinstance(data, dict):
-        return None, _GENERIC_ERR
+        return None, _GENERIC_ERR, None
     raw = data.get("sections")
     if not isinstance(raw, list):
-        return None, _GENERIC_ERR
+        return None, _GENERIC_ERR, None
     if len(raw) > SECTIONS_MAX:
-        return None, f"up to {SECTIONS_MAX} sections per page 🙈"
+        return None, f"up to {SECTIONS_MAX} sections per page 🙈", None
 
     clean = []
-    for section in raw:
+    for i, section in enumerate(raw):
         if not isinstance(section, dict):
-            return None, _GENERIC_ERR
+            return None, _GENERIC_ERR, i
         stype = section.get("type")
         if stype not in ALL_TYPES:
-            return None, "that section isn't one of ours 🤔"
+            return None, "that section isn't one of ours 🤔", i
         if stype in PREMIUM_TYPES and plan != "sprout":
-            return None, "that section blooms with sprout 🌱 — upgrade to unlock it"
+            return None, "that section blooms with sprout 🌱 — upgrade to unlock it", i
         variant = section.get("variant")
         if variant not in VARIANTS[stype]:
-            return None, "that section style isn't one of ours 🎀"
+            return None, "that section style isn't one of ours 🎀", i
         props = section.get("props")
         if not isinstance(props, dict):
-            return None, _GENERIC_ERR
+            return None, _GENERIC_ERR, i
         clean_props, err = _VALIDATORS[stype](props)
         if err:
-            return None, err
+            return None, err, i
         entry = {"type": stype, "variant": variant, "props": clean_props}
         sid = section.get("id")
         if isinstance(sid, str) and 0 < len(sid) <= 40:
             entry["id"] = sid
         clean.append(entry)
 
-    return {"version": SECTIONS_VERSION, "sections": clean}, None
+    return {"version": SECTIONS_VERSION, "sections": clean}, None, None
 
 
 # --------------------------------------------------------- stored-shape / load
