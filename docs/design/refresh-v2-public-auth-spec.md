@@ -63,6 +63,13 @@ public avatar ring `50%` (104px mobile / 128px wide) + `box-shadow: 0 8px 22px r
 **Responsive:** centered is the mobile baseline; wide only engages ≥860px when selected. Keep tap targets ≥44px (link pills are ~52px tall).
 
 ### B. Auth & state screens
+
+> **Update (2026-07-12): magic-link sign-in was dropped** (owner — #53/#70/#71
+> closed not-planned). Password auth only: email/username + password, with reset.
+> Ignore the "magic link" ghost buttons, the "check your email" magic-link
+> screen, and "enable all three sign-in methods" below — build email+password
+> [default] and username+password [toggle] only.
+
 All share the **shell**: full-viewport gradient, optional ambient (landing-style, count ~8), a centered column `max-width:400px`, the **slice wordmark** centered above (slice 42px + "cutecumber" Fredoka green 1.6rem), then one **card** (`rgba(255,255,255,.92)`, blur 10, radius 24, padding `30px 26px`, soft shadow). *(The pill switcher at the top of the prototype is **prototype-only** navigation — each screen is its own route/state in production.)*
 
 1. **Log in** — H1 "welcome back 🌱", sub "log in to tend your page.". Form: **email** field (default) with a text-button toggle **"use username instead"** (swaps label/placeholder; username variant shows the `cutecumber.cc/` prefix); **password** field with a **show/hide** reveal button; primary **log in**. `—or—` divider. Ghost button **"email me a magic link ✨"**. Foot: "new here? claim your username". 

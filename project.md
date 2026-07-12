@@ -22,10 +22,12 @@ allowlist.) Widening access is safe because the risky section types stay
 premium/coming-soon, so only the six free, server-rendered sections go public —
 the sandbox/embed CSP exceptions stay dormant until sprout ships. Still ahead:
 **real billing** (Stripe — the gate before sprout actually opens) and two
-low-priority editor-polish items (#86). `v0.6.0` (magic-link) stays deferred and
-un-milestoned (#53/#70/#71/#69/#65) — a natural next cycle, alongside billing.
-Next cycle: propose it + its issues, wait for the owner's OK. Per-task status →
-the *cutecumber.cc* board ↗
+low-priority editor-polish items (#86). **Magic-link sign-in was dropped**
+(owner, 2026-07-12 — #53/#70/#71 closed not-planned); password auth stays the
+model. A couple of standalone backlog items remain un-milestoned (the
+dashboard WCAG-AA button fix #65, and the 404→signup username carry #69). Next
+cycle (most likely billing): propose it + its issues, wait for the owner's OK.
+Per-task status → the *cutecumber.cc* board ↗
 
 ## Roadmap
 
