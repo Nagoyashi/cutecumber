@@ -40,12 +40,14 @@ dashboard WCAG-AA button fix #65, and the 404→signup username carry #69).
 
 **Direction (2026-07-12):** the project pivoted from "link-in-bio" to a
 **privacy-first creator platform** aimed at rivalling beacons.ai — see the Vision
-and the roadmap's *road to a privacy-first creator platform* (Phases A–E). The
-next cycle is **Phase A — make the builder feel like a product** (fix gallery
-upload + editor jank, polish, tests): the current builder is functional but
-rough, and nothing rivals anything until the core tool is pleasant. Propose the
-cycle + its issues, wait for the owner's OK. Per-task status → the
-*cutecumber.cc* board ↗
+and the roadmap's *road to a privacy-first creator platform* (Phases A–E).
+**Phase A shipped** as `v0.10.0` (2026-07-12, verified live): the builder
+reliability pass — loud save-failure state, errors that jump to the offending
+section, gallery upload feedback, and DOM-light drag — so the core tool actually
+behaves. The next cycle is **Phase B — sites, not just pages** (a small
+multi-page site per creator + templates). Pure-visual editor polish (#86) waits
+for the incoming design batch (`design/Cutecumber.cc-5.zip`). Propose the cycle +
+its issues, wait for the owner's OK. Per-task status → the *cutecumber.cc* board ↗
 
 ## Roadmap
 
@@ -128,6 +130,25 @@ entry before their phase is cycle-ready.
 ## Phase log
 
 Durable completion notes, newest first. Rationale → `DECISIONS.md`.
+
+### Phase A — a builder that behaves — shipped 2026-07-12 (`v0.10.0`)
+
+First cycle of the creator-platform overhaul: make the builder feel like a
+product. Editor-only; the public page a visitor loads is unchanged.
+
+- **Loud save state** (#102): the whole-page autosave was silently all-or-nothing
+  — one invalid section dropped the entire draft with only a whisper, so a
+  just-uploaded gallery photo vanished on reload. Now a failed save is a
+  persistent red "not saved" pill (reason on hover) that clears on the next good
+  save; gallery uploads show a per-photo "uploading…" spinner → thumbnail.
+- **Errors point to the culprit** (#103): `validate_sections_detailed` returns the
+  offending section index; save/publish return it as `at`; the pill reads "click
+  to jump there" and selects + scrolls to that section.
+- **DOM-light drag** (#103): reorder no longer rebuilds the canvas on every
+  pointer move (only a drop-line indicator moves) — smooth on long pages — plus
+  edge auto-scroll. Verified in a real browser; 185 tests green.
+- Deferred: pure-visual prototype-match polish (#86) → awaits the incoming design
+  batch.
 
 ### Page builder for everyone; sprout "coming soon" — shipped 2026-07-12 (`v0.9.0`)
 
