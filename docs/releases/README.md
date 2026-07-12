@@ -22,6 +22,7 @@ Pre-releases use a hyphenated tag (`vX.Y.Z-rc.N`) and the Action marks them
 
 _(newest first — add a line when a release ships)_
 
+- [`v0.11.0`](v0.11.0.md) — Sites, not just pages: multi-page creator sites (`/you/about`), a zero-JS site nav, and a builder page switcher.
 - [`v0.10.0`](v0.10.0.md) — A builder that behaves: loud save-failure state, errors that jump to the offending section, gallery-upload feedback, smooth drag.
 - [`v0.9.0`](v0.9.0.md) — Page builder for everyone: opened to all creators as the primary editor; paid sprout tier gated as "coming soon".
 - [`v0.8.0`](v0.8.0.md) — Page builder live (allowlist-gated): the prod flag flip, real-browser security QA, editor polish, billing deferred.
