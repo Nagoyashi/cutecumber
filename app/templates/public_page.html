@@ -64,6 +64,7 @@ footer a:hover,footer a:focus-visible{color:var(--text)}
 </head>
 <body class="layout-{{ t.layout }}">
 <main class="inner">
+  {% include "_site_nav.html" %}
   <div class="profile">
     {% if avatar_image %}<div class="avatar-ring"><img class="avatar-img" src="/a/{{ avatar_image }}" width="104" height="104" alt=""></div>
     {% elif avatar_set %}<div class="avatar-ring"><img class="avatar-set" src="/static/avatars/{{ avatar_set }}.svg" width="104" height="104" alt=""></div>

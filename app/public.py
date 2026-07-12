@@ -120,23 +120,16 @@ def profile(username: str):
         description = description[: DESCRIPTION_MAX - 1].rstrip() + "…"
     canonical = f"{current_app.config['SITE_ORIGIN']}/{user['username']}"
 
-    # Builder page (STAGING): when a live section stack exists, render it and
-    # skip the legacy links path entirely. resolve_sections is tolerant — a
-    # corrupt/empty column yields [], so we fall through to the legacy page.
+    # Home + published subpages, for the zero-JS site nav (empty => only home).
+    nav = _site_nav(get_db(), user, None)
+
+    # Builder page: when a live section stack exists, render it and skip the
+    # legacy links path entirely. resolve_sections is tolerant — a corrupt/empty
+    # column yields [], so we fall through to the legacy page.
     sections = resolve_sections(user["sections_live_json"])
     if sections:
-        embeds, code = has_embed(sections), has_code(sections)
-        return render_template(
-            "public_page_sections.html",
-            t=theme,
-            sections=sections,
-            user=user,
-            title=title,
-            description=description,
-            canonical=canonical,
-            has_embed=embeds,
-            # CSP exceptions armed ONLY for the section types actually present.
-            csp_nonce=use_public_csp(embeds=embeds, code=code),
+        return _render_section_page(
+            user, theme, sections, title, description, canonical, nav
         )
 
     rows = (
@@ -182,8 +175,82 @@ def profile(username: str):
         avatar_set=avatar_set,
         avatar_emoji=avatar_emoji,
         links=links,
+        nav=nav,
         csp_nonce=use_public_csp(),
     )
+
+
+def _site_nav(db, user, current_slug):
+    """Home + the user's PUBLISHED subpages, for the server-rendered site nav.
+    current_slug is None on the home page. Returns [] when there's nothing to
+    navigate to (only home) so the nav is hidden."""
+    subs = db.execute(
+        "SELECT slug, title FROM pages WHERE user_id = ?"
+        " AND sections_live_json IS NOT NULL ORDER BY position, id",
+        (user["id"],),
+    ).fetchall()
+    if not subs:
+        return []
+    base = "/" + user["username"]
+    nav = [{"title": "home", "url": base, "current": current_slug is None}]
+    for s in subs:
+        nav.append({
+            "title": s["title"],
+            "url": f"{base}/{s['slug']}",
+            "current": s["slug"] == current_slug,
+        })
+    return nav
+
+
+def _render_section_page(user, theme, sections, title, description, canonical, nav):
+    """Render a builder section stack (home or a subpage). CSP exceptions are
+    armed ONLY for the section types actually present."""
+    embeds, code = has_embed(sections), has_code(sections)
+    return render_template(
+        "public_page_sections.html",
+        t=theme,
+        sections=sections,
+        user=user,
+        title=title,
+        description=description,
+        canonical=canonical,
+        has_embed=embeds,
+        nav=nav,
+        csp_nonce=use_public_csp(embeds=embeds, code=code),
+    )
+
+
+@bp.get("/<username>/<slug>")
+def subpage(username: str, slug: str):
+    """A creator's subpage at /<username>/<slug> — renders its published section
+    stack, or the cute 404 if the page doesn't exist or isn't published yet."""
+    lowered, lslug = username.lower(), slug.lower()
+    if lowered != username or lslug != slug:
+        return redirect(f"/{lowered}/{lslug}", code=301)
+    if not USERNAME_RE.match(lowered) or lowered in RESERVED_USERNAMES:
+        return _not_found()
+    db = get_db()
+    user = db.execute(
+        "SELECT id, username, bio, theme_json FROM users WHERE username = ?",
+        (lowered,),
+    ).fetchone()
+    if user is None:
+        return _not_found()
+    page = db.execute(
+        "SELECT title, sections_live_json FROM pages WHERE user_id = ? AND slug = ?",
+        (user["id"], lslug),
+    ).fetchone()
+    sections = resolve_sections(page["sections_live_json"]) if page else None
+    if not sections:
+        return _not_found()  # unknown or not-yet-published subpage
+    theme = resolve_theme(load_theme(user["theme_json"]))
+    title = f"{page['title']} · @{user['username']}"
+    description = (user["bio"] or DEFAULT_DESCRIPTION).strip()
+    if len(description) > DESCRIPTION_MAX:
+        description = description[: DESCRIPTION_MAX - 1].rstrip() + "…"
+    canonical = f"{current_app.config['SITE_ORIGIN']}/{user['username']}/{lslug}"
+    nav = _site_nav(db, user, lslug)
+    return _render_section_page(user, theme, sections, title, description, canonical, nav)
 
 
 def _not_found(claim_name: str | None = None):
