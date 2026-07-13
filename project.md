@@ -46,7 +46,17 @@ pages** — a creator's page grows into a small multi-page site (`/<username>` h
 + `/<username>/<slug>` subpages), with a zero-JS server-rendered site nav and a
 page switcher in the builder. Additive model (home stays in the user row;
 subpages in a `pages` table, DECISIONS #41). (Phase A, `v0.10.0`, made the builder
-*behave*.) The next cycle is **Phase C — monetization**: real billing (Stripe —
+*behave*.)
+
+**⚠️ As of `v0.11.1` (2026-07-14) the page builder is HIDDEN in production**
+(owner call — still too rough to ship; kept cooking). It's now gated behind
+`BUILDER_ENABLED` on *every* surface (creator + visitor), and the prod flag is
+**off**, so the **links editor** is the live editor and public pages render the
+classic links page. All builder code + saved data stay put — flipping the flag on
+restores it. Builder work continues on `main` behind the flag; re-expose it when
+it's genuinely shippable.
+
+The next cycle is **Phase C — monetization**: real billing (Stripe —
 the deferred #38 item, the gate before `sprout` actually opens), then tips + a
 digital-product store (server-rendered, checkout link-out). Pure-visual editor
 polish (#86) still waits for the incoming design batch

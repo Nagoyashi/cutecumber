@@ -18,6 +18,7 @@ from tests.test_security import SecurityTestBase
 class TestPublicSections(SecurityTestBase):
     def setUp(self):
         super().setUp()
+        self.app.config["BUILDER_ENABLED"] = True  # builder public render is flag-gated
         self.uid, _ = self._create_user("builder@test.test", username="mochi")
         self.client = self.app.test_client()
 
@@ -144,6 +145,7 @@ class TestPublicSections(SecurityTestBase):
 class TestMultiPage(SecurityTestBase):
     def setUp(self):
         super().setUp()
+        self.app.config["BUILDER_ENABLED"] = True  # builder public render is flag-gated
         self.uid, _ = self._create_user("site@test.test", username="mochi")
         self.client = self.app.test_client()
 
@@ -197,6 +199,45 @@ class TestMultiPage(SecurityTestBase):
         self._add_page("about", "About", self._ABOUT)
         body = self.client.get("/mochi/about").get_data(as_text=True)
         self.assertNotIn("<script", body)
+
+
+class TestBuilderHiddenWhenFlagOff(SecurityTestBase):
+    """With BUILDER_ENABLED off, the page builder disappears from the PUBLIC site:
+    a builder home reverts to the legacy links page, subpages 404, and no site
+    nav — while the data stays put (it renders again when the flag is on)."""
+
+    def setUp(self):
+        super().setUp()
+        self.app.config["BUILDER_ENABLED"] = False
+        self.uid, _ = self._create_user("hidden@test.test", username="mochi")
+        self.client = self.app.test_client()
+
+    def _publish_home(self, sections):
+        clean, err = validate_sections(sections, plan="sprout")
+        self.assertIsNone(err, err)
+        with self.app.app_context():
+            db = get_db()
+            db.execute("UPDATE users SET sections_live_json = ? WHERE id = ?",
+                       (json.dumps(clean), self.uid))
+            db.commit()
+
+    def test_builder_home_falls_back_to_legacy_page(self):
+        self._publish_home({"version": 1, "sections": [
+            {"type": "hero", "variant": "centered",
+             "props": {"avatar": "sprout", "name": "mochi", "bio": "builder bio here"}}]})
+        body = self.client.get("/mochi").get_data(as_text=True)
+        self.assertEqual(self.client.get("/mochi").status_code, 200)
+        self.assertNotIn("builder bio here", body)   # section stack NOT rendered
+        self.assertNotIn('class="site-nav"', body)   # no site nav
+
+    def test_subpage_404s_when_builder_hidden(self):
+        from app import pages
+        with self.app.app_context():
+            db = get_db()
+            pages.create_page(db, self.uid, "about", "About")
+            pages.save_page_sections(db, self.uid, "about",
+                                     json.dumps({"version": 1, "sections": []}), publish=True)
+        self.assertEqual(self.client.get("/mochi/about").status_code, 404)
 
 
 if __name__ == "__main__":
