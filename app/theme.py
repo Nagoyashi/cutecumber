@@ -373,20 +373,23 @@ def _dots_layer(bg2: str) -> str:
 
 def _page_background(t: dict) -> str:
     """Complete CSS background value: optional decoration layer on top of the
-    chosen background type, base color always last. All inputs validated hex
-    or fixed literals from this file."""
+    chosen background type, base color always last. The flat colour parts
+    reference the CSS custom properties (`:root` sets --bg/--bg2 to the resolved
+    hex), so the rendered result is identical AND the dashboard's live preview
+    can repaint a colour tweak instantly by overriding the vars. The dot tile
+    keeps its literal colour — it's baked into a data-URI SVG."""
     layers = []
     for token in t["decoration"]:
         layers.append(_decoration_layer(token, t["accent"]))
     if t["background"] == "gradient":
-        layers.append(f"linear-gradient(160deg,{t['bg']} 0%,{t['bg2']} 100%)")
+        layers.append("linear-gradient(160deg,var(--bg) 0%,var(--bg2) 100%)")
     elif t["background"] == "stripes":
-        layers.append(f"repeating-linear-gradient(135deg,{t['bg']} 0 22px,{t['bg2']} 22px 30px)")
+        layers.append("repeating-linear-gradient(135deg,var(--bg) 0 22px,var(--bg2) 22px 30px)")
     elif t["background"] == "dots":
         layers.append(_dots_layer(t["bg2"]))
     if not layers:
-        return t["bg"]
-    layers[-1] += " " + t["bg"]
+        return "var(--bg)"
+    layers[-1] += " var(--bg)"
     return ",".join(layers)
 
 
