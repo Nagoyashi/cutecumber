@@ -120,17 +120,24 @@ def profile(username: str):
         description = description[: DESCRIPTION_MAX - 1].rstrip() + "…"
     canonical = f"{current_app.config['SITE_ORIGIN']}/{user['username']}"
 
-    # Home + published subpages, for the zero-JS site nav (empty => only home).
-    nav = _site_nav(get_db(), user, None)
-
-    # Builder page: when a live section stack exists, render it and skip the
-    # legacy links path entirely. resolve_sections is tolerant — a corrupt/empty
-    # column yields [], so we fall through to the legacy page.
-    sections = resolve_sections(user["sections_live_json"])
-    if sections:
-        return _render_section_page(
-            user, theme, sections, title, description, canonical, nav
-        )
+    # The page builder is gated behind BUILDER_ENABLED on EVERY surface — creator
+    # (dash) and visitor (here) alike — so flipping the flag off hides it entirely
+    # while the code + data keep cooking. Off => the legacy links page renders and
+    # there are no subpages / no site nav; the builder's home data is untouched and
+    # comes straight back when the flag is on again.
+    if current_app.config.get("BUILDER_ENABLED"):
+        # Home + published subpages, for the zero-JS site nav (empty => only home).
+        nav = _site_nav(get_db(), user, None)
+        # When a live section stack exists, render it and skip the legacy links
+        # path. resolve_sections is tolerant — a bad column yields [] and we fall
+        # through to the legacy page.
+        sections = resolve_sections(user["sections_live_json"])
+        if sections:
+            return _render_section_page(
+                user, theme, sections, title, description, canonical, nav
+            )
+    else:
+        nav = []
 
     rows = (
         get_db()
@@ -224,6 +231,8 @@ def _render_section_page(user, theme, sections, title, description, canonical, n
 def subpage(username: str, slug: str):
     """A creator's subpage at /<username>/<slug> — renders its published section
     stack, or the cute 404 if the page doesn't exist or isn't published yet."""
+    if not current_app.config.get("BUILDER_ENABLED"):
+        return _not_found()  # subpages don't exist while the builder is hidden
     lowered, lslug = username.lower(), slug.lower()
     if lowered != username or lslug != slug:
         return redirect(f"/{lowered}/{lslug}", code=301)
