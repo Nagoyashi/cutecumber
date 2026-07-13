@@ -17,7 +17,7 @@
 {% if t.font_file %}<link rel="preload" href="{{ t.font_file }}" as="font" type="font/woff2" crossorigin>
 {% endif %}<style nonce="{{ csp_nonce }}">
 {% if t.font_file %}@font-face{font-family:{{ t.font_family }};src:url({{ t.font_file }}) format('woff2');font-weight:{{ t.heading_weight }};font-display:swap}
-{% endif %}:root{--bg:{{ t.bg }};--surface:{{ t.surface }};--text:{{ t.text }};--muted:{{ t.muted }};--accent:{{ t.accent }};--accent-text:{{ t.accent_text }};--radius:{{ t.radius }}}
+{% endif %}:root{--bg:{{ t.bg }};--bg2:{{ t.bg2 }};--surface:{{ t.surface }};--text:{{ t.text }};--muted:{{ t.muted }};--accent:{{ t.accent }};--accent-text:{{ t.accent_text }};--radius:{{ t.radius }}}
 *{margin:0;padding:0;box-sizing:border-box}
 body{min-height:100svh;display:flex;align-items:flex-start;justify-content:center;padding:56px 20px 40px;
 font-family:system-ui,-apple-system,sans-serif;color:var(--text);line-height:1.5;

@@ -1,7 +1,8 @@
 /* cutecumber editor JS — the ONLY JavaScript in the product.
-   Hard budget: 200 lines (PROJECT_STRUCTURE.md). Count before adding anything.
+   Budget ~220 lines (RULES.md; grew from ~200 for live theme preview). Count
+   before adding — if it needs to grow much more, reconsider the design first.
    Everything is progressive enhancement: with JS disabled, all CRUD still
-   works — only drag-reordering and live-typing preview are lost.
+   works — only drag-reordering and live preview (typing + colour) are lost.
    Public pages NEVER load this file or any script. */
 "use strict";
 (() => {
@@ -161,7 +162,30 @@
           if (file) swapAvatar(URL.createObjectURL(file), "avatar-img");
         });
       }
+      paintTheme(); // apply current colours to the freshly (re)loaded preview
     };
+
+    // live theme preview: colour tweaks repaint the same-origin preview via CSS
+    // custom properties — instant, and nothing persists until "save".
+    const COLOR_VARS = [["t-bg", "--bg"], ["t-bg2", "--bg2"], ["t-surface", "--surface"], ["t-text", "--text"], ["t-accent", "--accent"]];
+    const paintTheme = () => {
+      const root = frame.contentDocument && frame.contentDocument.documentElement;
+      if (!root) return;
+      COLOR_VARS.forEach(([id, name]) => {
+        const el = document.getElementById(id);
+        if (el) root.style.setProperty(name, el.value);
+      });
+      const acc = document.getElementById("t-accent");
+      if (acc) {
+        const n = parseInt(acc.value.slice(1), 16);
+        const lum = (0.299 * (n >> 16 & 255) + 0.587 * (n >> 8 & 255) + 0.114 * (n & 255)) / 255;
+        root.style.setProperty("--accent-text", lum < 0.6 ? "#ffffff" : "#22141b");
+      }
+    };
+    COLOR_VARS.forEach(([id]) => {
+      const el = document.getElementById(id);
+      if (el) el.addEventListener("input", paintTheme);
+    });
     frame.addEventListener("load", wire);
   }
 

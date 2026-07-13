@@ -109,6 +109,15 @@ class TestResolveTheme(unittest.TestCase):
         for key in ("muted", "accent_text", "shadow", "radius", "page_background", "heading_stack"):
             self.assertIn(key, t)
 
+    def test_page_background_uses_css_vars(self):
+        # The flat colour parts reference --bg/--bg2 so the dashboard's live
+        # preview can repaint a colour tweak by overriding the CSS vars.
+        for name, bgkey in (("gradient", "var(--bg)"), ("stripes", "var(--bg)"),
+                            ("solid", "var(--bg)")):
+            t = resolve_theme({"version": 1, "preset": "strawberry_milk",
+                               "overrides": {"background": name, "decoration": []}})
+            self.assertIn(bgkey, t["page_background"], name)
+
     def test_generated_css_is_autoescape_transparent(self):
         # No quotes/ampersands/angle brackets may appear in generated CSS
         # values — that's what lets us avoid |safe entirely.
