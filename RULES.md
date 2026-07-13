@@ -92,11 +92,12 @@ frame-src. The page-weight budget no longer caps builder pages.
 - **Vanilla CSS with custom properties** is the theming engine — per-user
   tokens render into a `<style>` block at request time. No Tailwind, no CSS
   framework, no build step, no `node_modules`, no preprocessor.
-- **Vanilla JS, dashboard only, ~220-line budget** (`dash.js`, currently ~223 —
-  grew from ~200 for the live theme-colour preview, 2026-07-14). It is all
-  progressive enhancement: with JS off, every CRUD action still works — only
-  drag-reorder and live preview (typing + colour) degrade. If JS would grow much
-  past this, stop and reconsider the design before reaching for a library.
+- **Vanilla JS, dashboard only, ~250-line budget** (`dash.js`, currently ~246 —
+  grew from ~200 for the full live theme preview: instant colours + a debounced
+  reload of the preview iframe for structural tweaks, 2026-07-14). All progressive
+  enhancement: with JS off, every CRUD action still works — only drag-reorder and
+  live preview degrade. If it needs to grow much past this, stop and reconsider
+  the design (e.g. a tiny reactive helper) before reaching for a library.
 - **Allowed deps:** flask, bcrypt, python-dotenv, flask-limiter, gunicorn,
   pillow. Anything else is a written decision, justified against the problem.
 

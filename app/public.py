@@ -139,6 +139,14 @@ def profile(username: str):
     else:
         nav = []
 
+    return render_links_page(user, theme, nav, title, description, canonical)
+
+
+def render_links_page(user, theme, nav, title, description, canonical):
+    """Render the classic links profile page. Shared by the public route and the
+    dashboard's live theme preview (dash.theme_preview) so both go through exactly
+    the same renderer + safety filters. `user` is a Row or a dict with the same
+    keys (the preview builds one from the unsaved form)."""
     rows = (
         get_db()
         .execute(

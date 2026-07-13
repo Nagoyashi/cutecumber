@@ -1,8 +1,9 @@
 /* cutecumber editor JS — the ONLY JavaScript in the product.
-   Budget ~220 lines (RULES.md; grew from ~200 for live theme preview). Count
+   Budget ~250 lines (RULES.md; grew for the full live theme preview). Count
    before adding — if it needs to grow much more, reconsider the design first.
    Everything is progressive enhancement: with JS disabled, all CRUD still
-   works — only drag-reordering and live preview (typing + colour) are lost.
+   works — only drag-reordering and live preview (typing/colour + the debounced
+   theme reload) are lost.
    Public pages NEVER load this file or any script. */
 "use strict";
 (() => {
@@ -187,6 +188,28 @@
       if (el) el.addEventListener("input", paintTheme);
     });
     frame.addEventListener("load", wire);
+
+    // Decorations, font, buttons, background pattern & layout are server-computed,
+    // so on any structural change reload the preview with the current UNSAVED form
+    // state (colours + text keep updating in-place above between reloads). Nothing
+    // saves until the theme form is submitted.
+    const finetune = $("form.finetune");
+    if (finetune) {
+      const forms = [finetune, $("#profile form")].filter(Boolean);
+      const previewSrc = () => {
+        const p = new URLSearchParams();
+        forms.forEach((f) => new FormData(f).forEach((v, k) => {
+          if (k !== "_csrf" && typeof v === "string") p.append(k, v);
+        }));
+        return "/dash/theme-preview?" + p.toString();
+      };
+      let timer;
+      finetune.addEventListener("change", (e) => {
+        if (!e.target.matches("select, input[type=checkbox]")) return;
+        clearTimeout(timer);
+        timer = setTimeout(() => { frame.src = previewSrc(); }, 120);
+      });
+    }
   }
 
   /* ---- copy-link button (progressive: no JS → the visit link still works) ---- */

@@ -157,9 +157,16 @@ AVATAR_EMOJI_MAX = 8  # generous for ZWJ sequences (matches LINK_EMOJI_MAX)
 # AND at render like every other token. Each slug has a matching static file at
 # app/static/avatars/<slug>.svg (enforced by tests/test_avatar.py).
 AVATAR_SETS = frozenset({
+    # original 12 (design-spec v1)
     "berry", "blossom", "boo", "bun", "froggy", "matcha",
     "moonbeam", "riceball", "shroom", "sprout", "twinkle", "whiskers",
     "cutecumber",  # the slice mark itself, pickable as an avatar
+    # avatar expansion — 36 new characters (design_handoff_avatars, 2026-07-14)
+    "avo", "bamboo", "bao", "boba", "bumble", "cocoa", "dango", "dino", "dot",
+    "ducky", "flan", "goldie", "hammy", "honey", "hoot", "jelly", "kit",
+    "lottie", "melly", "nigiri", "peachy", "pinchy", "prickle", "puff",
+    "pumpkin", "pup", "scoop", "sealie", "shelly", "splash", "sunny", "tako",
+    "toasty", "tuck", "waddle", "zesty",
 })
 
 # New accounts start on a drawn set tile, not the 🥒 emoji (DECISIONS.md #13

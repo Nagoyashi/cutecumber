@@ -22,6 +22,7 @@ Pre-releases use a hyphenated tag (`vX.Y.Z-rc.N`) and the Action marks them
 
 _(newest first — add a line when a release ships)_
 
+- [`v0.11.3`](v0.11.3.md) — 36 new avatars (12→48) + a fully-live theme preview (decorations, fonts, buttons, layout — all update as you go).
 - [`v0.11.2`](v0.11.2.md) — Live colour preview: theme colour tweaks repaint the dashboard preview instantly (saves only on save).
 - [`v0.11.1`](v0.11.1.md) — Page builder hidden in production (kept cooking): gated on `BUILDER_ENABLED` across creator + visitor surfaces; links editor stays live.
 - [`v0.11.0`](v0.11.0.md) — Sites, not just pages: multi-page creator sites (`/you/about`), a zero-JS site nav, and a builder page switcher.
