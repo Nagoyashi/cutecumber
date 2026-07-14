@@ -240,5 +240,40 @@ class TestBuilderHiddenWhenFlagOff(SecurityTestBase):
         self.assertEqual(self.client.get("/mochi/about").status_code, 404)
 
 
+class TestThemePreview(SecurityTestBase):
+    """The dashboard's live preview endpoint renders the user's page with the
+    UNSAVED theme/profile from the query, and saves nothing."""
+
+    def setUp(self):
+        super().setUp()
+        from app.security import session_auth_fragment
+        self.uid, pw = self._create_user("prev@test.test", username="mochi")
+        self.client = self.app.test_client()
+        with self.client.session_transaction() as s:
+            s["user_id"] = self.uid
+            s["auth"] = session_auth_fragment(pw)
+
+    def test_preview_applies_unsaved_theme_and_saves_nothing(self):
+        resp = self.client.get(
+            "/dash/theme-preview?bg=%23112233&background=solid"
+            "&layout=wide&decoration=basic/hearts&display_name=Zed")
+        self.assertEqual(resp.status_code, 200)
+        body = resp.get_data(as_text=True)
+        self.assertIn("--bg:#112233", body)              # colour override applied
+        self.assertIn("layout-wide", body)               # layout applied
+        self.assertIn("data:image/svg+xml", body)        # the decoration layer
+        self.assertIn("Zed", body)                        # unsaved profile name
+        with self.app.app_context():
+            saved = get_db().execute(
+                "SELECT theme_json, display_name FROM users WHERE id = ?",
+                (self.uid,)).fetchone()
+        self.assertNotIn("112233", saved["theme_json"])   # nothing persisted
+        self.assertIsNone(saved["display_name"])
+
+    def test_preview_requires_login(self):
+        self.assertEqual(
+            self.app.test_client().get("/dash/theme-preview").status_code, 302)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -163,6 +163,67 @@ def home():
     return _render_home()
 
 
+@bp.get("/dash/theme-preview")
+@login_required
+def theme_preview():
+    """Live-preview target for the dashboard's preview iframe: renders the user's
+    REAL page with the UNSAVED theme + profile taken from the query string, so
+    every design tweak (colours, font, buttons, background, DECORATIONS, layout)
+    shows immediately. Nothing is saved — the theme/profile forms still persist
+    only on their own submit. Reuses public.render_links_page (same renderer +
+    safety filters); tolerant, so a half-typed value just falls back."""
+    from .public import DEFAULT_DESCRIPTION, DESCRIPTION_MAX, render_links_page
+
+    if not g.user["username"]:
+        abort(404)
+    q = request.args
+    # theme candidate from the fine-tune form (mirrors dash.theme_save's save arm)
+    overrides = {}
+    for key in COLOR_KEYS:
+        v = (q.get(key) or "").strip().lower()
+        if v:
+            overrides[key] = v
+    for key in ENUM_KEYS:
+        v = (q.get(key) or "").strip()
+        if v:
+            overrides[key] = v
+    overrides["decoration"] = q.getlist("decoration")
+    overrides["show_credit"] = q.get("show_credit") == "on"
+    layout = q.get("layout")
+    if layout:
+        overrides["layout"] = layout
+    # Render the SAME tolerant path as a saved theme (resolve_theme(load_theme)):
+    # a half-typed value falls back per-field, not wholesale. Preview only — the
+    # premium-gating lives on the SAVE path (theme_save). Fall back to the saved
+    # preset when the query omits it (partial queries still preview).
+    stored = load_theme(g.user["theme_json"])
+    candidate = {"version": THEME_VERSION,
+                 "preset": q.get("preset") or stored.get("preset", ""),
+                 "overrides": overrides}
+    theme = resolve_theme(load_theme(_json.dumps(candidate)))
+
+    # profile from the query, falling back to the saved value. Avatar previews
+    # only for the curated SET tiles (an unsaved photo upload can't ride a GET);
+    # anything else keeps the saved avatar.
+    kind, value = g.user["avatar_kind"], g.user["avatar_value"]
+    picked = q.get("avatar") or ""
+    if picked.startswith("set:") and picked[4:] in AVATAR_SETS:
+        kind, value = "set", picked[4:]
+    user = {
+        "id": g.user["id"], "username": g.user["username"],
+        "display_name": q.get("display_name", g.user["display_name"]),
+        "bio": q.get("bio", g.user["bio"]),
+        "pronouns": q.get("pronouns", g.user["pronouns"]),
+        "avatar_kind": kind, "avatar_value": value,
+    }
+    title = user["display_name"] or f"@{user['username']}"
+    description = (user["bio"] or DEFAULT_DESCRIPTION).strip()
+    if len(description) > DESCRIPTION_MAX:
+        description = description[: DESCRIPTION_MAX - 1].rstrip() + "…"
+    canonical = f"{current_app.config['SITE_ORIGIN']}/{user['username']}"
+    return render_links_page(user, theme, [], title, description, canonical)
+
+
 @bp.post("/dash/claim")
 @limiter.limit("10 per hour")
 @login_required

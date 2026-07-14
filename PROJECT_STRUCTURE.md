@@ -115,9 +115,10 @@ cutecumber/
     └── static/
         ├── favicon.svg          brand slice mark (also the inlined landing
         │                        logo); fixed colors, never themed (DECISIONS #34).
-        ├── avatars/             12 curated kawaii SVG tiles = the 'set' avatar
-        │                        kind; AVATAR_SETS in constants is the boundary
-        │                        (DECISIONS #13 addendum). Served as static <img>.
+        ├── avatars/             48 curated kawaii SVG tiles = the 'set' avatar
+        │                        kind (12 original + 36 expansion); AVATAR_SETS in
+        │                        constants is the boundary (DECISIONS #13 addendum).
+        │                        Served as static <img>.
         ├── packs/               decoration tiles, <pack>/<slug>.svg: 'basic'
         │                        (glyph picker thumbs) + 4 house packs.
         │                        DECORATION_PACKS in theme.py is the boundary
